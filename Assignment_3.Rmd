@@ -1,0 +1,133 @@
+---
+title: "20236 Time Series Analysis - Assignment 3"
+author:
+- Simone Arrigoni (1794692)
+- Luca Badolato (3086040)
+- Simone Valle (3088281)
+subtitle: "Bocconi University"
+date: March 12, 2020
+output: 
+  pdf_document
+header-includes:
+  \usepackage[utf8]{inputenc}
+  \usepackage{setspace}
+  \usepackage{algpseudocode}
+  \usepackage{algorithm}
+  \usepackage{bm}
+  \usepackage{amsmath}
+  \usepackage{amssymb}
+  \usepackage{graphicx}
+  \usepackage{subfig}
+  \usepackage{booktabs, caption}
+  \usepackage{array}
+  \usepackage{threeparttable}
+  \usepackage{listings}
+  \usepackage{physics}
+  \usepackage{float}
+  \floatplacement{figure}{H}
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(fig.pos="H")
+# Load useful packages
+library(utf8)
+library(labeling)
+library(rmarkdown)
+library(knitr)
+library(tseries)
+library(dlm)
+library(ggplot2)
+library(tidyr)
+```
+
+\section{Exercise 1}
+Let's consider a time series $(Y_{t})_{t\geq0}$ with $Y_{t} \in \{1,2,...,K\}$.
+\begin{itemize}
+\item The time series $(Y_{t})$ is a Markov chain if $Y_{0} \sim p_{0}(\cdot)$ and $Y_{t}$ depends on the past observations through $Y_{t-1}$ and only through it. In other words, if $Y_{t}$ is conditionally independent on $(Y_{0}, ..., Y_{t-2})$ given $Y_{t-1}$.
+\item An example of a Markov chain is...
+\end{itemize}
+
+\section{Exercise 2}
+Let's consider a homogeneous Markov chain $(Y_{t})_{t\geq0}$ with finite state-space $\{1,2,...,K\}$.
+\begin{itemize}
+\item The initial distribution is... The transition matrix is... For non-homogeneous Markov chains... 
+\item Supposing that $K=3$, we have that:
+\begin{equation*}
+P(Y_{2}=1 \; | \; Y_{1}=2, Y_{0}=2) = P(Y_{2}=1 \; | \; Y_{1}=2) = p_{2,1}
+\end{equation*}
+\item We also have that:
+\begin{equation*}
+\begin{split}
+P(Y_{0}&=2, Y_{1}=2, Y_{3}=1, Y_{4}=2, Y_{5}=2, Y_{6}=2, Y_{7}=1, Y_{8}=3) \\
+= & \; P(Y_{1}=2 \; | \; Y_{0}=2) \; P(Y_{3}=1 \; | \; Y_{1}=2, Y_{0}=2) \; P(Y_{4}=2 \; | \; Y_{3}=1, Y_{1}=2, Y_{0}=2) \\ & \; P(Y_{5}=2 \; | \; Y_{4}=2, Y_{3}=1,  Y_{1}=2, Y_{0}=2) \; P(Y_{6}=2 \; | \; Y_{5}=2, Y_{4}=2, Y_{3}=1, Y_{1}=2, Y_{0}=2) \\ & \; P(Y_{7}=1 \; | \; Y_{6}=2, Y_{5}=2, Y_{4}=2, Y_{3}=1, Y_{1}=2, Y_{0}=2) \\ & \; P(Y_{8}=3 \; | \; Y_{7}=1, Y_{6}=2, Y_{5}=2, Y_{4}=2, Y_{3}=1, Y_{1}=2, Y_{0}=2) \\
+= & \; P(Y_{1}=2 \; | \; Y_{0}=2) \; P(Y_{3}=1 \; | \; Y_{1}=2) P(Y_{4}=2 \; | \; Y_{3}=1) \; P(Y_{5}=2 \; | \; Y_{4}=2) \; P(Y_{6}=2 \; | \; Y_{5}=2) \\ & \; P(Y_{7}=1 \; | \; Y_{6}=2) \; P(Y_{8}=3 \; | \; Y_{7}=1) \\
+= & \; (p_{2,2})(p_{2,1})(p_{1,2})(p_{2,2})(p_{2,2})(p_{2,1})(p_{1,3}) \\
+= & \; (p_{1,2})(p_{1,3})(p_{2,1}^{2})(p_{2,2}^{3})
+\end{split}
+\end{equation*}
+\end{itemize}
+
+\section{Exercise 3}
+We are now considering a simple random walk.
+\begin{itemize}
+\item The process $(Y_{t})_{t\geq0}$ is not stationary. Indeed, the variance is not constant: it explodes with increasing $t$.
+\item The process $(Y_{t})_{t\geq0}$ is a Markov chain, as it has the Markov property, namely $Y_{t}$ depends on the past observation only through $Y_{t-1}$. Indeed, conditionally on the trajectory $(y_{0}, Y_{1}=y_{1},...,Y_{t-1}=i)$, the probability law of the capital $Y_{t}$ at the next step does not depend on the entire trajectory but only on the position reached at time $t-1$, that is $Y_{t-1}=i$.
+\end{itemize}
+
+\section{Exercise 4}
+Let's consider a random walk:
+\begin{equation*}
+Y_{t}=Y_{t+1}+Z_{t} \qquad Z_{t} \overset{i.i.d.}{\sim} N(\mu,\sigma^{2}).
+\end{equation*}
+\begin{itemize}
+\item The mean function is... The variance function is... The process $(Y_{t})_{t\geq0}$ is not stationary because...
+\item The process $(Y_{t})_{t\geq0}$ satisfies the Markov property and is thus a Markov chain.
+\item The process $(R_{t})$ is stationary because...
+\end{itemize}
+
+\section{Exercise 5}
+\begin{itemize}
+\item Knowing the state-space, the initial value and the transition matrix, the probability that $Y_{2}=2$ can be obtained as follows:
+\begin{equation*}
+P(Y_{2}=2)=
+\end{equation*}
+\item We also have that:
+\begin{equation*}
+P(Y_{1}=1 \; | \; Y_{2}=2, Y_{0}=1)=
+\end{equation*}
+\end{itemize}
+
+\section{Exercise 6}
+\begin{itemize}
+\item The state-space of the given Markov chain is $\mathcal{Y}=\{1,2,3\}$.
+\item The marginal probability distribution of $Y_{2}$, given the starting value $Y_{0}=1$ is...
+\end{itemize}
+
+\section{Exercise 7}
+\begin{itemize}
+\item We have that:
+\begin{equation*}
+P(Y_{1}=2, Y_{2}=1 \; | \; Y_{0}=1) = 0.4*0 = 0
+\end{equation*}
+\item The above Markov chain is(is not irreducible... because...
+\end{itemize}
+
+\section{Exercise 8}
+
+
+\section{Exercise 9}
+\begin{itemize}
+\item MLE of $p_{3}=P(Y_{t}=1 \; | \; Y_{t-1}=3)$:
+\item Asymptotic confidence interval of level 0.95 for $p_{3}$:
+\item MLE of $p_{3,1}(t)$ for $t=1,2$ (relaxing the homogeneity assumption for the Markov chain):
+\end{itemize}
+
+\section{Exercise 10}
+\begin{itemize}
+\item We have that:
+\begin{equation*}
+P(Y_{1,1}=1, Y_{1,2}=3, Y_{1,3}=3, Y_{1,4}=2 \; | \; Y_{1,0}=1; \text{\textbf{P}}) =
+\end{equation*}
+\item MLE of $p_{i,j}$
+\item 
+\end{itemize}
