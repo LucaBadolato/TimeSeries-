@@ -1,3 +1,3 @@
 Prova
 
-Simone Valle
+Simone
