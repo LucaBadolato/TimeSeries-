@@ -5,7 +5,7 @@ author:
 - Luca Badolato (3086040)
 - Simone Valle (3088281)
 subtitle: "Bocconi University"
-date: March 12, 2020
+date: March 16, 2020
 output: 
   pdf_document
 header-includes:
@@ -50,7 +50,7 @@ Let's consider a time series $(Y_{t})_{t\geq0}$ with $Y_{t} \in \{1,2,...,K\}$.
 \section{Exercise 2}
 Let's consider a homogeneous Markov chain $(Y_{t})_{t\geq0}$ with finite state-space $\{1,2,...,K\}$.
 \begin{itemize}
-\item The initial distribution is... The transition matrix is... For non-homogeneous Markov chains... 
+\item The initial distribution is... The transition matrix is... For non-homogeneous Markov chains the transition matrix can be different for any $t$, i.e. $\textbf{P}_{t_{1}} \ne \textbf{P}_{t_{2}}$.
 \item Supposing that $K=3$, we have that:
 \begin{equation*}
 P(Y_{2}=1 \; | \; Y_{1}=2, Y_{0}=2) = P(Y_{2}=1 \; | \; Y_{1}=2) = p_{2,1}
@@ -140,7 +140,7 @@ P(Y_{1}=2, Y_{2}=1 \; | \; Y_{0}=1) = 0.4 \cdot 0 = 0
 \end{itemize}
 
 \section{Exercise 8}
-
+Let's consider a Markov chain $(Y_{t})_{t \geq 0}$ with finite state-space $\mathcal{Y}$.
 
 \section{Exercise 9}
 \begin{itemize}
@@ -179,3 +179,4 @@ P(Y_{1,1}=1, Y_{1,2}=3, Y_{1,3}=3, Y_{1,4}=2 \; | \; Y_{1,0}=1; \text{\textbf{P}
 \item MLE of $p_{i,j}$
 \item
 \end{itemize}
+
