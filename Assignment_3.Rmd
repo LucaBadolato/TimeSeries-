@@ -219,12 +219,88 @@ The MLE of $p_{3,1}$, given by $\hat{p}_{i,j} = \frac{n_{i,j}}{n_{i,+}}$, is:
 
 
 \section{Exercise 10}
+
 \begin{itemize}
-\item We have that:
-\begin{equation*}
-P(Y_{1,1}=1, Y_{1,2}=3, Y_{1,3}=3, Y_{1,4}=2 \; | \; Y_{1,0}=1; \text{\textbf{P}}) =
-\end{equation*}
-\item MLE of $p_{i,j}$
-\item
-\end{itemize}
+
+\item First, we estimate the transition matrix $P$ based on the data, that is: 
+
+\begin{center}
+ \begin{tabular}{|c|c|c|c|}
+\hline 
+ & 1 & 2 & 3 \\ 
+\hline 
+1 & 30/120 & 20/120 & 40/120  \\ 
+\hline 
+2 & 20/120 & 80/120 & 20/120  \\ 
+\hline 
+3 & 20/160 & 120/160 & 20/160  \\ 
+\hline 
+\end{tabular} 
+\end{center}
+
+simplifying, we obtain: 
+
+\begin{center}
+ \begin{tabular}{|c|c|c|c|}
+\hline 
+ & 1 & 2 & 3 \\ 
+\hline 
+1 & 0.5 & $0.1\overline{6}$ & $0.3\overline{3}$  \\ 
+\hline 
+2 & $0.1\overline{6}$ & $0.6\overline{6}$ & $0.1\overline{6}$  \\ 
+\hline 
+3 & 0.125 & 0.75 & 0.125  \\ 
+\hline 
+\end{tabular} 
+\end{center}
+
+Hence, we have that:
+
+$P(Y_{1,1}=1, Y_{1,2}=3, Y_{1,3}=3, Y_{1,4}=2 \; | \; Y_{1,0}=1; \text{\textbf{P}}) =$
+
+$P(Y_{1,1}=1 \; | \; Y_{1,0}=1; \text{\textbf{P}}) P(Y_{1,2}=3 \; | \; Y_{1,1}=1; \text{\textbf{P}}) P(Y_{1,3}=1 \; | \; Y_{1,2}=3; \text{\textbf{P}}) P(Y_{1,4}=2 \; | \; Y_{1,3}=3; \text{\textbf{P}})=$ 
+
+$= 0.5 \cdot 0.3\overline{3} \cdot 0.125 \cdot 0.75 = 0.01547$ . 
+
+\item Assuming that the initial values $y_{k,0}$ are fixed, the likelihood is: 
+\medskip
+\begin{center}
+$L((p_{i,j}); y_1 , ..., y_n, \textit{initial values}) =$
+
+$=p(y_1 , ..., y_n; (p_{i,j}), \textit{initial values}) =$
+
+$= \prod_{k=1}^{n} p(y_k ; (p_{i,j}))=$
+
+$= \prod_{i=1}^{N} \prod_{j=1}^{N} p_{i,j}^{n_{i,j}}$. 
+\medskip
+\end{center}
+
+To obtain the MLEs we have to mazimize this expression with respect to the $p_{i,j}$, with the constraint $p_{i,j} \geq 0$ and $\sum_{j=1}^{N} p_{i,j} = 1$. Being the likelihood previously obtained proportional to the product of multinomial distributions with parameters $n_{i, +}$ and $(p_{i,1}, ..., p_{i,N})$, the problem of finding the MLEs of the $p_{i,j}$ reduces to computing the MLEs for the probabilities $(p_{i,1}, ..., p_{i,N})$ of independent Multinomial distributions, which are: 
+
+\begin{center}
+$\hat{p}_{i,j} = \frac{n_{i,j}}{n_{i,+}}, \; \; \; \; j = 1, ..., N$
+\end{center}
+for $i = 1, ..., N$. 
+
+
+
+\item The MLEs of $p_{i,j}$ are the ones computed before in the estimated transtion matrix P: 
+
+\begin{center}
+$P(Y_3 = 2 | Y_2 = 1) = 0.1\overline{6}$.
+\end{center}
+
+\item The asymptotic confidence interval of level 0.90 is :
+
+\begin{center}
+$\bigg[\hat{p}_{1,2}-1.65\sqrt{\frac{\hat{p}_{1,2}(1-\hat{p}_{1,2})}{n_{1,+}}}\text{;} \; \hat{p}_{1,2}+1.65\sqrt{\frac{\hat{p}_{1,2}(1-\hat{p}_{1,2})}{n_{1,+}}}\bigg]=$
+
+$= \bigg[0.1\overline{6} -1.65\sqrt{\frac{0.1\overline{6}(1-0.1\overline{6})}{120}}\text{;} \; 0.1\overline{6}+1.65 \sqrt{\frac{0.1\overline{6}(1-0.1\overline{6})}{120}}\bigg]=$
+
+$= \big[0.11083 \text{;} \; 0.22317\big]$
+\end{center}
+
+\end{itemize}.
+
+
 
