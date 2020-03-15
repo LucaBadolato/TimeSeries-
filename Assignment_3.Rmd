@@ -176,7 +176,23 @@ A Markov chain is *irreducible* if  there are no closed set, that is, for every 
 \section{Exercise 9}
 \begin{itemize}
 
-\item The MLE of $p_{3,1}$ is:
+\item Given the assumption of homogeneity, it is possible to sum all the counts, obtaining the following matrix of transition counts:
+
+\begin{center}
+ \begin{tabular}{|c|c|c|c|c|}
+\hline 
+ & 1 & 2 & 3 &  \\ 
+\hline 
+1 & 105 & 10 & 15 & 130 \\ 
+\hline 
+2 & 40 & 55 & 25 & 120 \\ 
+\hline 
+3 & 25 & 55 & 70 & 150 \\ 
+\hline 
+\end{tabular} 
+\end{center}
+
+The MLE of $p_{3,1}$, given by $\hat{p}_{i,j} = \frac{n_{i,j}}{n_{i,+}}$, is:
 \begin{equation*}
 \hat{p}_{3,1}=\frac{25}{150}=\frac{1}{6}=0.1\overline{6}.
 \end{equation*}
@@ -200,6 +216,7 @@ A Markov chain is *irreducible* if  there are no closed set, that is, for every 
 \end{equation*}
 
 \end{itemize}
+
 
 \section{Exercise 10}
 \begin{itemize}
