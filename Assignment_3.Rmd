@@ -138,9 +138,40 @@ P(Y_{1}=2, Y_{2}=1 \; | \; Y_{0}=1) = 0.4 \cdot 0 = 0
 \end{equation*}
 \item The above Markov chain is irreducible... because...
 \end{itemize}
-
+f
 \section{Exercise 8}
-Let's consider a Markov chain $(Y_{t})_{t \geq 0}$ with finite state-space $\mathcal{Y}$.
+Let's consider a Markov chain $(Y_{t})_{t \geq 0}$ with finite state-space $\mathcal{Y}$. Our aim is to study the probability distribution of $Y_n$, given the initial state $Y_0 = j$, that is $P(Y_n = k | Y_0 = j)$ for $K = 1, ..., N$, the possible states. 
+
+In general the random variables $Y_n$ are not identically distributed, since the distribution of $Y_n$ varies with $n$. However, if the Markov chain is eergotic, the conditional distribution of $Y_n$ given the initial state $j$ converge to the limit distribution $P ^ {\ast} (.)$. This result is provided by the Ergotic theorem, a fundamental result in Markov chain theory: 
+\medskip
+
+
+**Th** Let $(Y_{t})_{t \geq 0}$ be an \textbf{irriducible} and \textbf{aperiodic} Markov chain with finite state space $\textit{Y}\{ 1, ..., N \}$. Then:
+
+
+$(i)$ The conditional distribution $P(Y_n = . | Y_0 = j)$ converges to a limit distribution $p ^ {\ast} (.)$, independent of $j$. More specifically, for any $j$ and $k$ :
+
+\begin{center}
+$\lim_{n \to \inf} P(Y_n = k | Y_0 = j) = p ^ {\ast} (k) > 0$
+\end{center}
+
+
+where $p ^ {\ast} (1), ... ,p ^ {\ast} (N)$ is a probability distribution: $p ^ {\ast} (k) > 0 \forall k \in \textit{Y}$ and $\sum_{k \in \textit{Y}} p^{\ast} = 1$.
+
+$(ii)$ Moreover, the $p^{\ast} (k)$ satisfy
+\begin{center}
+$p^{\ast} (k) = \sum_{i \in \textit{Y}} p^{\ast} (i) p_{i, k}.$
+\end{center}
+
+
+\bigskip
+
+The required conditions are irreducibility and aperiodicity: 
+
+A state $j$ is *periodic* with period $t$ if a return to state $j$ is possible only in $7, 2t, 3t ...$ steps. 
+
+A Markov chain is *irreducible* if  there are no closed set, that is, for every set $C$ of states no one-step transition in possible from any state inside $C$ to any outside $C$, i.e. $p_{j,k} = 0$ if $j \in C$ and $k \notin C$.
+
 
 \section{Exercise 9}
 \begin{itemize}
