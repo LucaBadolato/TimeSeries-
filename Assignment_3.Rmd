@@ -106,15 +106,15 @@ Since the random gain is distributed as
     \quad \forall t
 \end{split}
  \end{align*}
-Hence, $\E[Z_t]=0$ and $\V[Z_t]=1$ for each $t$
+Hence, $\E[Z_t]=2p-1$ and $\V[Z_t]=4p(1-p)$ for each $t$
 
 Then, the unconditional first and second moments of $Y_t$ are
 \begin{align*}
     \begin{split}
-        \E[Y_t]=y_0+\sum_{k=1}^{t}\E[Z_k]=y_0 \; , \quad & \quad  \V[Y_t]=\sum_{k=1}^{t}\V[Z_k]=t
+        \E[Y_t]=y_0+\sum_{k=1}^{t}\E[Z_k]=y_0+t(2p-1) \; , \quad & \quad  \V[Y_t]=\sum_{k=1}^{t}\V[Z_k]=4p(1-p)t
     \end{split}
 \end{align*}
-with $\V[Y_t]\rightarrow\infty$ as $t\rightarrow\infty$.
+with both $\E[Y_t], \; \V[Y_t]\rightarrow\infty$ as $t\rightarrow\infty$.
 \item The process $(Y_{t})_{t\geq0}$ is a Markov chain, as it has the Markov property, namely $Y_{t}$ depends on the past observation only through $Y_{t-1}$. Indeed, conditionally on the trajectory $(y_{0}, Y_{1}=y_{1},...,Y_{t-1}=i)$, the probability law of the capital $Y_{t}$ at the next step does not depend on the entire trajectory but only on the position reached at time $t-1$, that is $Y_{t-1}=i$.
 \end{itemize}
 
@@ -209,7 +209,8 @@ P(Y_{1}=2, Y_{2}=1 \; | \; Y_{0}=1)
 \end{equation*}
 \item The above Markov chain is irreducible since there are no closed sets, that is there is no set $C$ of states for which no one-step transition is possible from any state inside $C$ to any state outside $C$.
 \end{itemize}
-f
+
+
 \section{Exercise 8}
 Let's consider a Markov chain $(Y_{t})_{t \geq 0}$ with finite state-space $\mathcal{Y}$. Our aim is to study the probability distribution of $Y_n$, given the initial state $Y_0 = j$, that is $P(Y_n = k | Y_0 = j)$ for $K = 1, ..., N$, the possible states. 
 
@@ -372,6 +373,8 @@ $= \big[0.11083 \text{;} \; 0.22317\big]$
 \end{center}
 
 \end{itemize}.
+
+\end{document}
 
 
 
