@@ -1,0 +1,19 @@
+Etiquette:
+
+- per scrivere equazione:
+       \begin{align*}
+       & [...]   \\    --> "&" dove si vogliono allineare le righe e "\\" in fondo
+       & [...]         --> "\\" no nell'ultima riga
+       \end{align*}
+
+- per elenco:
+  - elenco numerato:  \begin{enumerate} + \item + \end{enumerate}
+  - elenco puntato:   \begin{itemize} + \item + \end{itemize}
+
+- per lettere maiuscole corsive:
+       \mathcal{*lettera*}
+
+- per inserire teorema:
+       \newtheorem{theorem}{Theorem} --> da inserire in "header-includes:"
+       \begin{theorem}
+       \end{theorem}
