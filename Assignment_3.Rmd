@@ -201,9 +201,13 @@ P(Y_{2}=i \; | \; Y_{0}=1)
 \begin{itemize}
 \item We have that:
 \begin{equation*}
-P(Y_{1}=2, Y_{2}=1 \; | \; Y_{0}=1) = 0.4 \cdot 0 = 0
+\begin{split}
+P(Y_{1}=2, Y_{2}=1 \; | \; Y_{0}=1)
+& = P(Y_{1}=2 \; | \; Y_{0}=1) \; P(Y_{2}=1 \; | \; Y_{1}=2) \\
+& = p_{1,2} \; p_{2,1} = 0.4 \cdot 0 = 0
+\end{split}
 \end{equation*}
-\item The above Markov chain is irreducible... because...
+\item The above Markov chain is irreducible since there are no closed sets, that is there is no set $C$ of states for which no one-step transition is possible from any state inside $C$ to any state outside $C$.
 \end{itemize}
 f
 \section{Exercise 8}
