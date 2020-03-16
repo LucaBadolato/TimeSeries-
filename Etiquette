@@ -14,6 +14,10 @@ Etiquette:
        \mathcal{*lettera*}
 
 - per inserire teorema:
+<<<<<<< HEAD
        \newtheorem{theorem}{Theorem} --> da inserire in "header-includes"
+=======
+       \newtheorem{theorem}{Theorem} --> da inserire in "header-includes:"
+>>>>>>> 88fa3e2bfe5464eca5e9f998c30d54a20bd72a2c
        \begin{theorem}
        \end{theorem}
