@@ -25,6 +25,10 @@ header-includes:
   \usepackage{physics}
   \usepackage{float}
   \floatplacement{figure}{H}
+  \DeclareMathOperator*{\E}{\mathbb{E}}
+  \DeclareMathOperator*{\Ec}{\mathbb{E}_t}
+  \DeclareMathOperator*{\V}{\mathbb{V}}
+  \DeclareMathOperator*{\Vc}{\mathbb{V}_t}
 ---
 
 ```{r, include=FALSE}
@@ -41,48 +45,111 @@ library(tidyr)
 ```
 
 \section{Exercise 1}
-Let's consider a time series $(Y_{t})_{t\geq0}$ with $Y_{t} \in \{1,2,...,K\}$.
+Let's consider a discrete time stochastic process $(Y_{t})_{t\geq0}$ with $Y_{t} \in \{1,2,...,K\}$ and define $p_{0}(\cdot)$ the \textit{initial distribution} of $Y_{t}$.
 \begin{itemize}
-\item The time series $(Y_{t})$ is a Markov chain if $Y_{0} \sim p_{0}(\cdot)$ and $Y_{t}$ depends on the past observations through $Y_{t-1}$ and only through it. In other words, if $Y_{t}$ is conditionally independent on $(Y_{0}, ..., Y_{t-2})$ given $Y_{t-1}$.
-\item An example of a Markov chain is...
+\item $Y_{t}$ is a Markov chain, (or \textit{Markov process}), if $Y_{0} \sim p_{0}(\cdot)$ and $Y_{t}$ depends on the past observations through $Y_{t-1}$ and only through it. In other words, if $Y_{t}$ is conditionally independent on $(Y_{0}, ..., Y_{t-2})$ given $Y_{t-1}$.
+\item The set $\mathcal{Y}$ of all possible values taken by the process $Y_{t}$ is defined \textit{State Space} of Markov process.
+\item An example of a Markov chain is that of independent trials, which is a useful model for categorical time series.
+Other examples are the simple random walk and the continuous random walk among discrete time processes or Brownian motions and Poisson point processes among continuous time processes.
 \end{itemize}
 
 \section{Exercise 2}
-Let's consider a homogeneous Markov chain $(Y_{t})_{t\geq0}$ with finite state-space $\{1,2,...,K\}$.
+Let's consider a homogeneous Markov chain $(Y_{t})_{t\geq0}$ with finite state-space $\mathcal{Y}=\{1,2,...,K\}$.
 \begin{itemize}
-\item The initial distribution is... The transition matrix is... For non-homogeneous Markov chains the transition matrix can be different for any $t$, i.e. $\textbf{P}_{t_{1}} \ne \textbf{P}_{t_{2}}$.
-\item Supposing that $K=3$, we have that:
+\item The initial distribution $p_{0}$ is the probability distribution of the process at time $t=0$, i.e. $Y_{0} \sim p_{0}$.
+The transition matrix $\textbf{P}$ collects the \textit{transition probabilities} $p_{ij}=P(Y_{t}=j|Y_{t-1}=i)$ for every $t\geq0$ and for every $i,j \in \mathcal{Y}$, i.e. the probabilities of $Y$ of moving from state $i$ at time $t-1$ to state $j$ at time $t$.
+For non-homogeneous Markov chains the transition matrix can be different for any $t$, i.e. $\textbf{P}_{t_{1}} \ne \textbf{P}_{t_{2}}$.
+\item Suppose that $K=3$, the conditional distribution of $Y_2=1$ given $y_1$ and $y_2$ is:
 \begin{equation*}
 P(Y_{2}=1 \; | \; Y_{1}=2, Y_{0}=2) = P(Y_{2}=1 \; | \; Y_{1}=2) = p_{2,1}
 \end{equation*}
-\item We also have that:
+\item Also, the joint probability distribution $P(\underline{\mathbf{Y}}=\underline{\mathbf{y}})$ is defined as:
 \begin{equation*}
 \begin{split}
-P(Y_{0}&=2, Y_{1}=2, Y_{3}=1, Y_{4}=2, Y_{5}=2, Y_{6}=2, Y_{7}=1, Y_{8}=3) \\
-= & \; P(Y_{1}=2 \; | \; Y_{0}=2) \; P(Y_{3}=1 \; | \; Y_{1}=2, Y_{0}=2) \; P(Y_{4}=2 \; | \; Y_{3}=1, Y_{1}=2, Y_{0}=2) \\ & \; P(Y_{5}=2 \; | \; Y_{4}=2, Y_{3}=1,  Y_{1}=2, Y_{0}=2) \; P(Y_{6}=2 \; | \; Y_{5}=2, Y_{4}=2, Y_{3}=1, Y_{1}=2, Y_{0}=2) \\ & \; P(Y_{7}=1 \; | \; Y_{6}=2, Y_{5}=2, Y_{4}=2, Y_{3}=1, Y_{1}=2, Y_{0}=2) \\ & \; P(Y_{8}=3 \; | \; Y_{7}=1, Y_{6}=2, Y_{5}=2, Y_{4}=2, Y_{3}=1, Y_{1}=2, Y_{0}=2) \\
-= & \; P(Y_{1}=2 \; | \; Y_{0}=2) \; P(Y_{3}=1 \; | \; Y_{1}=2) P(Y_{4}=2 \; | \; Y_{3}=1) \; P(Y_{5}=2 \; | \; Y_{4}=2) \; P(Y_{6}=2 \; | \; Y_{5}=2) \\ & \; P(Y_{7}=1 \; | \; Y_{6}=2) \; P(Y_{8}=3 \; | \; Y_{7}=1) \\
+P(\underline{\mathbf{Y}}=\underline{\mathbf{y}})\\
+=P(Y_{0}&=2, Y_{1}=2, Y_{3}=1, Y_{4}=2, Y_{5}=2, Y_{6}=2, Y_{7}=1, Y_{8}=3) \\
+= & P(Y_{1}=2 \; | \; Y_{0}=2) \; P(Y_{3}=1 \; | \; Y_{1}=2, Y_{0}=2) \; P(Y_{4}=2 \; | \; Y_{3}=1, Y_{1}=2, Y_{0}=2) \\ & \; P(Y_{5}=2 \; | \; Y_{4}=2, Y_{3}=1,  Y_{1}=2, Y_{0}=2) \; P(Y_{6}=2 \; | \; Y_{5}=2, Y_{4}=2, Y_{3}=1, Y_{1}=2, Y_{0}=2) \\ & \; P(Y_{7}=1 \; | \; Y_{6}=2, Y_{5}=2, Y_{4}=2, Y_{3}=1, Y_{1}=2, Y_{0}=2) \\ & \; P(Y_{8}=3 \; | \; Y_{7}=1, Y_{6}=2, Y_{5}=2, Y_{4}=2, Y_{3}=1, Y_{1}=2, Y_{0}=2) \\
+= & \; P(Y_{1}=2 \; | \; Y_{0}=2) \; P(Y_{3}=1 \; | \; Y_{1}=2) P(Y_{4}=2 \; | \; Y_{3}=1) \; P(Y_{5}=2 \; | \; Y_{4}=2) \\ & \; P(Y_{6}=2 \; | \; Y_{5}=2) \; P(Y_{7}=1 \; | \; Y_{6}=2) \; P(Y_{8}=3 \; | \; Y_{7}=1) \\
 = & \; (p_{2,2})(p_{2,1})(p_{1,2})(p_{2,2})(p_{2,2})(p_{2,1})(p_{1,3}) \\
 = & \; (p_{1,2})(p_{1,3})(p_{2,1}^{2})(p_{2,2}^{3})
 \end{split}
 \end{equation*}
+
+\item This is the solution by S.A.
+\begin{align*}
+    P(\underline{\mathbf{Y}}=\underline{\mathbf{y}}) &= P(Y_{0}=2, Y_{1}=2, Y_{3}=1, Y_{4}=2, Y_{5}=2, Y_{6}=2, Y_{7}=1, Y_{8}=3)\\
+    &= P_{y_0}(y_1) \; P_{y_1}(y_3) \; P_{y_3}(y_4) \; ... \; P_{y_7}(y_8)\\
+    &= p_{2,2}\; \biggl[\sum_{j=1}^{3} P(T_{3}=1 \;|\; Y_{2}=j,Y_{1}=2)\biggr] \; p_{1,2}\ p_{2,2}\ p_{2,2}\ p_{2,1}\ p_{1,3}\\
+    &= p_{1,2}\ p_{2,2}^2\ p_{2,2}\ p_{2,1}\ p_{1,3}\ (p_{1,2}\ p_{1,1} + p_{2,2}\ p_{2,1} + p_{2,3}\ p_{3,1})
+\end{align*}
 \end{itemize}
+
 
 \section{Exercise 3}
 We are now considering a simple random walk.
 \begin{itemize}
-\item The process $(Y_{t})_{t\geq0}$ is not stationary. Indeed, the variance is not constant: it explodes with increasing $t$.
+\item The process $(Y_{t})_{t\geq0}$ is not stationary. Indeed, the variance is not constant and it explodes with increasing $t$
+
+From the random walk equation $Y_t=Y_{t-1}+Z_t$, by recursively substituting for each $t$, we obtain,
+\begin{align*}
+    Y_t = Y_{t-1}+Z_t =Y_{t-2}+Z_{t-1}+Z_t=...=Y_0+\sum_{k=1}^{t}Z_k
+\end{align*}
+
+Since the random gain is distributed as
+\begin{align*}
+\begin{split}
+    Z_t=
+    \begin{cases}
+      +1, & \text{w.p.}\ p \\
+      -1, & \text{w.p.}\ (1-p)
+    \end{cases}
+    \quad \forall t
+\end{split}
+ \end{align*}
+Hence, $\E[Z_t]=0$ and $\V[Z_t]=1$ for each $t$
+
+Then, the unconditional first and second moments of $Y_t$ are
+\begin{align*}
+    \begin{split}
+        \E[Y_t]=y_0+\sum_{k=1}^{t}\E[Z_k]=y_0 \; , \quad & \quad  \V[Y_t]=\sum_{k=1}^{t}\V[Z_k]=t
+    \end{split}
+\end{align*}
+with $\V[Y_t]\rightarrow\infty$ as $t\rightarrow\infty$.
 \item The process $(Y_{t})_{t\geq0}$ is a Markov chain, as it has the Markov property, namely $Y_{t}$ depends on the past observation only through $Y_{t-1}$. Indeed, conditionally on the trajectory $(y_{0}, Y_{1}=y_{1},...,Y_{t-1}=i)$, the probability law of the capital $Y_{t}$ at the next step does not depend on the entire trajectory but only on the position reached at time $t-1$, that is $Y_{t-1}=i$.
 \end{itemize}
 
 \section{Exercise 4}
-Let's consider a random walk:
+Let's consider a continuous random walk:
 \begin{equation*}
 Y_{t}=Y_{t+1}+Z_{t} \qquad Z_{t} \overset{i.i.d.}{\sim} N(\mu,\sigma^{2}).
 \end{equation*}
 \begin{itemize}
-\item The mean function is... The variance function is... The process $(Y_{t})_{t\geq0}$ is not stationary because...
-\item The process $(Y_{t})_{t\geq0}$ satisfies the Markov property and is thus a Markov chain.
-\item The process $(R_{t})$ is stationary because...
+\item The mean function $\mu(t)=\E[Y_t]$ is
+\begin{align*}
+    \mu(t)=\E[Y_t]=\E\biggl[y_0+\sum_{k=1}^{t}Z_k\biggr]=y_0+t\mu
+\end{align*}
+
+Similarly, the variance function $\sigma^2(t)=\V(Y_t)$ is
+\begin{align*}
+    \sigma^2(t)=\V[Y_t]=\V\biggl[y_0+\sum_{k=1}^{t}Z_k\biggr]=t\sigma^2
+\end{align*}
+
+The process $(Y_{t})_{t\geq0}$ is not weakly stationary because both the mean and variance functions shown above are not constant and diverge as time goes by.
+\item The process $(Y_{t})_{t\geq0}$ satisfies the Markov property and is thus a Markov chain. Indeed, $Y_{t}$ depends on the past observation only through $Y_{t-1}$. Moreover, $Y_t$ is a sufficient statistic for the filtration $\mathcal{F}_{t-1}$
+\item However, the process $(Y_t)$ is Integrated of order 1, implying by definition of integration that  $(R_{t})$ is, in fact, stationary.
+
+Indeed,
+
+\begin{align*}
+    R_t:=Y_t - Y_{t-1}=Z_t \; , \quad Z_{t}\overset{i.i.d.}{\sim}N(\mu,\sigma^2) 
+\end{align*}
+
+Follows that the mean and variance function of $R_t$ are constant over time, that is
+\begin{align*}
+    \begin{split}
+        \E[R_t]=\E[Z_t]=\mu \; , \quad  \V[R_t]=\V[Z_t]=\sigma^2 \quad \forall t
+    \end{split}
+\end{align*}
 \end{itemize}
 
 \section{Exercise 5}
