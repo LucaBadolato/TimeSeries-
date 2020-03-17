@@ -49,6 +49,16 @@ library(magrittr)
 
 \item %1
 
+General form of the emission distribution in state $j$:
+\begin{align*}
+Y_{t} \;|\; S_{t} = j \sim
+  \begin{cases}
+  \begin{matrix}
+  1 & \dots & i & \dots & M \\
+  \underbrace{P(Y_{t}=1 \;|\; S_{t}=j)}_{b_{j,1}} & \dots & \underbrace{P(Y_{t}=1 \;|\; S_{t}=j)}_{b_{j,i}} & \dots & \underbrace{P(Y_{t}=M \;|\; S_{t}=j)}_{b_{j,M}}
+  \end{matrix}
+  \end{cases}
+\end{align*}
 
 \item %2
 
@@ -56,5 +66,4 @@ library(magrittr)
 \end{enumerate}
 
 \section{Final project: First part}
-
 
