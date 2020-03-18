@@ -28,42 +28,126 @@ header-includes:
 ---
 
 ```{r, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.align = "center", fig.pos="H")
+
 # Load useful packages
 library(utf8)
 library(labeling)
 library(rmarkdown)
+library(httr)
 library(knitr)
 library(tseries)
+library(scales)
 library(dlm)
 library(depmixS4)
-library(ggplot2)
 library(tidyr)
 library(tidyverse)
+library(ggthemes)
 library(magrittr)
+library(latex2exp)
+library(kableExtra)
+
+# Settings
+knitr::opts_chunk$set(message = FALSE, 
+                      warning = FALSE,
+                      echo    = FALSE,
+                      include = TRUE,
+                      fig.pos = "H",
+                      fig.align = "center")
 ```
 
 \section{Exercise}
 
+In this exercise we use the dataset \texttt{data\_a4.csv}, which contains monthly data for the period January 1997 to July 2019 including 10 years Italian government bond's interest rate, inflation represented by the Harmonised Index of Consumer Prices (HICP) and default ratings assigned by Moody's and Fitch in the investment grade range.
+The structure of the dataset can be seen in Table \ref{tab:data}, where the first observations are listed.
+
+```{r echo=FALSE}
+# Import the dataset
+data_a4 <- read.csv(url("https://raw.githubusercontent.com/LucaBadolato/TimeSeries-/master/data_a4.csv"), sep = ",", header=T)
+data_a4$Time <- as.Date(data_a4$Time, tryFormats = c("%Y_%m_%d"), optional = FALSE)
+```
+```{r}
+# How the dataset looks like
+knitr::kable(data_a4[1:5,], "pandoc", caption="Dataset structure\\label{tab:data}") %>%
+  kable_styling(latex_options = "hold_position")
+```
+
 \begin{enumerate}
 
 \item %1
+Let's consider the \textit{real} interest rate for the 10 years Italian government bond, i.e. the ratio between the \textit{nominal} interest rate and the Harmonised Index of Consumer Prices (HICP).
+Figure \ref{fig:ITAbond_real} plots the time series for the \textit{real} interest rate.
 
-General form of the emission distribution in state $j$:
+```{r, fig.width=6.5, fig.height=3, fig.cap="\\label{fig:ITAbond_real}Real interest rate for the 10 years Italian government bond"}
+
+# Time series plot
+ggplot(data_a4, aes(x=Time, y=ITAbond_real)) +
+  geom_line(color="steelblue") +
+  theme_bw(base_size=9) +
+  labs(y="Real interest rate", x="Date") +
+  scale_x_date(date_breaks="2 years", date_minor_breaks="1 year", limits=as.Date(c('1997_01_01','2019_07_01'), tryFormats=c("%Y_%m_%d"), optional=FALSE), labels=date_format("%m/%Y")) +
+  scale_y_continuous(minor_breaks=NULL) +
+  theme(axis.text.x=element_text(angle=45, hjust=1), axis.title.x=element_text(margin=margin(t=5)), axis.title.y=element_text(margin=margin(r=5)))
+```
+
+The time series is clearly non-stationary and there seems to be several change points, the most clear of which being at the end of 2008, in correspondence to the beginning of the Great recession. In light of the presence of these structural breaks, a transformation of the series into a stationary one is also unlikely to be carried out. For these reasons, a Hidden Markov Model (HMM) could be a reasonable choice for modelling this time series.
+
+Let's indeed model the series using a HMM. In particular, let's assume:
+\begin{itemize}
+\item three states, representing respectively boom (low interest rates), recession (high interest rates) and a stable path;
+\item Gaussian emission distributions, with state-dependent mean and variance.
+\end{itemize}
+The 
+We want to specify a Gaussian HMM for the interest rate series, where
 \begin{align*}
-Y_{t} \;|\; S_{t} = j \sim
-  \begin{cases}
-  \begin{matrix}
-  1 & \dots & i & \dots & M \\
-  \underbrace{P(Y_{t}=1 \;|\; S_{t}=j)}_{b_{j,1}} & \dots & \underbrace{P(Y_{t}=1 \;|\; S_{t}=j)}_{b_{j,i}} & \dots & \underbrace{P(Y_{t}=M \;|\; S_{t}=j)}_{b_{j,M}}
-  \end{matrix}
-  \end{cases}
+\begin{cases}
+Y_{t}=\mu_{1}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{1}^2) \qquad \text{if} \; S_{t}=1 \\
+Y_{t}=\mu_{2}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{2}^2) \qquad \text{if} \; S_{t}=2 \\
+Y_{t}=\mu_{3}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{3}^2) \qquad \text{if} \; S_{t}=3
+\end{cases}
 \end{align*}
 
-\item %2
+```{r}
+# 1) Model specification
+y <- as.numeric(data_a4$ITAbond_real)
+model <- depmixS4::depmix(y ~ 1, data=data.frame(y), nstates=3)
+```
 
+We can now estimate the MLE of the unknown parameters of the model.
+Table \ref{tab:HMM_MLE} presents the estimated values for the mean and standard deviation of the three states. The standard errors are shown in parentheses. 
+
+```{r include=FALSE}
+# 2) Model estimation
+# MLE
+fmodel <- depmixS4::fit(model)
+depmixS4::summary(fmodel)
+mu1hat <- paste0(round(fmodel@response[[1]][[1]]@parameters$coefficients,3))
+mu2hat <- paste0(round(fmodel@response[[2]][[1]]@parameters$coefficients,3))
+mu3hat <- paste0(round(fmodel@response[[3]][[1]]@parameters$coefficients,3))
+sd1hat <- paste0(round(fmodel@response[[1]][[1]]@parameters$sd,3))
+sd2hat <- paste0(round(fmodel@response[[2]][[1]]@parameters$sd,3))
+sd3hat <- paste0(round(fmodel@response[[3]][[1]]@parameters$sd,3))
+# se(MLE)
+MLEse=depmixS4::standardError(fmodel)
+se_mu1hat <- paste0('(', round(MLEse$se[13],3), ')')
+se_mu2hat <- paste0('(', round(MLEse$se[15],3), ')')
+se_mu3hat <- paste0('(', round(MLEse$se[17],3), ')')
+se_sd1hat <- paste0('(', round(MLEse$se[14],3), ')')
+se_sd2hat <- paste0('(', round(MLEse$se[16],3), ')')
+se_sd3hat <- paste0('(', round(MLEse$se[18],3), ')')
+```
+```{r}
+# Summary table creation
+MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2), rep("S=3",2)), mu=c(mu1hat, se_mu1hat, mu2hat, se_mu2hat, mu3hat, se_mu3hat), sd=c(sd1hat, se_sd1hat, sd2hat, se_sd2hat, sd3hat, se_sd3hat), check.names=F)
+knitr::kable(MLEsum, "latex", booktabs=T, align="c", col.names = c("hidden state", "mean", "standard deviation"), escape=F, caption="MLE estimators of HMM\\label{tab:HMM_MLE}") %>% 
+  collapse_rows(columns = 1, latex_hline = "major", valign = "middle") %>%
+  kable_styling(latex_options = "hold_position")
+```
+
+\item %2
+We now use a non-homogeneous HMM, namely we allow the transition matrix to depend on covariates, in order to \textit{predict} possible change points in our time series.
 
 \end{enumerate}
 
 \section{Final project: First part}
 
+Our idea:
