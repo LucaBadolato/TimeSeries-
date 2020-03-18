@@ -139,8 +139,8 @@ se_sd3hat <- paste0('(', round(MLEse$se[18],3), ')')
 # Summary table creation
 MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2), rep("S=3",2)), mu=c(mu1hat, se_mu1hat, mu2hat, se_mu2hat, mu3hat, se_mu3hat), sd=c(sd1hat, se_sd1hat, sd2hat, se_sd2hat, sd3hat, se_sd3hat))
 knitr::kable(MLEsum, "latex", booktabs=T, align="c", col.names = c("hidden state", "mean", "standard deviation"), escape=F, caption="MLE estimators of HMM\\label{tab:HMM_MLE}") %>% 
-  collapse_rows(columns = 1, latex_hline = "major", valign = "middle") %>%
-  kable_styling(latex_options = "hold_position")
+  collapse_rows(columns=1, latex_hline="major", valign="middle") %>%
+  kable_styling(latex_options="hold_position")
 ```
 
 \item %2
