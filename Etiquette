@@ -1,10 +1,46 @@
+
+Standard packages:
+
+\documentclass[11pt]{article}
+\usepackage[english]{babel}
+\usepackage[document]{ragged2e}
+\usepackage[utf8]{inputenc}
+\usepackage{apacite}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage[margin=3.5cm]{geometry}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{bm}
+\usepackage{amssymb}
+\usepackage{amsmath, mathtools}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{booktabs, caption}
+\usepackage{array}
+\usepackage{threeparttable}
+\usepackage{listings}
+\usepackage{physics}
+\usepackage{float}
+\floatplacement{figure}{h}
+\usepackage{color} %red, green, blue, yellow, cyan, magenta, black, white
+\definecolor{mygreen}{RGB}{28,172,0} % color values Red, Green, Blue
+\definecolor{mylilas}{RGB}{170,55,241}
+\DeclareMathOperator*{\E}{\mathbb{E}}
+\DeclareMathOperator*{\Ec}{\mathbb{E}_t}
+
+-----------------------------------------------------------------------------------------------
+
 Etiquette:
 
 - per scrivere equazione:
-      \begin{align*}
-      & [...]   \\    --> "&" dove si vogliono allineare le righe e "\\" in fondo
-      & [...]         --> "\\" no nell'ultima riga
-      \end{align*}
+    \begin{align*}
+    \begin{split}
+      & [...]   \\    --> &= per allineare le righe e \\ in fondo per andare a capo; 
+                          non inserire = (senza &) per continuare l'equazione sulla stessa riga
+      & [...]         --> \\ no nell'ultima riga
+    \end{split}
+    \end{align*}
 
 - per elenco:
   - elenco numerato:  \begin{enumerate} + \item + \end{enumerate}
