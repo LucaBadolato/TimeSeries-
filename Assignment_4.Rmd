@@ -73,8 +73,9 @@ data_a4$Time <- as.Date(data_a4$Time, tryFormats = c("%Y_%m_%d"), optional = FAL
 ```
 ```{r}
 # How the dataset looks like
-knitr::kable(data_a4[1:5,], "pandoc", caption="Dataset structure\\label{tab:data}") %>%
-  kable_styling(latex_options = "hold_position")
+knitr::kable(data_a4[1:5,], "latex", booktabs=T,
+             caption="Dataset structure\\label{tab:data}") %>%
+  kable_styling(latex_options="hold_position")
 ```
 
 \begin{enumerate}
@@ -83,16 +84,20 @@ knitr::kable(data_a4[1:5,], "pandoc", caption="Dataset structure\\label{tab:data
 Let's consider the \textit{real} interest rate for the 10 years Italian government bond, i.e. the ratio between the \textit{nominal} interest rate and the Harmonised Index of Consumer Prices (HICP).
 Figure \ref{fig:ITAbond_real} plots the time series for the \textit{real} interest rate.
 
-```{r, fig.width=6.5, fig.height=3, fig.cap="\\label{fig:ITAbond_real}Real interest rate for the 10 years Italian government bond"}
+```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:ITAbond_real}Real interest rate for the 10 years Italian government bond"}
 
 # Time series plot
 ggplot(data_a4, aes(x=Time, y=ITAbond_real)) +
   geom_line(color="steelblue") +
-  theme_bw(base_size=9) +
+  theme_classic(base_size=9) +
   labs(y="Real interest rate", x="Date") +
-  scale_x_date(date_breaks="2 years", date_minor_breaks="1 year", limits=as.Date(c('1997_01_01','2019_07_01'), tryFormats=c("%Y_%m_%d"), optional=FALSE), labels=date_format("%m/%Y")) +
-  scale_y_continuous(minor_breaks=NULL) +
-  theme(axis.text.x=element_text(angle=45, hjust=1), axis.title.x=element_text(margin=margin(t=5)), axis.title.y=element_text(margin=margin(r=5)))
+  scale_x_date(date_breaks="2 years", date_minor_breaks="1 year",
+               limits=as.Date(c('1997_01_01','2019_07_01'), tryFormats=c("%Y_%m_%d"),
+                              optional=FALSE), labels=date_format("%m/%Y")) +
+  scale_y_continuous(breaks = seq(0,6,0.5)) +
+  theme(axis.text.x=element_text(angle=45, hjust=1),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 
 The time series is clearly non-stationary and there seems to be several change points, the most clear of which being at the end of 2008, in correspondence to the beginning of the Great recession. In light of the presence of these structural breaks, a transformation of the series into a stationary one is also unlikely to be carried out. For these reasons, a Hidden Markov Model (HMM) could be a reasonable choice for modelling this time series.
@@ -100,8 +105,8 @@ The time series is clearly non-stationary and there seems to be several change p
 Let's indeed model the series using a HMM. In particular, let's assume:
 \begin{itemize}
 \item three states, representing respectively boom (low interest rates), recession (high interest rates) and a stable path;
-\item Gaussian emission distributions, with state-dependent mean $\mu_i$ and variance $\sigma_i$ with $i=1,2,3$
-\item No trend clearly shows up from the time series plot suggesting that the data oscillates around a reference value
+\item Gaussian emission distributions, with state-dependent mean $\mu_i$ and variance $\sigma_i$ with $i=1,2,3$;
+\item No trend clearly shows up from the time series plot suggesting that the data oscillates around a reference value.
 \end{itemize}
 
 Then, we may specify a Gaussian HMM for the interest rate series in its simplest form, i.e. as long-term mean plus noise
@@ -121,11 +126,12 @@ model <- depmixS4::depmix(y ~ 1, data=data.frame(y), nstates=3)
 
 We can now estimate the MLE of the unknown parameters of the model.
 Table \ref{tab:HMM_MLE} presents the estimates the mean and standard deviation in the three states as well as their standard errors.
-
 \medskip
+
+\textcolor{red}{Quelli riportati nella tabella seguente (ottenuta su LaTeX inserendo manualmente i valori) sono i valori corretti. È possibile che nella tabella ancora seguente (ottenuta su R con "kable" salvando i valori nell'environment) le righe siano invertite. Non c'è problema, finché non assegniamo a ciascuno stato uno specifico market regime (e.g., S=1 è recessione), cosa che non abbiamo fatto.}
 \begin{table}[H]
-    \centering
-\begin{tabular}{ccc}
+\centering
+{\color{red}\begin{tabular}{ccc}
 \toprule
 State & $\hat{\mu}_{MLE}$ & $\hat{\sigma}_{MLE}$ \\
 \midrule
@@ -135,17 +141,16 @@ S=2   & 3.169              & 0.737                 \\
       & (0.071)            & (0.049)               \\
 S=3   & 2.019              & 0.207                 \\
       & (0.055)            & (0.033) \\ \bottomrule
-\end{tabular}
-    \caption{Maximum Likelihood Estimates of the state-dependent mean and standard deviation Standard errors are shown in parenthesis}\label{tab:HMM_MLE}
+\end{tabular}}
 \end{table}
-
-
 
 ```{r include=FALSE}
 # 2) Model estimation
-# MLE
 fmodel <- depmixS4::fit(model)
 depmixS4::summary(fmodel)
+```
+```{r}
+#MLE
 mu1hat <- paste0(round(fmodel@response[[1]][[1]]@parameters$coefficients,3))
 mu2hat <- paste0(round(fmodel@response[[2]][[1]]@parameters$coefficients,3))
 mu3hat <- paste0(round(fmodel@response[[3]][[1]]@parameters$coefficients,3))
@@ -163,35 +168,75 @@ se_sd3hat <- paste0('(', round(MLEse$se[18],3), ')')
 ```
 ```{r}
 # Summary table creation
-MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2), rep("S=3",2)), mu=c(mu1hat, se_mu1hat, mu2hat, se_mu2hat, mu3hat, se_mu3hat), sd=c(sd1hat, se_sd1hat, sd2hat, se_sd2hat, sd3hat, se_sd3hat))
-knitr::kable(MLEsum, "latex", booktabs=T, align="c", col.names = c("Hidden state", "Mean", "Standard deviation"), escape=F, caption="MLE estimators of HMM\\label{tab:HMM_MLE}") %>% 
-  collapse_rows(columns=1, latex_hline="major", valign="middle") %>%
+MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2), rep("S=3",2)),
+                     mu=c(mu1hat, se_mu1hat, mu2hat, se_mu2hat, mu3hat, se_mu3hat),
+                     sd=c(sd1hat, se_sd1hat, sd2hat, se_sd2hat, sd3hat, se_sd3hat))
+knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+             col.names = c("State", "$\\hat{\\mu}_{MLE}$", "$\\hat{\\sigma}_{MLE}$"),
+             escape=F, caption="Maximum Likelihood estimates of the state-dependent
+             mean and standard deviation\\label{tab:HMM_MLE}") %>%
+  column_spec(1:3, width="5em") %>%
+  collapse_rows(columns=1, latex_hline="none") %>%
+  footnote(general="Standard errors in parentheses",
+           general_title="Note:",
+           footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
 ```
-Finally, we find the optimal state variable path given the observed real interst rates, that is, we proceed with a global decoding procedure based on the \textit{Viterbi algorithm}. Viterbi States and state-dependent means are plotted respectively in panels (A) and (B) of Figure \ref{fig:model_fit}
+
+Finally, we find the optimal state variable path given the observed real interest rates, that is, we proceed with a global decoding procedure based on the \textit{Viterbi algorithm}. Viterbi states and state-dependent means are plotted respectively in Figure \ref{fig:model_fit_ost} and Figure \ref{fig:model_fit_rsm}.
 
 ```{r}
 # Get the estimated state for each timestep 
 estStates <- posterior(fmodel)
 ```
 
+```{r, fig.width=6.5, fig.height=3, fig.cap="\\label{fig:model_fit_ost}Optimal state trajectory"}
 
-```{r, out.width='60%', fig.width=6.5, fig.height=3, fig.cap="\\label{fig:model_fit}Optimal state trajectory and regime switching mean"}
+# Plot the optimal path, that is stored in the first column of estStates
+F1 <- ggplot(data.frame(data_a4[1],data_a4[6], estStates[1])) +
+  geom_line(aes(x=Time,y=ITAbond_real)) +
+  theme_classic(base_size=9) +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(y="Real interest rate", x="Date") +
+  scale_x_date(date_breaks="3 years", 
+               date_minor_breaks="1 year",
+               limits=as.Date(c('1997_01_01','2019_07_01'),
+                              tryFormats=c("%Y_%m_%d"),
+                              optional=FALSE),
+               labels=date_format("%Y-%m")) +
+  scale_y_continuous(breaks=seq(0,6,1)) +
+  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+  ggtitle("Real interest rate")
 
-#Plot the optimal path, that is stored in the first column of estStates
-F1 <- ggplot(data.frame(data_a4[1],data_a4[6], estStates[1]))+
-      geom_line(aes(x=Time,y=ITAbond_real))+
-      geom_line(aes(x=Time, y=state), linetype="longdash", color="red")+
-      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-panel.background = element_blank(), axis.line = element_line(colour = "black"), plot.title = element_text(size=12, face="bold"))+
-      labs(y="Real interest rate", x="Date") +
-      scale_x_date(date_breaks="2 years", date_minor_breaks="1 year", limits=as.Date(c('1997_01_01','2019_07_01'), tryFormats=c("%Y_%m_%d"), optional=FALSE), labels=date_format("%m/%Y"))+
-      scale_y_continuous(breaks = seq(0,6,0.5)) +
-      theme(axis.text.x=element_text(angle=45, hjust=1), axis.title.x=element_text(margin=margin(t=5)), axis.title.y=element_text(margin=margin(r=5)))+
-      ggtitle("Viterbi states")
+S1 <- ggplot(data.frame(data_a4[1],data_a4[6], estStates[1])) +
+  geom_line(aes(x=Time, y=state), 
+            linetype="solid", 
+            color="red") +
+  theme_classic(base_size=9) +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(y="State", x="Date") +
+  scale_x_date(date_breaks="3 years", 
+               date_minor_breaks="1 year",
+               limits=as.Date(c('1997_01_01','2019_07_01'),
+                              tryFormats=c("%Y_%m_%d"),
+                              optional=FALSE),
+               labels=date_format("%Y-%m")) +
+  scale_y_continuous(breaks=seq(0,3,1)) +
+  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+  ggtitle("Viterbi states")
 
+# Merge graphs in one plot
+ggarrange(F1, S1,
+          ncol=1, nrow=2)
+```
 
-# chart with state-dependent mean
+```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:model_fit_rsm}Regime switching mean"}
+
+# Chart with state-dependent mean
 estMeans=matrix(0, length(data_a4[,1]),3)
 
 for (i in 1:3) {
@@ -206,24 +251,24 @@ for (i in 1:3) {
 
 switching_mean <- estMeans[,1]+estMeans[,2]+estMeans[,3]
 
-F2<-ggplot(data.frame(switching_mean, data_a4[1],data_a4[6]))+
-      geom_line(aes(x=Time, y=ITAbond_real))+
-      geom_point(aes(x=Time, y=switching_mean), col="blue", size=.05)+
-      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(size=12, face="bold"))+
+ggplot(data.frame(switching_mean, data_a4[1],data_a4[6])) +
+  geom_line(aes(x=Time, y=ITAbond_real)) +
+  geom_point(aes(x=Time, y=switching_mean), col="blue", size=.05) +
+  theme_classic(base_size=9) +
+  theme(plot.title=element_text(hjust=0.5)) +
   labs(y="Real interest rate", x="Date") +
-      scale_x_date(date_breaks="2 years", date_minor_breaks="1 year", limits=as.Date(c('1997_01_01','2019_07_01'), tryFormats=c("%Y_%m_%d"), optional=FALSE), labels=date_format("%m/%Y"))+
-      scale_y_continuous(breaks = seq(0,6,0.5)) +
-      theme(axis.text.x=element_text(angle=45, hjust=1), axis.title.x=element_text(margin=margin(t=5)), axis.title.y=element_text(margin=margin(r=5)))+
-      ggtitle("State dependent mean")
-
-# Merge graphs in one plot
-
-ggarrange(F1, F2, labels = c("A", "B"), ncol = 2, nrow = 1)
-
+  scale_x_date(date_breaks="2 years",
+               date_minor_breaks="1 year",
+               limits=as.Date(c('1997_01_01','2019_07_01'),
+                              tryFormats=c("%Y_%m_%d"),
+                              optional=FALSE),
+               labels=date_format("%Y-%m")) +
+  scale_y_continuous(breaks = seq(0,6,0.5)) +
+  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+  ggtitle("State dependent mean")
 ```
-
-
 
 \item %2
 We now use a non-homogeneous HMM, namely we allow the transition matrix to depend on covariates, in order to \textit{predict} possible change points in our time series.
@@ -234,11 +279,16 @@ y_nh <- as.numeric(data_a4$ITAbond_real)
 model_nh <- depmixS4::depmix(y_nh ~ 1, data=data.frame(y_nh), nstates=3, transition=~ y_nh)
 ```
 
+We proceed exactly as above and first estimate the MLE of the unknown parameters of the model.
+Table \ref{tab:HMM_MLE_nh} presents the estimates the mean and standard deviation in the three states as well as their standard errors.
+
 ```{r include=FALSE}
 # 2) Model estimation for non-homogeneous HMM
-# MLE
 fmodel_nh <- depmixS4::fit(model_nh)
 depmixS4::summary(fmodel_nh)
+```
+```{r}
+# MLE
 mu1hat_nh <- paste0(round(fmodel_nh@response[[1]][[1]]@parameters$coefficients,3))
 mu2hat_nh <- paste0(round(fmodel_nh@response[[2]][[1]]@parameters$coefficients,3))
 mu3hat_nh <- paste0(round(fmodel_nh@response[[3]][[1]]@parameters$coefficients,3))
@@ -247,37 +297,87 @@ sd2hat_nh <- paste0(round(fmodel_nh@response[[2]][[1]]@parameters$sd,3))
 sd3hat_nh <- paste0(round(fmodel_nh@response[[3]][[1]]@parameters$sd,3))
 # se(MLE)
 MLEse_nh=depmixS4::standardError(fmodel_nh)
-se_mu1hat_nh <- paste0('(', round(MLEse_nh$se[13],3), ')')
-se_mu2hat_nh <- paste0('(', round(MLEse_nh$se[15],3), ')')
-se_mu3hat_nh <- paste0('(', round(MLEse_nh$se[17],3), ')')
-se_sd1hat_nh <- paste0('(', round(MLEse_nh$se[14],3), ')')
-se_sd2hat_nh <- paste0('(', round(MLEse_nh$se[16],3), ')')
-se_sd3hat_nh <- paste0('(', round(MLEse_nh$se[18],3), ')')
-
+se_mu1hat_nh <- paste0('(', round(MLEse_nh$se[22],3), ')')
+se_mu2hat_nh <- paste0('(', round(MLEse_nh$se[24],3), ')')
+se_mu3hat_nh <- paste0('(', round(MLEse_nh$se[26],3), ')')
+se_sd1hat_nh <- paste0('(', round(MLEse_nh$se[23],3), ')')
+se_sd2hat_nh <- paste0('(', round(MLEse_nh$se[25],3), ')')
+se_sd3hat_nh <- paste0('(', round(MLEse_nh$se[27],3), ')')
 ```
+```{r}
+# Summary table creation
+MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2), rep("S=3",2)),
+                     mu=c(mu1hat_nh, se_mu1hat_nh, mu2hat_nh, se_mu2hat_nh,
+                          mu3hat_nh, se_mu3hat_nh),
+                     sd=c(sd1hat_nh, se_sd1hat_nh, sd2hat_nh, se_sd2hat_nh,
+                          sd3hat_nh, se_sd3hat_nh))
+knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+             col.names = c("State", "$\\hat{\\mu}_{MLE}$", "$\\hat{\\sigma}_{MLE}$"),
+             escape=F, caption="Maximum Likelihood estimates of the state-dependent
+             mean and standard deviation\\label{tab:HMM_MLE_nh}") %>%
+  column_spec(1:3, width="5em") %>%
+  collapse_rows(columns=1, latex_hline="none") %>%
+  footnote(general="Standard errors in parentheses",
+           general_title="Note:",
+           footnote_as_chunk=T, escape=F) %>%
+  kable_styling(latex_options="hold_position")
+```
+
+Then, in order to find the optimal state variable path, we perform the global decoding procedure based on the \textit{Viterbi algorithm}.
+Viterbi states and state-dependent means in the non-homogeneous HMM case are plotted respectively in Figure \ref{fig:model_fit_ost_nh} and Figure \ref{fig:model_fit_rsm_nh}.
 
 ```{r}
 # Get the estimated state for each timestep 
 estStates_nh <- posterior(fmodel_nh)
 ```
 
+```{r, fig.width=6.5, fig.height=3, fig.cap="\\label{fig:model_fit_ost_nh}Optimal state trajectory (non-homogeneous HMM)"}
 
-```{r, out.width='60%', fig.width=6.5, fig.height=3}
-
-#Plot the optimal path, that is stored in the first column of estStates_nh
+# Plot the optimal path, that is stored in the first column of estStates
 F1_nh <- ggplot(data.frame(data_a4[1],data_a4[6], estStates_nh[1]))+
-      geom_line(aes(x=Time,y=ITAbond_real))+
-      geom_line(aes(x=Time, y=state), linetype="longdash", color="red")+
-      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-panel.background = element_blank(), axis.line = element_line(colour = "black"), plot.title = element_text(size=12, face="bold"))+
-      labs(y="Real interest rate", x="Date") +
-      scale_x_date(date_breaks="2 years", date_minor_breaks="1 year", limits=as.Date(c('1997_01_01','2019_07_01'), tryFormats=c("%Y_%m_%d"), optional=FALSE), labels=date_format("%m/%Y"))+
-      scale_y_continuous(breaks = seq(0,6,0.5)) +
-      theme(axis.text.x=element_text(angle=45, hjust=1), axis.title.x=element_text(margin=margin(t=5)), axis.title.y=element_text(margin=margin(r=5)))+
-      ggtitle("Viterbi states")
+  geom_line(aes(x=Time,y=ITAbond_real)) +
+  theme_classic(base_size=9) +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(y="Real interest rate", x="Date") +
+  scale_x_date(date_breaks="3 years", 
+               date_minor_breaks="1 year",
+               limits=as.Date(c('1997_01_01','2019_07_01'),
+                              tryFormats=c("%Y_%m_%d"),
+                              optional=FALSE),
+               labels=date_format("%Y-%m")) +
+  scale_y_continuous(breaks=seq(0,6,1)) +
+  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+  ggtitle("Real interest rate")
 
+S1_nh <- ggplot(data.frame(data_a4[1],data_a4[6], estStates_nh[1])) +
+  geom_line(aes(x=Time, y=state), 
+            linetype="solid", 
+            color="red") +
+  theme_classic(base_size=9) +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(y="State", x="Date") +
+  scale_x_date(date_breaks="3 years", 
+               date_minor_breaks="1 year",
+               limits=as.Date(c('1997_01_01','2019_07_01'),
+                              tryFormats=c("%Y_%m_%d"),
+                              optional=FALSE),
+               labels=date_format("%Y-%m")) +
+  scale_y_continuous(breaks=seq(0,3,1)) +
+  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+  ggtitle("Viterbi states")
 
-# chart with state-dependent mean
+# Merge graphs in one plot
+ggarrange(F1_nh, S1_nh,
+          ncol=1, nrow=2)
+```
+
+```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:model_fit_rsm_nh}Regime switching mean (non-homogeneous HMM)"}
+
+# Chart with state-dependent mean
 estMeans_nh=matrix(0, length(data_a4[,1]),3)
 
 for (i in 1:3) {
@@ -292,21 +392,23 @@ for (i in 1:3) {
 
 switching_mean_nh <- estMeans_nh[,1]+estMeans_nh[,2]+estMeans_nh[,3]
 
-F2_nh<-ggplot(data.frame(switching_mean_nh, data_a4[1],data_a4[6]))+
-      geom_line(aes(x=Time, y=ITAbond_real))+
-      geom_point(aes(x=Time, y=switching_mean_nh), col="blue", size=.05)+
-      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(size=12, face="bold"))+
+ggplot(data.frame(switching_mean_nh, data_a4[1],data_a4[6])) +
+  geom_line(aes(x=Time, y=ITAbond_real)) +
+  geom_point(aes(x=Time, y=switching_mean_nh), col="blue", size=.05) +
+  theme_classic(base_size=9) +
+  theme(plot.title=element_text(hjust=0.5)) +
   labs(y="Real interest rate", x="Date") +
-      scale_x_date(date_breaks="2 years", date_minor_breaks="1 year", limits=as.Date(c('1997_01_01','2019_07_01'), tryFormats=c("%Y_%m_%d"), optional=FALSE), labels=date_format("%m/%Y"))+
-      scale_y_continuous(breaks = seq(0,6,0.5)) +
-      theme(axis.text.x=element_text(angle=45, hjust=1), axis.title.x=element_text(margin=margin(t=5)), axis.title.y=element_text(margin=margin(r=5)))+
-      ggtitle("State dependent mean")
-
-# Merge graphs in one plot
-
-ggarrange(F1_nh, F2_nh, labels = c("A", "B"), ncol = 2, nrow = 1)
-
+  scale_x_date(date_breaks="2 years",
+               date_minor_breaks="1 year",
+               limits=as.Date(c('1997_01_01','2019_07_01'),
+                              tryFormats=c("%Y_%m_%d"),
+                              optional=FALSE),
+               labels=date_format("%Y-%m")) +
+  scale_y_continuous(breaks = seq(0,6,0.5)) +
+  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+  ggtitle("State dependent mean")
 ```
 
 \end{enumerate}
