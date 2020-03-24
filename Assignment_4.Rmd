@@ -228,6 +228,87 @@ ggarrange(F1, F2, labels = c("A", "B"), ncol = 2, nrow = 1)
 \item %2
 We now use a non-homogeneous HMM, namely we allow the transition matrix to depend on covariates, in order to \textit{predict} possible change points in our time series.
 
+```{r}
+# 1) Model specification for non-homogeneous HMM
+y_nh <- as.numeric(data_a4$ITAbond_real)
+model_nh <- depmixS4::depmix(y_nh ~ 1, data=data.frame(y_nh), nstates=3, transition=~ y_nh)
+```
+
+```{r include=FALSE}
+# 2) Model estimation for non-homogeneous HMM
+# MLE
+fmodel_nh <- depmixS4::fit(model_nh)
+depmixS4::summary(fmodel_nh)
+mu1hat_nh <- paste0(round(fmodel_nh@response[[1]][[1]]@parameters$coefficients,3))
+mu2hat_nh <- paste0(round(fmodel_nh@response[[2]][[1]]@parameters$coefficients,3))
+mu3hat_nh <- paste0(round(fmodel_nh@response[[3]][[1]]@parameters$coefficients,3))
+sd1hat_nh <- paste0(round(fmodel_nh@response[[1]][[1]]@parameters$sd,3))
+sd2hat_nh <- paste0(round(fmodel_nh@response[[2]][[1]]@parameters$sd,3))
+sd3hat_nh <- paste0(round(fmodel_nh@response[[3]][[1]]@parameters$sd,3))
+# se(MLE)
+MLEse_nh=depmixS4::standardError(fmodel_nh)
+se_mu1hat_nh <- paste0('(', round(MLEse_nh$se[13],3), ')')
+se_mu2hat_nh <- paste0('(', round(MLEse_nh$se[15],3), ')')
+se_mu3hat_nh <- paste0('(', round(MLEse_nh$se[17],3), ')')
+se_sd1hat_nh <- paste0('(', round(MLEse_nh$se[14],3), ')')
+se_sd2hat_nh <- paste0('(', round(MLEse_nh$se[16],3), ')')
+se_sd3hat_nh <- paste0('(', round(MLEse_nh$se[18],3), ')')
+
+```
+
+```{r}
+# Get the estimated state for each timestep 
+estStates_nh <- posterior(fmodel_nh)
+```
+
+
+```{r, out.width='60%', fig.width=6.5, fig.height=3}
+
+#Plot the optimal path, that is stored in the first column of estStates_nh
+F1_nh <- ggplot(data.frame(data_a4[1],data_a4[6], estStates_nh[1]))+
+      geom_line(aes(x=Time,y=ITAbond_real))+
+      geom_line(aes(x=Time, y=state), linetype="longdash", color="red")+
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"), plot.title = element_text(size=12, face="bold"))+
+      labs(y="Real interest rate", x="Date") +
+      scale_x_date(date_breaks="2 years", date_minor_breaks="1 year", limits=as.Date(c('1997_01_01','2019_07_01'), tryFormats=c("%Y_%m_%d"), optional=FALSE), labels=date_format("%m/%Y"))+
+      scale_y_continuous(breaks = seq(0,6,0.5)) +
+      theme(axis.text.x=element_text(angle=45, hjust=1), axis.title.x=element_text(margin=margin(t=5)), axis.title.y=element_text(margin=margin(r=5)))+
+      ggtitle("Viterbi states")
+
+
+# chart with state-dependent mean
+estMeans_nh=matrix(0, length(data_a4[,1]),3)
+
+for (i in 1:3) {
+  for (j in 1:length(data_a4[,1])) {
+    if (estStates_nh[j,1]==i){
+      estMeans_nh[j,i]<-fmodel_nh@response[[i]][[1]]@parameters$coefficients
+   }else{
+      estMeans_nh[j,i]<-0
+   }
+  }
+}
+
+switching_mean_nh <- estMeans_nh[,1]+estMeans_nh[,2]+estMeans_nh[,3]
+
+F2_nh<-ggplot(data.frame(switching_mean_nh, data_a4[1],data_a4[6]))+
+      geom_line(aes(x=Time, y=ITAbond_real))+
+      geom_point(aes(x=Time, y=switching_mean_nh), col="blue", size=.05)+
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(size=12, face="bold"))+
+  labs(y="Real interest rate", x="Date") +
+      scale_x_date(date_breaks="2 years", date_minor_breaks="1 year", limits=as.Date(c('1997_01_01','2019_07_01'), tryFormats=c("%Y_%m_%d"), optional=FALSE), labels=date_format("%m/%Y"))+
+      scale_y_continuous(breaks = seq(0,6,0.5)) +
+      theme(axis.text.x=element_text(angle=45, hjust=1), axis.title.x=element_text(margin=margin(t=5)), axis.title.y=element_text(margin=margin(r=5)))+
+      ggtitle("State dependent mean")
+
+# Merge graphs in one plot
+
+ggarrange(F1_nh, F2_nh, labels = c("A", "B"), ncol = 2, nrow = 1)
+
+```
+
 \end{enumerate}
 
 \section{Final project: First part}
