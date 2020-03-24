@@ -50,6 +50,7 @@ library(ggthemes)
 library(magrittr)
 library(latex2exp)
 library(kableExtra)
+library(ggpubr)
 
 # Settings
 knitr::opts_chunk$set(message = FALSE, 
@@ -167,21 +168,59 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c", col.names = c("Hidden state
   collapse_rows(columns=1, latex_hline="major", valign="middle") %>%
   kable_styling(latex_options="hold_position")
 ```
-Finally, we find the optimal state variable path given the observed real interst rates, that is, we proceed with a global decoding procedure based on the \textit{Viterbi algorithm}.
+Finally, we find the optimal state variable path given the observed real interst rates, that is, we proceed with a global decoding procedure based on the \textit{Viterbi algorithm}. Viterbi States and state-dependent means are plotted respectively in panels (A) and (B) of Figure \ref{fig:model_fit}
 
-```{r, out.width='0.40', fig.width=6.5, fig.height=3, fig.cap="\\label{fig:Viterbi states}Viterbi states"}
+```{r}
 # Get the estimated state for each timestep 
 estStates <- posterior(fmodel)
+```
+
+
+```{r, out.width='60%', fig.width=6.5, fig.height=3, fig.cap="\\label{fig:model_fit}Optimal state trajectory and regime switching mean"}
+
 #Plot the optimal path, that is stored in the first column of estStates
-ggplot(data.frame(data_a4[1],data_a4[6], estStates[1]))+
-geom_line(aes(x=Time,y=ITAbond_real))+
-geom_line(aes(x=Time, y=state), linetype="longdash", color="red")+
-theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-labs(y="Real interest rate", x="Date") +
-scale_x_date(date_breaks="2 years", date_minor_breaks="1 year", limits=as.Date(c('1997_01_01','2019_07_01'), tryFormats=c("%Y_%m_%d"), optional=FALSE), labels=date_format("%m/%Y"))+
-scale_y_continuous() +
-theme(axis.text.x=element_text(angle=45, hjust=1), axis.title.x=element_text(margin=margin(t=5)), axis.title.y=element_text(margin=margin(r=5)))
+F1 <- ggplot(data.frame(data_a4[1],data_a4[6], estStates[1]))+
+      geom_line(aes(x=Time,y=ITAbond_real))+
+      geom_line(aes(x=Time, y=state), linetype="longdash", color="red")+
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"), plot.title = element_text(size=12, face="bold"))+
+      labs(y="Real interest rate", x="Date") +
+      scale_x_date(date_breaks="2 years", date_minor_breaks="1 year", limits=as.Date(c('1997_01_01','2019_07_01'), tryFormats=c("%Y_%m_%d"), optional=FALSE), labels=date_format("%m/%Y"))+
+      scale_y_continuous(breaks = seq(0,6,0.5)) +
+      theme(axis.text.x=element_text(angle=45, hjust=1), axis.title.x=element_text(margin=margin(t=5)), axis.title.y=element_text(margin=margin(r=5)))+
+      ggtitle("Viterbi states")
+
+
+# chart with state-dependent mean
+estMeans=matrix(0, length(data_a4[,1]),3)
+
+for (i in 1:3) {
+  for (j in 1:length(data_a4[,1])) {
+    if (estStates[j,1]==i){
+      estMeans[j,i]<-fmodel@response[[i]][[1]]@parameters$coefficients
+   }else{
+      estMeans[j,i]<-0
+   }
+  }
+}
+
+switching_mean <- estMeans[,1]+estMeans[,2]+estMeans[,3]
+
+F2<-ggplot(data.frame(switching_mean, data_a4[1],data_a4[6]))+
+      geom_line(aes(x=Time, y=ITAbond_real))+
+      geom_point(aes(x=Time, y=switching_mean), col="blue", size=.05)+
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"),plot.title = element_text(size=12, face="bold"))+
+  labs(y="Real interest rate", x="Date") +
+      scale_x_date(date_breaks="2 years", date_minor_breaks="1 year", limits=as.Date(c('1997_01_01','2019_07_01'), tryFormats=c("%Y_%m_%d"), optional=FALSE), labels=date_format("%m/%Y"))+
+      scale_y_continuous(breaks = seq(0,6,0.5)) +
+      theme(axis.text.x=element_text(angle=45, hjust=1), axis.title.x=element_text(margin=margin(t=5)), axis.title.y=element_text(margin=margin(r=5)))+
+      ggtitle("State dependent mean")
+
+# Merge graphs in one plot
+
+ggarrange(F1, F2, labels = c("A", "B"), ncol = 2, nrow = 1)
+
 ```
 
 
