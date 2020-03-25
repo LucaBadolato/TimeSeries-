@@ -102,14 +102,18 @@ ggplot(data_a4, aes(x=Time, y=ITAbond_real)) +
 
 The time series is clearly non-stationary and there seems to be several change points, the most clear of which being at the end of 2008, in correspondence to the beginning of the Great recession. In light of the presence of these structural breaks, a transformation of the series into a stationary one is also unlikely to be carried out. For these reasons, a Hidden Markov Model (HMM) could be a reasonable choice for modelling this time series.
 
-Let's indeed model the series using a HMM. In particular, let's assume:
+Let's indeed model the series using a HMM. Specifically, in this exercise we use a homogeneous HMM, namely we assume that the hidden process $(S_{t})_{t\geq0}$ is a homogeneous Markov chain.
+
+\textbf{Step 1: Model specification}
+
+Let's assume:
 \begin{itemize}
 \item three states, representing respectively boom (low interest rates), recession (high interest rates) and a stable path;
-\item Gaussian emission distributions, with state-dependent mean $\mu_i$ and variance $\sigma_i$ with $i=1,2,3$;
-\item No trend clearly shows up from the time series plot suggesting that the data oscillates around a reference value.
+\item Gaussian emission distributions, with state-dependent mean $\mu_i$ and variance $\sigma_i$ with $i=1,2,3$.
+\item \textcolor{red}{No trend clearly shows up from the time series plot suggesting that the data oscillates around a reference value. --> Da riposizionare: qui stiamo facendo assumptions}
 \end{itemize}
 
-Then, we may specify a Gaussian HMM for the interest rate series in its simplest form, i.e. as long-term mean plus noise
+The model we want to specify for the interest rate time series is thus a Gaussian HMM in its simplest form, i.e. a long-term mean plus noise.
 \begin{align*}
 \begin{cases}
 Y_{t}=\mu_{1}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{1}^2) \qquad \text{if} \; S_{t}=1 \\
@@ -123,6 +127,8 @@ Y_{t}=\mu_{3}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\s
 y <- as.numeric(data_a4$ITAbond_real)
 model <- depmixS4::depmix(y ~ 1, data=data.frame(y), nstates=3)
 ```
+
+\textbf{Step 2: Estimation of the unknown parameters}
 
 We can now estimate the MLE of the unknown parameters of the model.
 Table \ref{tab:HMM_MLE} presents the estimates the mean and standard deviation in the three states as well as their standard errors.
@@ -145,12 +151,12 @@ S=3   & 2.019              & 0.207                 \\
 \end{table}
 
 ```{r include=FALSE}
-# 2) Model estimation
+# 2) Estimation of the unknown parameters
 fmodel <- depmixS4::fit(model)
 depmixS4::summary(fmodel)
 ```
 ```{r}
-#MLE
+# MLE
 mu1hat <- paste0(round(fmodel@response[[1]][[1]]@parameters$coefficients,3))
 mu2hat <- paste0(round(fmodel@response[[2]][[1]]@parameters$coefficients,3))
 mu3hat <- paste0(round(fmodel@response[[3]][[1]]@parameters$coefficients,3))
@@ -167,7 +173,7 @@ se_sd2hat <- paste0('(', round(MLEse$se[16],3), ')')
 se_sd3hat <- paste0('(', round(MLEse$se[18],3), ')')
 ```
 ```{r}
-# Summary table creation
+# Build a summary table
 MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2), rep("S=3",2)),
                      mu=c(mu1hat, se_mu1hat, mu2hat, se_mu2hat, mu3hat, se_mu3hat),
                      sd=c(sd1hat, se_sd1hat, sd2hat, se_sd2hat, sd3hat, se_sd3hat))
@@ -183,14 +189,17 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
   kable_styling(latex_options="hold_position")
 ```
 
-Finally, we find the optimal state variable path given the observed real interest rates, that is, we proceed with a global decoding procedure based on the \textit{Viterbi algorithm}. Viterbi states and state-dependent means are plotted respectively in Figure \ref{fig:model_fit_ost} and Figure \ref{fig:model_fit_rsm}.
+\textbf{Step 3: Decoding}
+
+Finally, we find the optimal state variable path given the observed real interest rates, that is, we proceed with a global decoding procedure based on the \textit{Viterbi algorithm}.
+Viterbi states are plotted in Figure \ref{fig:model_fit_ost}.
 
 ```{r}
 # Get the estimated state for each timestep 
 estStates <- posterior(fmodel)
 ```
 
-```{r, fig.width=6.5, fig.height=3, fig.cap="\\label{fig:model_fit_ost}Optimal state trajectory"}
+```{r, fig.width=6, fig.height=3, fig.cap="\\label{fig:model_fit_ost}Optimal state trajectory"}
 
 # Plot the optimal path, that is stored in the first column of estStates
 F1 <- ggplot(data.frame(data_a4[1],data_a4[6], estStates[1])) +
@@ -213,7 +222,7 @@ F1 <- ggplot(data.frame(data_a4[1],data_a4[6], estStates[1])) +
 S1 <- ggplot(data.frame(data_a4[1],data_a4[6], estStates[1])) +
   geom_line(aes(x=Time, y=state), 
             linetype="solid", 
-            color="red") +
+            color="black") +
   theme_classic(base_size=9) +
   theme(plot.title=element_text(hjust=0.5)) +
   labs(y="State", x="Date") +
@@ -233,6 +242,47 @@ S1 <- ggplot(data.frame(data_a4[1],data_a4[6], estStates[1])) +
 ggarrange(F1, S1,
           ncol=1, nrow=2)
 ```
+
+\textcolor{red}{Another way to combine the two plots is shown in Figure \ref{fig:model_fit_ost2}.}
+
+```{r, fig.width=6, fig.height=3, fig.cap="\\label{fig:model_fit_ost2}Optimal state trajectory"}
+
+# Plot the optimal path, that is stored in the first column of estStates
+results_df <- data.frame(time_index=data_a4$Time,
+                         interest_rate=data_a4$ITAbond_real,
+                         state=estStates[1]) %>% 
+  gather("variable", "value", -time_index)
+
+my_breaks <- function(x) { if (max(x)<4) seq(0,3,1) else seq(0,6,1) }
+lab_names <- c(
+  'interest_rate'="Real interest rate", 
+  'state'="Viterbi state")
+
+plotobj <- ggplot(results_df, aes(time_index, value)) +
+  geom_line(color="red") +
+  facet_wrap(variable~., scales="free", ncol=1,
+             strip.position="left",
+             labeller = as_labeller(lab_names)) +
+  labs(x="Date") +
+  scale_y_continuous(breaks=my_breaks) +
+  scale_x_date(date_breaks="3 years",
+               date_minor_breaks="1 year",
+               limits=as.Date(c('1997_01_01','2019_07_01'),
+                              tryFormats=c("%Y_%m_%d"),
+                              optional=FALSE),
+               labels=date_format("%Y-%m")) +
+  theme_classic(base_size=9) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(5,0,0,0)),
+        axis.title.y=element_blank(),
+        strip.text.x=element_text(family="Times", face="bold",
+                                  margin=margin(10,0,0,0)),
+        strip.background=element_rect(colour="black", fill=NA),
+        strip.placement="outside")
+
+plot(plotobj)
+```
+
+The interest rates series with HMM estimated state-dependent means are shown in Figure \ref{fig:model_fit_rsm}.
 
 ```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:model_fit_rsm}Regime switching mean"}
 
