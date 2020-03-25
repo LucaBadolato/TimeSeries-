@@ -465,4 +465,177 @@ ggplot(data.frame(switching_mean_nh, data_a4[1],data_a4[6])) +
 
 \section{Final project: First part}
 
-Our idea:
+```{r echo=FALSE}
+# Import the dataset
+tracks_df <- read.csv(url("https://raw.githubusercontent.com/LucaBadolato/TimeSeries-/master/tracking_data_start=30min_record=120min_freq=30sec.csv"), sep = "\t", header=T)
+```
+
+In this exercise we consider the \texttt{Activity tracking} data set, which containts 45 activities recorded during a bike ride. The variables of interest are the following:
+  \begin{itemize}
+\item average speed (\textit{speed})
+\item heart rate (\textit{bpm})
+\item elevation (\textit{elev}),
+\end{itemize}
+measured at regular 30-second intervals, for a total duration of 2 hours. 
+
+Given that elevation gains/losses are more informative than elevation itself, we create the variable \textit{dfelev} by first differenting \textit{elev}. We report in table \ref{tab:tracks} the first five observations:   
+```{r echo=FALSE}
+#create the variable dfelev
+dfelev <- tracks_df$elev - lag(tracks_df$elev)
+dfelev[1] <- 0
+tracks_df <- cbind(tracks_df, dfelev)
+```
+
+```{r}
+# How the dataset looks like
+knitr::kable(tracks_df[1:5, c(1:5, 8)], "pandoc", caption="Dataset structure\\label{tab:tracks}") %>%
+  kable_styling(latex_options = "hold_position")
+```
+
+For the first analysis we focus our attention on activity 38 and the time series \text{bpm}, plotted in figure \ref{fig:plot_bpm}: 
+  
+```{r echo=FALSE}
+#create the data frame containing activity 38 only
+which_track <- 38
+
+track_38 <- tracks_df %>% 
+  filter(track_id==which_track)
+```
+
+```{r, fig.width=6.5, fig.height=3, fig.cap="\\label{fig:plot_bpm} Recorded bpm activity 38"}
+
+# Time series plot
+ggplot(track_38, aes(x=time, y=bpm)) +
+  geom_line(color="steelblue") +
+  theme_bw(base_size=9) +
+  labs(y="Bpm", x="Time(sec)") +
+  scale_y_continuous(minor_breaks=NULL) +
+  theme(axis.text.x=element_text(angle=45, hjust=1), axis.title.x=element_text(margin=margin(t=5)), axis.title.y=element_text(margin=margin(r=5)))
+```
+
+It is possible to see that the time series does not look stationary and that several change points characterize the plot, e.g. at 4600sec and 5400sec. Therefore, it is not possible to analyse this series with the well-known ARMA models, which require stationarity (or non-stationary time series that can be easilty trasformed into stationary ones). A suitable class of model for these cases is given by the Hidden Markov Models. We consider a latent process $(S_{t})_{t\geq0}$ which  represents the required athletic effort: low effort, medium effort and high effort. We assume tha the process $(S_{t})_{t\geq0}$ is a \textit{homogeneous} Markov chain, with state space $\{1, 2, 3\}$
+
+\textbf{Step 1: Model specification}
+We assume a Gaussian emission distribution, with state-dependent mean $\mu_i$ and variance $\sigma_i$ with $i=1,2,3$: 
+
+\begin{align*}
+\begin{cases}
+Y_{t}=\mu_{1}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{1}^2) \qquad \text{if} \; S_{t}=1 \\
+Y_{t}=\mu_{2}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{2}^2) \qquad \text{if} \; S_{t}=2 \\
+Y_{t}=\mu_{3}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{3}^2) \qquad \text{if} \; S_{t}=3
+\end{cases}
+\end{align*}
+
+```{r}
+# 1) Model specification
+y <- as.numeric(track_38$bpm)
+model_bpm <- depmixS4::depmix(y ~ 1, data=data.frame(y), nstates=3)
+```
+
+\textbf{Step 2: Estimation of the unknown parameters}
+
+We estimate the unknown parameters by maximum likelihood, using an \textit{Expectation-Maximization} (EM) \textit{algorithm}. In table \ref{tab:HMM_MLE_bpm} we report the estimated means and standard deviations of the three states with the associated standard errors.  
+```{r include=FALSE}
+# 2) Model estimation
+# MLE
+fmodel_bpm <- depmixS4::fit(model_bpm)
+depmixS4::summary(fmodel_bpm)
+mu1hat_bpm <- paste0(round(fmodel_bpm@response[[1]][[1]]@parameters$coefficients,3))
+mu2hat_bpm <- paste0(round(fmodel_bpm@response[[2]][[1]]@parameters$coefficients,3))
+mu3hat_bpm <- paste0(round(fmodel_bpm@response[[3]][[1]]@parameters$coefficients,3))
+sd1hat_bpm <- paste0(round(fmodel_bpm@response[[1]][[1]]@parameters$sd,3))
+sd2hat_bpm <- paste0(round(fmodel_bpm@response[[2]][[1]]@parameters$sd,3))
+sd3hat_bpm <- paste0(round(fmodel_bpm@response[[3]][[1]]@parameters$sd,3))
+# se(MLE)
+MLEse_bpm=depmixS4::standardError(fmodel_bpm)
+se_mu1hat_bpm <- paste0('(', round(MLEse_bpm$se[13],3), ')')
+se_mu2hat_bpm <- paste0('(', round(MLEse_bpm$se[15],3), ')')
+se_mu3hat_bpm <- paste0('(', round(MLEse_bpm$se[17],3), ')')
+se_sd1hat_bpm <- paste0('(', round(MLEse_bpm$se[14],3), ')')
+se_sd2hat_bpm <- paste0('(', round(MLEse_bpm$se[16],3), ')')
+se_sd3hat_bpm <- paste0('(', round(MLEse_bpm$se[18],3), ')')
+```
+
+
+```{r}
+# Summary table creation
+MLEsum_bpm <- data.frame(state=c(rep("S=1",2), rep("S=2",2), rep("S=3",2)), mu=c(mu1hat_bpm, se_mu1hat_bpm, mu2hat_bpm, se_mu2hat_bpm, mu3hat_bpm, se_mu3hat_bpm), sd=c(sd1hat_bpm, se_sd1hat_bpm, sd2hat_bpm, se_sd2hat_bpm, sd3hat_bpm, se_sd3hat_bpm))
+knitr::kable(MLEsum_bpm, "latex", booktabs=T, align="c", col.names = c("Hidden state", "Mean", "Standard deviation"), escape=F, caption="MLE estimators of HMM\\label{tab:HMM_MLE_bpm}") %>% 
+  collapse_rows(columns=1, latex_hline="major", valign="middle") %>%
+  kable_styling(latex_options="hold_position")
+```
+
+
+```{r}
+# Get the estimated state for each timestep 
+estStates_bpm<- posterior(fmodel_bpm)
+```
+
+
+\textbf{Step 3: Decoding}
+Finally, we find the "oprimal" state sequence associated with the observed \textit{bpm} time series. The optimization problem is solve using the \textit{Viterbi algorithm} and the results are shown in figure \ref{fig:model_fit_ost_bpm}: 
+```{r, fig.width=6, fig.height=3, fig.cap="\\label{fig:model_fit_ost_bpm}Optimal state trajectory"}
+
+# Plot the optimal path, that is stored in the first column of estStates
+F1_bpm <- ggplot(data.frame(track_38[2],track_38[3], estStates_bpm[1])) +
+  geom_line(aes(x=time,y=bpm)) +
+  theme_classic(base_size=9) +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(y="bpm", x="time(sec)") +
+  scale_y_continuous(breaks=seq(0,6,1)) +
+  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+  ggtitle("Bpm")
+
+S1_bpm <- ggplot(data.frame(track_38[2],track_38[3], estStates_bpm[1])) +
+  geom_line(aes(x=time, y=state), 
+            linetype="solid", 
+            color="black") +
+  theme_classic(base_size=9) +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(y="State", x="time(sec)") +
+  scale_y_continuous(breaks=seq(0,3,1)) +
+  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+  ggtitle("Viterbi states")
+
+# Merge graphs in one plot
+ggarrange(F1_bpm, S1_bpm,
+          ncol=1, nrow=2)
+```
+
+
+```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:model_fit_rsm}Regime switching mean"}
+
+# Chart with state-dependent mean
+estMeans_bpm=matrix(0, length(track_38[,1]),3)
+
+for (i in 1:3) {
+  for (j in 1:length(track_38[,1])) {
+    if (estStates_bpm[j,1]==i){
+      estMeans_bpm[j,i]<-fmodel_bpm@response[[i]][[1]]@parameters$coefficients
+   }else{
+      estMeans_bpm[j,i]<-0
+   }
+  }
+}
+
+switching_mean_bpm <- estMeans_bpm[,1]+estMeans_bpm[,2]+estMeans_bpm[,3]
+
+ggplot(data.frame(switching_mean_bpm, track_38[2],track_38[3])) +
+  geom_line(aes(x=time, y=bpm)) +
+  geom_point(aes(x=time, y=switching_mean_bpm), col="blue", size=.05) +
+  theme_classic(base_size=9) +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(y="bpm", x="time(sec)") +
+  scale_y_continuous(breaks = seq(0,6,0.5)) +
+  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+  ggtitle("State dependent mean")
+```
+
+
+
