@@ -502,20 +502,22 @@ knitr::kable(tracks_df[1:5, c(1:5, 8)], "latex", booktabs=T,
 \begin{enumerate}
 
 \item %1
-Let's consider activity \texttt{track\_id==38} and restrict our attention to the heart rate (\texttt{bpm}) data.
-The time series is plotted in Figure \ref{fig:bpm}.
+Let's consider activity \texttt{track\_id==38}.
+The time series of interest are plotted in Figure \ref{fig:plots}.
   
 ```{r echo=FALSE}
 # Create the data frame containing activity 38 only
 which_track <- 38
 track_38 <- tracks_df %>% 
   filter(track_id==which_track)
+track_38$dfelev[1] <- 0 #taking the lags with the previous observation, we have to set the first 
+                        #observation equal to 0, otherwise we would subtract the elevation of the                         #previous activity. 
 ```
 
-```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:bpm} Recorded bpm of activity 38"}
+```{r, fig.width=6, fig.height=3.5, fig.cap="\\label{fig:plots} Recorded bpm, speed and elevation gains/losses of activity 38"}
 
 # Time series plot
-ggplot(track_38, aes(x=time, y=bpm)) +
+B <- ggplot(track_38, aes(x=time, y=bpm)) +
   geom_line(color="steelblue") +
   theme_classic(base_size=9) +
   labs(y="Heart rate (bpm)", x="Time (sec)") +
@@ -523,9 +525,30 @@ ggplot(track_38, aes(x=time, y=bpm)) +
   scale_y_continuous(breaks=seq(100,170,10)) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+S <- ggplot(track_38, aes(x=time, y=speed)) +
+  geom_line(color="steelblue") +
+  theme_classic(base_size=9) +
+  labs(y="Speed (km/h)", x="Time (sec)") +
+  scale_x_continuous(breaks=seq(2000,9000,1000)) +
+  scale_y_continuous(breaks=seq(10,60,10)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+EG <- ggplot(track_38, aes(x=time, y=dfelev)) +
+  geom_line(color="steelblue") +
+  theme_classic(base_size=9) +
+  labs(y="Elev. gains/losses", x="Time (sec)") +
+  scale_x_continuous(breaks=seq(2000,9000,1000)) +
+  scale_y_continuous(breaks=seq(-20,10,5)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+ggarrange(B, S, EG,
+          ncol=1, nrow=3)
 ```
 
-It is possible to see that the time series does not look stationary and that several change points characterize the plot, e.g. at 4600sec and 5400sec. Therefore, it is not possible to analyse this series with the well-known ARMA models, which require stationarity (or non-stationary time series that can be easily trasformed into stationary ones). A suitable class of models for these cases is given by the Hidden Markov Models.
+We restrict our attention to the heart rate (\texttt{bpm}) data. It is possible to see that the time series does not look stationary and that several change points characterize the plot, e.g. at 4600sec and 5400sec. Therefore, it is not possible to analyse this series with the well-known ARMA models, which require stationarity (or non-stationary time series that can be easily trasformed into stationary ones). A suitable class of models for these cases is given by the Hidden Markov Models.
 
 Let's indeed model the series using a \textit{homogeneous} HMM, with a latent process $(S_{t})_{t\geq0}$ representing the required athletic effort.
 
