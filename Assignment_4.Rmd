@@ -111,10 +111,11 @@ Let's assume:
 \begin{itemize}
 \item three states, representing respectively boom (low interest rates), recession (high interest rates) and a stable path;
 \item Gaussian emission distributions, with state-dependent mean $\mu_i$ and variance $\sigma_i$ with $i=1,2,3$.
-\item \textcolor{red}{No trend clearly shows up from the time series plot suggesting that the data oscillates around a reference value. --> Da riposizionare: qui stiamo facendo assumptions}
 \end{itemize}
 
-The model we want to specify for the interest rate time series is thus a Gaussian HMM in its simplest form, i.e. a long-term mean plus noise.
+Moreover, no linear trend clearly shows up from the time series plot at Figure \ref{fig:ITAbond_real} suggesting that the data oscillates around a reference value that, as explained before, seem to depend on a latent state variable (or \textit{regime}).
+Given the previous considerations, we shall specify for the interest rate a Gaussian HMM in its simplest form, i.e. a long-term state-dependent mean plus noise with state-dependent volatility.
+
 \begin{align*}
 \begin{cases}
 Y_{t}=\mu_{1}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{1}^2) \qquad \text{if} \; S_{t}=1 \\
@@ -483,7 +484,7 @@ which are measured at regular 30-second intervals, for a total duration of 2 hou
 tracks_df <- read.csv(url("https://raw.githubusercontent.com/LucaBadolato/TimeSeries-/master/tracking_data_start=30min_record=120min_freq=30sec.csv"), sep="\t", dec=".", header=T)
 ```
 
-Given that elevation gains/losses are more informative than elevation itself, we create the variable \texttt{dfelev} by first differenting \texttt{elev}.
+Given that elevation gains/losses are more informative than elevation itself, we create the variable \texttt{dfelev} by first differencing \texttt{elev}.
 We report in Table \ref{tab:tracks_df} the first five observations of the dataset.
 
 ```{r echo=FALSE}
@@ -504,8 +505,11 @@ The three variables are related by a common physical process, the bike ride. In 
 
 \begin{itemize}
 \item Elevation gains are associated with an increase in the heart rate and a decrease of speed
-\item Speed and heart rate have a negative correlation. Apparentely this is counterintuitive, but the real effect if confounded by the fact that speed increases a lot during the downhills where heart rate gets lower. 
+\item Speed and heart rate have a negative correlation. Apparentely this is counterintuitive, but the real effect is confounded by the fact that speed increases a lot during the downhills where heart rate gets lower. 
 \end{itemize}
+
+\medskip
+
 ```{r}
 # Correlation plot
 datacor = subset(tracks_df,select=c(bpm, speed, dfelev))
@@ -522,8 +526,9 @@ kable_styling(latex_options="hold_position")
 ```
 \begin{enumerate}
 
-\item %1
-Let's consider activity \texttt{track\_id==38}.
+\medskip
+
+Let's consider activity \texttt{track\_id=38}.
 The time series of interest are plotted in Figure \ref{fig:plots}.
   
 ```{r echo=FALSE}
