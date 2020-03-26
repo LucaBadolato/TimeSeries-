@@ -51,6 +51,7 @@ library(magrittr)
 library(latex2exp)
 library(kableExtra)
 library(ggpubr)
+library(reshape2)
 
 # Settings
 knitr::opts_chunk$set(message = FALSE, 
@@ -499,6 +500,26 @@ knitr::kable(tracks_df[1:5, c(1:5, 8)], "latex", booktabs=T,
   kable_styling(latex_options = "hold_position")
 ```
 
+The three variables are related by a common physical process, the bike ride. In table \ref{tab:corr} we reported their correlation coefficients. Particularly, we have:
+
+\begin{itemize}
+\item Elevation gains are associated with an increase in the heart rate and a decrease of speed
+\item Speed and heart rate have a negative correlation. Apparentely this is counterintuitive, but the real effect if confounded by the fact that speed increases a lot during the downhills where heart rate gets lower. 
+\end{itemize}
+```{r}
+# Correlation plot
+datacor = subset(tracks_df,select=c(bpm, speed, dfelev))
+cor.datacor = cor(datacor, use="complete.obs")
+cormat = round(cor(datacor),2)
+row.names(cormat) <- c("$\\texttt{bpm}$", "$\\texttt{speed}$", "$\\texttt{dfelev}$")
+
+knitr::kable(cormat, "latex", booktabs=T, align="c",
+             escape=F, caption="Correlation coefficients of heart rate, speed and elevation gains/losses\\label{tab:corr}",
+             col.names = c("$\\texttt{bpm}$", "$\\texttt{speed}$", "$\\texttt{dfelev}$")) %>%
+       column_spec(1:3, width="5em") %>%
+kable_styling(latex_options="hold_position")
+
+```
 \begin{enumerate}
 
 \item %1
