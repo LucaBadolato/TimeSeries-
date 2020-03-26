@@ -82,6 +82,7 @@ knitr::kable(data_a4[1:5,], "latex", booktabs=T,
 \begin{enumerate}
 
 \item %1
+
 Let's consider the \textit{real} interest rate for the 10 years Italian government bond, i.e. the ratio between the \textit{nominal} interest rate and the Harmonised Index of Consumer Prices (HICP).
 Figure \ref{fig:ITAbond_real} plots the time series for the \textit{real} interest rate.
 
@@ -373,7 +374,6 @@ plotobj_nh <- ggplot(results_df_nh, aes(time_index, value)) +
         strip.placement="outside")
 
 plot(plotobj_nh)
-
 ```
 
 ```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:model_fit_rsm_nh}Regime switching mean (non-homogeneous HMM)"}
@@ -411,7 +411,6 @@ ggplot(data.frame(switching_mean_nh, data_a4[1],data_a4[6])) +
         axis.title.y=element_text(family="Times", margin=margin(r=5))) +
   ggtitle("State dependent mean")
 ```
-
 \end{enumerate}
 
 \section{Final project: First part}
@@ -473,7 +472,6 @@ knitr::kable(cormat, "latex", booktabs=T, align="c",
 kable_styling(latex_options="hold_position")
 
 ```
-\begin{enumerate}
 
 \medskip
 
@@ -593,7 +591,6 @@ knitr::kable(MLEsum_bpm, "latex", booktabs=T, align="c",
   kable_styling(latex_options="hold_position")
 ```
 
-\item %2
 
 \textbf{Step 3: Decoding}
 
@@ -670,4 +667,3 @@ ggplot(data.frame(switching_mean_bpm, track_38[2],track_38[3])) +
   ggtitle("State dependent mean")
 ```
 
-\end{enumerate}
