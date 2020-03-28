@@ -43,11 +43,11 @@ library(knitr)
 library(tseries)
 library(scales)
 library(dlm)
+library(magrittr)
+library(stringr)
 library(depmixS4)
-library(tidyr)
 library(tidyverse)
 library(ggthemes)
-library(magrittr)
 library(latex2exp)
 library(kableExtra)
 library(ggpubr)
@@ -128,7 +128,8 @@ Y_{t}=\mu_{3}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\s
 ```{r}
 # 1) Model specification
 y <- as.numeric(data_a4$ITAbond_real)
-model <- depmixS4::depmix(y ~ 1, data=data.frame(y), nstates=3)
+nstates <- 3
+model <- depmixS4::depmix(y ~ 1, data=data.frame(y), nstates=nstates)
 ```
 
 \textbf{Step 2: Estimation of the unknown parameters}
@@ -156,7 +157,8 @@ S=3   & 2.019              & 0.207                 \\
 ```{r include=FALSE}
 # 2) Estimation of the unknown parameters
 fmodel <- depmixS4::fit(model)
-depmixS4::summary(fmodel)
+states_mu_sigma <- depmixS4::summary(fmodel)
+states_mu_sigma
 ```
 ```{r}
 # MLE
@@ -201,7 +203,6 @@ Viterbi states are plotted in Figure \ref{fig:model_fit_ost}.
 # Get the estimated state for each timestep 
 estStates <- posterior(fmodel)
 ```
-
 
 ```{r, fig.width=6, fig.height=3, fig.cap="\\label{fig:model_fit_ost}Optimal state trajectory"}
 
@@ -262,6 +263,39 @@ switching_mean <- estMeans[,1]+estMeans[,2]+estMeans[,3]
 ggplot(data.frame(switching_mean, data_a4[1],data_a4[6])) +
   geom_line(aes(x=Time, y=ITAbond_real)) +
   geom_point(aes(x=Time, y=switching_mean), col="blue", size=.05) +
+  theme_classic(base_size=9) +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(y="Real interest rate", x="Date") +
+  scale_x_date(date_breaks="2 years",
+               date_minor_breaks="1 year",
+               limits=as.Date(c('1997_01_01','2019_07_01'),
+                              tryFormats=c("%Y_%m_%d"),
+                              optional=FALSE),
+               labels=date_format("%Y-%m")) +
+  scale_y_continuous(breaks = seq(0,6,0.5)) +
+  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+  ggtitle("State dependent mean")
+```
+
+\textcolor{red}{An alternative (more complete) way of plotting the state-dependent means and standard deviations in shown in Figure \ref{fig:model_fit_rsm_2}.}
+
+```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:model_fit_rsm_2}State dependent means and standard deviations"}
+
+# Chart with state-dependent mean and standard deviations
+info_df <- data.frame(state=1:nstates,
+                      mu=states_mu_sigma[,1],
+                      sigma=states_mu_sigma[,2])
+df_to_plot <- estStates %>%
+  left_join(info_df)
+df_to_plot %<>%
+  mutate(xtime=data_a4$Time, yvalue=data_a4$ITAbond_real)
+
+ggplot(df_to_plot, aes(x=xtime, y=yvalue)) +
+  geom_line() +
+  geom_point(aes(x=xtime, y=mu), col="blue", size=.05) +
+  geom_ribbon(aes(ymin=mu-2*sigma, ymax=mu+2*sigma), alpha=.1) +
   theme_classic(base_size=9) +
   theme(plot.title=element_text(hjust=0.5)) +
   labs(y="Real interest rate", x="Date") +
