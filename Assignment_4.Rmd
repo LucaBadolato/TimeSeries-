@@ -462,30 +462,27 @@ In this exercise we use the dataset \texttt{USPollution}, which contains monthly
 
 Hence, the four variables of interest are interconnected and are the building blocks of a more general phenomenon, air pollution. Furthermore, they are related by a common latent process that can be summarized by several components: industrialization, car traffic and regulation. 
 
-In our analysis we will focus on the four times series related to Alaska, recorded daily from *anno di inizio* to *anno fine*, for a total of 493 observations. The main advantage is given by study the evolution of air pollution in the same country over the years. This allows to control for fixed effects and to better study the latent process of interest that relate the four pollution components. We report in Table \ref{tab:alaska_df} the first five observations of the dataset.
+In our analysis we will focus on the four times series related to Louisina, recorded weekly from *anno di inizio* to *anno fine*, for a total of 852 observations. The main advantage is given by study the evolution of air pollution in the same country over the years. This allows to control for fixed effects and to better study the latent process of interest that relate the four pollution components. We report in Table \ref{tab:louisiana_df_df} the first five observations of the dataset.
 
 ```{r echo=FALSE}
 # Import the dataset
-alaska_df <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_pollution/master//Alaska_dataset.csv"), sep = ",", header=T)
-
-obs <- c(1:493)
-alaska_df <- cbind(obs, alaska_df)
+louisiana_df <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_pollution/master//Louisiana_dataset.csv"), sep = ",", header=T)
 ```
 
 
 ```{r}
 # How the dataset looks like
-knitr::kable(alaska_df[1:5, 1:5], "latex", booktabs=T,
-             caption="Dataset structure\\label{tab:alaska_df}") %>%
+knitr::kable(louisiana_df[1:5, 1:5], "latex", booktabs=T,
+             caption="Dataset structure\\label{tab:louisiana_df}") %>%
   kable_styling(latex_options = "hold_position")
 ```
 
-As explained before, the four variables are related by a common latent process. Hence, we report in table \ref{tab:corr} their correlation coefficients. Particularly, we expect to see a positive correlation (**IN REALTà SONO TUTTE MOLTO POSITIVE TRANNE CON 03, CHIEDO MAGARI AL MIO AMICO UNA SPIEGAZIONE**).
+As explained before, the four variables are related by a common latent process. Hence, we report in table \ref{tab:corr} their correlation coefficients. Particularly, we expect to see a positive correlation (**COMMENTARE CORRELAZIONE**).
 
 
 ```{r}
 # Correlation plot
-datacor = subset(alaska_df,select=c(daily_O3_mean, daily_NO2_mean, daily_CO_mean, daily_SO2_mean))
+datacor = subset(louisiana_df,select=c(weekly_O3_mean, weekly_NO2_mean, weekly_CO_mean, weekly_SO2_mean))
 cor.datacor = cor(datacor, use="complete.obs")
 cormat = round(cor(datacor),2)
 row.names(cormat) <- c("$\\texttt{O3}$", "$\\texttt{NO2}$", "$\\texttt{CO}$", "$\\texttt{S02}$" )
@@ -503,35 +500,35 @@ we plot in figure \ref{fig:plots} the time series for the 4 pollutants under stu
 ```{r, fig.width=6, fig.height=3.5, fig.cap="\\label{fig:plots} Recorded bpm, speed and elevation gains/losses of activity 38"}
 
 # Time series plot
-O3 <- ggplot(alaska_df, aes(x=obs, y=daily_O3_mean)) +
+O3 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_O3_mean)) +
   geom_line(color="steelblue") +
   theme_classic(base_size=9) +
-  labs(y="Ground level ozone (O3)", x="Observation") +
-  scale_x_continuous(breaks=seq(0,500,50)) +
+  labs(y="Ground level ozone (O3)", x="Week") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 
-NO2 <- ggplot(alaska_df, aes(x=obs, y=daily_NO2_mean)) +
+NO2 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_NO2_mean)) +
   geom_line(color="steelblue") +
   theme_classic(base_size=9) +
-  labs(y="Nitrogen dioxide (NO2)", x="Observaion") +
-  scale_x_continuous(breaks=seq(0,500,50)) +
+  labs(y="Nitrogen dioxide (NO2)", x="Week") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 
-CO <- ggplot(alaska_df, aes(x=obs, y=daily_CO_mean)) +
+CO <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_CO_mean)) +
   geom_line(color="steelblue") +
   theme_classic(base_size=9) +
-  labs(y="carbon monoxide (CO)", x="observation") +
-  scale_x_continuous(breaks=seq(0,500,50)) +
+  labs(y="carbon monoxide (CO)", x="Week") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 
-SO2 <- ggplot(alaska_df, aes(x=obs, y=daily_SO2_mean)) +
+SO2 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_SO2_mean)) +
   geom_line(color="steelblue") +
   theme_classic(base_size=9) +
-  labs(y="Sulfur dioxide (SO2)", x="observation") +
-  scale_x_continuous(breaks=seq(0,500,50)) +
+  labs(y="Sulfur dioxide (SO2)", x="Week") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 
@@ -539,7 +536,7 @@ ggarrange(O3, NO2, CO, SO2,
           ncol=2, nrow=2)
 ```
 
-We restrict our attention to carbon monoxide (\texttt{CO}) data. It is possible to see that the time series does not look stationary and that several change points characterize the plot, e.g. at observation 120 and 320. Therefore, it is not possible to analyse this series with the well-known ARMA models, which require stationarity (or non-stationary time series that can be easily trasformed into stationary ones). A suitable class of models for these cases is given by the Hidden Markov Models.
+We restrict our attention to carbon monoxide (\texttt{SO2}) data. It is possible to see that the time series does not look stationary and that several change points characterize the plot. Indeed the mean of the series change over the years. Therefore, it is not possible to analyse this series with the well-known ARMA models, which require stationarity (or non-stationary time series that can be easily trasformed into stationary ones). A suitable class of models for these cases is given by the Hidden Markov Models.
 
 Let's indeed model the series using a \textit{homogeneous} HMM, with a latent process $(S_{t})_{t\geq0}$ representing, as explained in the introduction, the inustrialization activity/traffic level.
 
@@ -558,4 +555,133 @@ Y_{t}=\mu_{2}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\s
 Y_{t}=\mu_{3}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{3}^2) \qquad \text{if} \; S_{t}=3
 \end{cases}
 \end{align*}
+
+```{r}
+# 1) Model specification
+y <- as.numeric(louisiana_df$weekly_SO2_mean)
+model_SO2 <- depmixS4::depmix(y ~ 1, data=data.frame(y), nstates=3)
+```
+
+We estimate the unknown parameters by maximum likelihood, using an \textit{Expectation-Maximization} (EM) \textit{algorithm}. In Table \ref{tab:HMM_MLE_SO2} we report the estimated means and standard deviations of the three states with the associated standard errors. 
+
+
+```{r include=FALSE}
+# 2) Estimation of the unknown parameters
+# MLE
+fmodel_SO2 <- depmixS4::fit(model_SO2)
+depmixS4::summary(fmodel_SO2)
+mu1hat_SO2 <- paste0(round(fmodel_SO2@response[[1]][[1]]@parameters$coefficients,3))
+mu2hat_SO2 <- paste0(round(fmodel_SO2@response[[2]][[1]]@parameters$coefficients,3))
+mu3hat_SO2 <- paste0(round(fmodel_SO2@response[[3]][[1]]@parameters$coefficients,3))
+sd1hat_SO2 <- paste0(round(fmodel_SO2@response[[1]][[1]]@parameters$sd,3))
+sd2hat_SO2 <- paste0(round(fmodel_SO2@response[[2]][[1]]@parameters$sd,3))
+sd3hat_SO2 <- paste0(round(fmodel_SO2@response[[3]][[1]]@parameters$sd,3))
+# se(MLE)
+MLEse_SO2=depmixS4::standardError(fmodel_SO2)
+se_mu1hat_SO2 <- paste0('(', round(MLEse_SO2$se[13],3), ')')
+se_mu2hat_SO2 <- paste0('(', round(MLEse_SO2$se[15],3), ')')
+se_mu3hat_SO2 <- paste0('(', round(MLEse_SO2$se[17],3), ')')
+se_sd1hat_SO2 <- paste0('(', round(MLEse_SO2$se[14],3), ')')
+se_sd2hat_SO2 <- paste0('(', round(MLEse_SO2$se[16],3), ')')
+se_sd3hat_SO2 <- paste0('(', round(MLEse_SO2$se[18],3), ')')
+```
+
+```{r}
+# Summary table creation
+MLEsum_SO2 <- data.frame(state=c(rep("S=1",2), rep("S=2",2), rep("S=3",2)), 
+                         mu=c(mu1hat_SO2, se_mu1hat_SO2, mu2hat_SO2, se_mu2hat_SO2, 
+                              mu3hat_SO2, se_mu3hat_SO2),
+                         sd=c(sd1hat_SO2, se_sd1hat_SO2, sd2hat_SO2, se_sd2hat_SO2,
+                              sd3hat_SO2, se_sd3hat_SO2))
+knitr::kable(MLEsum_SO2, "latex", booktabs=T, align="c",
+             col.names = c("State", "$\\hat{\\mu}_{MLE}$", "$\\hat{\\sigma}_{MLE}$"),
+             escape=F, caption="Maximum Likelihood estimates of the state-dependent
+             mean and standard deviation\\label{tab:HMM_MLE_SO2}") %>%
+  column_spec(1:3, width="5em") %>%
+  collapse_rows(columns=1, latex_hline="none") %>%
+  footnote(general="Standard errors in parentheses",
+           general_title="Note:",
+           footnote_as_chunk=T, escape=F) %>%
+  kable_styling(latex_options="hold_position")
+```
+
+\textbf{Step 3: Decoding}
+
+Finally, we find the "optimal" state sequence associated with the observed \texttt{SO2} time series. The optimization problem is solved using the \textit{Viterbi algorithm} and the results are shown in Figure \ref{fig:model_fit_ost_SO2}.
+
+```{r}
+# Get the estimated state for each timestep 
+estStates_SO2 <- posterior(fmodel_SO2)
+```
+
+```{r, fig.width=6, fig.height=3, fig.cap="\\label{fig:model_fit_ost_SO2}Optimal state trajectory"}
+
+# Plot the optimal path, that is stored in the first column of estStates
+# Plot the optimal path, that is stored in the first column of estStates
+results_df_SO2 <- data.frame(time_index=louisiana_df$n_weeks,
+                         SO2 =louisiana_df$weekly_SO2_mean,
+                         state=estStates_SO2[1]) %>% 
+  gather("variable", "value", -time_index)
+
+my_breaks <- function(x) { if (max(x)<4) seq(0,3,1) else seq(0,900,100) }
+lab_names <- c(
+  'SO2'="Sulfur dioxide (SO2)", 
+  'state'="Viterbi state")
+
+plotobj_SO2 <- ggplot(results_df_SO2, aes(time_index, value)) +
+  geom_line(color="black") +
+  facet_wrap(variable~., scales="free", ncol=1,
+             strip.position="left",
+             labeller = as_labeller(lab_names)) +
+  labs(x="Time (sec)") +
+  scale_y_continuous(breaks=my_breaks) +
+  scale_x_continuous(breaks=seq(0,900,100))+
+  theme_classic(base_size=9) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(5,0,0,0)),
+        axis.title.y=element_blank(),
+        strip.text.x=element_text(family="Times", face="bold",
+                                  margin=margin(10,0,0,0)),
+        strip.background=element_rect(colour="black", fill=NA),
+        strip.placement="outside")
+
+plot(plotobj_SO2)
+```
+
+The series with HMM estimated state-dependent means are shown in Figure \ref{fig:model_fit_rsm_SO2}.
+
+```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:model_fit_rsm_SO2}Regime switching mean"}
+
+# Chart with state-dependent mean
+estMeans_SO2=matrix(0, length(louisiana_df[,1]),3)
+
+for (i in 1:3) {
+  for (j in 1:length(louisiana_df[,1])) {
+    if (estStates_SO2[j,1]==i){
+      estMeans_SO2[j,i]<-fmodel_SO2@response[[i]][[1]]@parameters$coefficients
+   }else{
+      estMeans_SO2[j,i]<-0
+   }
+  }
+}
+
+switching_mean_SO2 <- estMeans_SO2[,1]+estMeans_SO2[,2]+estMeans_SO2[,3]
+
+ggplot(data.frame(switching_mean_SO2, louisiana_df[1],louisiana_df[5])) +
+  geom_line(aes(x=n_weeks, y=weekly_SO2_mean)) +
+  geom_point(aes(x=n_weeks, y=switching_mean_SO2), col="blue", size=.05) +
+  theme_classic(base_size=9) +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(y="Sulfur dioxide (SO2)", x="Weeks") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+  ggtitle("State dependent mean")
+```
+
+
+
+
+
+
 
