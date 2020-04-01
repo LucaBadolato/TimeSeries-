@@ -439,7 +439,8 @@ knitr::kable(louisiana_df[1:5, 1:5], "latex", booktabs=T,
   kable_styling(latex_options="hold_position")
 ```
 
-As explained before, the four variables are related by a common latent process. Hence, we report in Table \ref{tab:louisiana_corr} their correlation coefficients. Particularly, we expect to see a positive correlation (**COMMENTARE CORRELAZIONE**).
+As explained before, the four variables are related by a common latent process. Hence, we report in table \ref{tab:louisiana_corr} their correlation coefficients. Provided that correlation between pollutants show significant differnces in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution (Logan et al., 1981), a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field (A. Voulgarakis et al., 2011).
+(**COMMENTARE CORRELAZIONE**)
 
 ```{r}
 # Correlation plot
