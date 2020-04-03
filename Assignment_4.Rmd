@@ -87,7 +87,7 @@ knitr::kable(data_a4[1:5,], "latex", booktabs=T,
 Let's consider the \textit{real} interest rate for the 10 years Italian government bond, i.e. the ratio between the \textit{nominal} interest rate and the Harmonised Index of Consumer Prices (HICP).
 Figure \ref{fig:ITAbond_real} plots the time series for the \textit{real} interest rate.
 
-```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:ITAbond_real}Real interest rate for the 10 years Italian government bond"}
+```{r, fig.width=6, fig.height=3, fig.cap="\\label{fig:ITAbond_real}Real interest rate for the 10 years Italian government bond"}
 
 # Time series plot
 ggplot(data_a4, aes(x=Time, y=ITAbond_real)) +
@@ -106,7 +106,7 @@ ggplot(data_a4, aes(x=Time, y=ITAbond_real)) +
 The time series is clearly non-stationary and there seems to be several change points, the most clear of which being at the end of 2008, in correspondence to the beginning of the Great recession. In light of the presence of these structural breaks, a transformation of the series into a stationary one is also unlikely to be carried out. For these reasons, a Hidden Markov Model (HMM) could be a reasonable choice for modelling this time series.
 
 Let's indeed model the series using a HMM. Specifically, in this exercise we use a homogeneous HMM, namely we assume that the hidden process $(S_{t})_{t\geq0}$ is a homogeneous Markov chain.
-\medskip
+\bigskip
 
 \textbf{Step 1: Model specification}
 
@@ -134,29 +134,12 @@ nstates <- 3
 set.seed(78)
 model <- depmixS4::depmix(y ~ 1, data=data.frame(y), nstates=nstates)
 ```
-\medskip
+\bigskip
 
 \textbf{Step 2: Estimation of the unknown parameters}
 
 We can now estimate the MLE of the unknown parameters of the model.
 Table \ref{tab:HMM_MLE} presents the estimates the mean and standard deviation in the three states as well as their standard errors.
-
-\medskip
-\textcolor{red}{Quelli riportati nella tabella seguente (ottenuta su LaTeX inserendo manualmente i valori) sono i valori corretti. È possibile che nella tabella ancora seguente (ottenuta su R con "kable" salvando i valori nell'environment) le righe siano invertite. Non c'è problema, finché non assegniamo a ciascuno stato uno specifico market regime (e.g., S=1 è recessione), cosa che non abbiamo fatto.}
-\begin{table}[H]
-\centering
-{\color{red}\begin{tabular}{ccc}
-\toprule
-State & $\hat{\mu}_{MLE}$ & $\hat{\sigma}_{MLE}$ \\
-\midrule
-S=1   & 1.29               & 0.351                 \\
-      & (0.067)            & (0.033)               \\
-S=2   & 2.019              & 0.207                 \\
-      & (0.055)            & (0.033)               \\
-S=3   & 3.169              & 0.737                 \\
-      & (0.071)            & (0.049)               \\ \bottomrule
-\end{tabular}}
-\end{table}
 
 ```{r include=FALSE}
 # 2) Estimation of the unknown parameters
@@ -196,7 +179,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
 ```
-\medskip
+\bigskip
 
 \textbf{Step 3: Decoding}
 
@@ -247,7 +230,7 @@ plot(plotobj)
 
 The interest rates series with HMM estimated state-dependent means and state-dependent standard deviations are shown in Figure \ref{fig:model_fit_rsm}.
 
-```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:model_fit_rsm}State dependent means and standard deviations"}
+```{r, fig.width=6, fig.height=3, fig.cap="\\label{fig:model_fit_rsm}State dependent means and standard deviations"}
 
 # Chart with state-dependent mean and standard deviations
 info_df <- data.frame(state=1:nstates,
@@ -272,10 +255,12 @@ ggplot(df_to_plot, aes(x=xtime, y=yvalue)) +
                               optional=FALSE),
                labels=date_format("%Y-%m")) +
   scale_y_continuous(breaks = seq(0,6,0.5)) +
-  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+  theme(axis.text.x=element_text(angle=45, hjust=1),
+        plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
         axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
+\bigskip
 
 \item %2
 We now use a \textit{non-homogeneous} HMM, namely we allow the transition matrix to depend on covariates, in order to \textit{predict} possible change points in our time series.
@@ -287,6 +272,9 @@ nstates_nh <- 3
 set.seed(77)
 model_nh <- depmixS4::depmix(y_nh ~ 1, data=data.frame(y_nh), nstates=nstates_nh, transition=~y_nh)
 ```
+\bigskip
+
+\textbf{Step 2: Estimation of the unknown parameters}
 
 We proceed exactly as above and first estimate the MLE of the unknown parameters of the model.
 Table \ref{tab:HMM_MLE_nh} presents the estimates the mean and standard deviation in the three states as well as their standard errors.
@@ -331,6 +319,9 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
 ```
+\bigskip
+
+\textbf{Step 3: Decoding}
 
 Then, in order to find the optimal state variable path, we perform the global decoding procedure based on the \textit{Viterbi algorithm}.
 Viterbi states and state-dependent means in the non-homogeneous HMM case are plotted respectively in Figure \ref{fig:model_fit_ost_nh} and Figure \ref{fig:model_fit_rsm_nh}.
@@ -404,7 +395,8 @@ ggplot(df_to_plot_nh, aes(x=xtime, y=yvalue)) +
                               optional=FALSE),
                labels=date_format("%Y-%m")) +
   scale_y_continuous(breaks = seq(0,6,0.5)) +
-  theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+  theme(axis.text.x=element_text(angle=45, hjust=1),
+        plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
         axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
@@ -510,7 +502,7 @@ We restrict our attention to the \textbf{sulfur dioxide $\text{SO}_{2}$} data.
 It is possible to see that the time series does not look stationary and that several change points characterize the plot. Indeed the mean of the series change over the years. Therefore, it is not possible to analyse this series with the well-known ARMA models, which require stationarity (or non-stationary time series that can be easily trasformed into stationary ones). A suitable class of models for these cases is given by the Hidden Markov Models.
 
 Let's indeed model the series using a \textit{homogeneous} HMM, with a latent process $(S_{t})_{t\geq0}$ representing the industrialization activity or traffic level, as explained in the introduction.
-\medskip
+\bigskip
 
 \textbf{Step 1: Model specification}
 
@@ -532,9 +524,10 @@ Y_{t}=\mu_{3}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\s
 # 1) Model specification
 y <- as.numeric(louisiana_df$weekly_SO2_mean)
 nstates_us <- 3
+set.seed(61)
 model_SO2 <- depmixS4::depmix(y ~ 1, data=data.frame(y), nstates=nstates_us)
 ```
-\medskip
+\bigskip
 
 \textbf{Step 2: Estimation of the unknown parameters}
 
@@ -581,7 +574,7 @@ knitr::kable(MLEsum_SO2, "latex", booktabs=T, align="c",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
 ```
-\medskip
+\bigskip
 
 \textbf{Step 3: Decoding}
 
@@ -626,7 +619,7 @@ plot(plotobj_SO2)
 
 The series with HMM estimated state-dependent means and state-dependent standard deviations are shown in Figure \ref{fig:model_fit_rsm_SO2}.
 
-```{r, fig.width=7, fig.height=2.5, fig.cap="\\label{fig:model_fit_rsm_SO2}State-dependent means and standard deviations"}
+```{r, fig.width=7, fig.height=3, fig.cap="\\label{fig:model_fit_rsm_SO2}State-dependent means and standard deviations"}
 
 # Chart with state-dependent mean and standard deviations
 info_df_SO2 <- data.frame(state=1:nstates_us,
