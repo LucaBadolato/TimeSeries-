@@ -112,7 +112,7 @@ Let's indeed model the series using a HMM. Specifically, in this exercise we use
 
 Let's assume:
 \begin{itemize}
-\item three states, representing respectively boom (low interest rates), recession (high interest rates) and a stable path;
+\item three states,$\mathcal{Y}=\{1,2,3}$, representing respectively boom (low interest rates), recession (high interest rates) and a stable path;
 \item Gaussian emission distributions, with state-dependent mean $\mu_i$ and variance $\sigma_i$ with $i=1,2,3$.
 \end{itemize}
 
@@ -277,7 +277,7 @@ model_nh <- depmixS4::depmix(y_nh ~ 1, data=data.frame(y_nh), nstates=nstates_nh
 \textbf{Step 2: Estimation of the unknown parameters}
 
 We proceed exactly as above and first estimate the MLE of the unknown parameters of the model.
-Table \ref{tab:HMM_MLE_nh} presents the estimates the mean and standard deviation in the three states as well as their standard errors.
+Table \ref{tab:HMM_MLE_nh} presents the estimates the mean and standard deviation in the three states, that enjoy the same interpretation given above, as well as their standard errors.
 
 ```{r include=FALSE}
 # 2) Model estimation for non-homogeneous HMM
@@ -433,7 +433,7 @@ knitr::kable(louisiana_df[1:5, 1:5], "latex", booktabs=T,
   kable_styling(latex_options="hold_position")
 ```
 
-As explained before, the four variables are related by a common latent process. Hence, we report in table \ref{tab:louisiana_corr} their correlation coefficients. Provided that correlation between pollutants show significant differnces in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution (Logan et al., 1981), a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field (A. Voulgarakis et al., 2011).
+As explained before, the four variables are related by a common latent process. Hence, we report in table \ref{tab:louisiana_corr} their correlation coefficients. Provided that correlation between pollutants show significant differnces in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution (Logan et al., 1981), a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field (A. Voulgarakis et al., 2011). Other studies report that in the US $\text{O}_3$ is, on average, positively correlated with $\text{NO}_2$, which is opposite to our empirical findings about Louisiana.
 (**COMMENTARE CORRELAZIONE**)
 
 ```{r}
@@ -508,7 +508,7 @@ Let's indeed model the series using a \textit{homogeneous} HMM, with a latent pr
 
 Let's assume:
 \begin{itemize}
-\item three hidden states, therefore, the state space of the latent process is $\mathcal{Y}=\{1,2,3\}$;
+\item three hidden states, that may be interpreted as high, medium and low comprehensive air pollution. Therefore, the state space of the latent process is $\mathcal{Y}=\{1,2,3\}$;
 \item Gaussian emission distributions, with state-dependent mean $\mu_i$ and variance $\sigma_i$ with $i=1,2,3$.
 \end{itemize}
 
