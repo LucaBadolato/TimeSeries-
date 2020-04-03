@@ -131,6 +131,7 @@ Y_{t}=\mu_{3}+\varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\s
 # 1) Model specification
 y <- as.numeric(data_a4$ITAbond_real)
 nstates <- 3
+set.seed(78)
 model <- depmixS4::depmix(y ~ 1, data=data.frame(y), nstates=nstates)
 ```
 \medskip
@@ -283,6 +284,7 @@ We now use a \textit{non-homogeneous} HMM, namely we allow the transition matrix
 # 1) Model specification for non-homogeneous HMM
 y_nh <- as.numeric(data_a4$ITAbond_real)
 nstates_nh <- 3
+set.seed(77)
 model_nh <- depmixS4::depmix(y_nh ~ 1, data=data.frame(y_nh), nstates=nstates_nh, transition=~y_nh)
 ```
 
