@@ -113,7 +113,7 @@ Let's indeed model the series using a HMM. Specifically, in this exercise we use
 
 Let's assume:
 \begin{itemize}
-\item three states,$\mathcal{Y}=\{1,2,3\}$, representing respectively boom (low interest rates), recession (high interest rates) and a stable path;
+\item a state process taking values in $\mathcal{Y}=\{1,2,3\}$, with the three states representing respectively boom (low interest rates), stable path and recession (high interest rates);
 \item Gaussian emission distributions, with state-dependent mean $\mu_i$ and variance $\sigma_i$ with $i=1,2,3$.
 \end{itemize}
 
@@ -182,6 +182,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
 ```
 \bigskip
 
+\newpage
 \textbf{Step 3: Decoding}
 
 Finally, we find the optimal state variable path given the observed real interest rates, that is, we proceed with a global decoding procedure based on the \textit{Viterbi algorithm}.
@@ -402,6 +403,7 @@ ggplot(df_to_plot_nh, aes(x=xtime, y=yvalue)) +
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 \end{enumerate}
+\bigskip
 
 \section{Final project}
 
@@ -465,6 +467,7 @@ Provided that the correlation between pollutants show significant differences in
 Other studies report that, in the US, $\text{O}_3$ is on average positively correlated with $\text{NO}_2$, which is opposite to our empirical findings about Louisiana, where they are slightly negative correlated. A possible explanation can be given by substitution effects: an increase of nitrogen dioxide levels can be associated to the use of more fossil fuels that produce $\text{NO}_2$ and less fuels that produce other pollutants. This can be due to e.g. particular industries and factories located in Louisiana. A detailed research should be done to confirm this idea, but it would be beyond the purpose of our study.
 \bigskip
 
+\newpage
 \textbf{Time series plots}
 
 We plot in Figure \ref{fig:louisiana_plots} the time series for the four pollutants under study.
@@ -513,6 +516,7 @@ We restrict our attention to the \textbf{sulfur dioxide $\text{SO}_{2}$} data.
 It is possible to see that the time series does not look stationary and that several change points characterize the plot. Indeed the mean of the series change over the years. Therefore, it is not possible to analyse this series with the well-known ARMA models, which require stationarity (or non-stationary time series that can be easily trasformed into stationary ones). A suitable class of models for these cases is given by the Hidden Markov Models.
 \bigskip
 
+\newpage
 \textbf{Hidden Markov Model analysis}
 
 Let's indeed model the series using a \textit{homogeneous} HMM, with a latent process $(S_{t})_{t\geq0}$ representing the industrialization activity or traffic level, as explained in the introduction.
@@ -590,6 +594,7 @@ knitr::kable(MLEsum_SO2, "latex", booktabs=T, align="c",
 ```
 \bigskip
 
+\newpage
 \textbf{Step 3: Decoding}
 
 Finally, we find the "optimal" state sequence associated with the observed $\text{SO}_{2}$ time series. The optimization problem is solved using the \textit{Viterbi algorithm} and the results are shown in Figure \ref{fig:model_fit_ost_SO2}.
@@ -657,5 +662,6 @@ ggplot(df_to_plot_SO2, aes(x=xtime, y=yvalue)) +
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 
+\newpage
 \section{References}
 
