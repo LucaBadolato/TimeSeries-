@@ -7,10 +7,12 @@ author:
 subtitle: "Bocconi University"
 date: April 4, 2020
 output: pdf_document
+nocite: '@*'
 bibliography: References.bib
 header-includes:
   \usepackage[utf8]{inputenc}
   \usepackage{setspace}
+ 
   \usepackage{apacite}
   \usepackage{algpseudocode}
   \usepackage{algorithm}
@@ -661,6 +663,7 @@ ggplot(df_to_plot_SO2, aes(x=xtime, y=yvalue)) +
         axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
+
 
 \newpage
 \section{References}
