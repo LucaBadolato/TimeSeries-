@@ -6,11 +6,12 @@ author:
 - Simone Valle (3088281)
 subtitle: "Bocconi University"
 date: April 4, 2020
-output: 
-  pdf_document
+output: pdf_document
+bibliography: References.bib
 header-includes:
   \usepackage[utf8]{inputenc}
   \usepackage{setspace}
+  \usepackage{apacite}
   \usepackage{algpseudocode}
   \usepackage{algorithm}
   \usepackage{bm}
@@ -87,7 +88,7 @@ knitr::kable(data_a4[1:5,], "latex", booktabs=T,
 Let's consider the \textit{real} interest rate for the 10 years Italian government bond, i.e. the ratio between the \textit{nominal} interest rate and the Harmonised Index of Consumer Prices (HICP).
 Figure \ref{fig:ITAbond_real} plots the time series for the \textit{real} interest rate.
 
-```{r, fig.width=5, fig.height=2.5, fig.cap="\\label{fig:ITAbond_real}Real interest rate for the 10 years Italian government bond"}
+```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:ITAbond_real}Real interest rate for the 10 years Italian government bond"}
 
 # Time series plot
 ggplot(data_a4, aes(x=Time, y=ITAbond_real)) +
@@ -406,7 +407,7 @@ ggplot(df_to_plot_nh, aes(x=xtime, y=yvalue)) +
 
 \subsection{Introduction}
 
-In this exercise we use the dataset \texttt{US\_pollution}, which contains monthly and daily data about air pollution for each state in the United States. The dataset is provided by the United States Environmental Protection Agency (EPA), an independent executive agency of the United States federal government in charge of maintaining and enforcing national standards under a variety of environmental laws. Specifically, four key indicators of air pollution are considered in the dataset: 
+Our idea for the final project is to use the dataset \texttt{US\_pollution}, which contains monthly and daily data about air pollution for each state in the United States. The dataset is provided by the United States Environmental Protection Agency (EPA), an independent executive agency of the United States federal government in charge of maintaining and enforcing national standards under a variety of environmental laws. Specifically, four key indicators of air pollution are considered in the dataset: 
 
 \begin{itemize}
 \item \textbf{Ground level ozone $\text{O}_{3}$} (\texttt{O3}): Bad ozone (there is also a good one naturally present in the Earth's upper atomsphere, which protects us from the Sun's harmful ultraviolet rays) forms near the ground when pollutants (emitted by sources such as cars, power plants, industrial boilers, refineries, and chemical plants) react chemically in sunlight. Since it is more likely to form during warmer months, we expect to see a seasonal component in the series. 
@@ -414,12 +415,13 @@ In this exercise we use the dataset \texttt{US\_pollution}, which contains month
 \item \textbf{Carbon monoxide $\text{CO}$} (\texttt{CO}):  It forms when the carbon in flues does not completely burn. The principal causes are given by vehicle exhaust (it contributes roughly 75 percent of all carbon monoxide emissions nationwide, up to 95 percent in cities) and fuel combustion in industrial processes and natural sources such as wildfires. Cold temperatures make combustion less complete and cause inversions that trap the CO close to the ground, therefore we expect also in this case a seasonal behavior. 
 \item \textbf{Sulfur dioxide $\text{SO}_{2}$} (\texttt{SO2}): It is produced when sulfur-containing fuels such as coal and oil are burned. Tha major cause of this pollutant are large industrial complexes such as power plants, refineries and industrial boilers. 
 \end{itemize}
+\bigskip
 
 Hence, the four variables of interest are interconnected and are the building blocks of a more general phenomenon, that is air pollution. Furthermore, they are related by a common latent process that can be summarized by several components: industrialization, car traffic and regulation. 
 
-In our analysis we will focus on the four times series for the state of Louisiana, recorded weekly from 2000-01-01 to 2016-04-27, for a total of 852 observations. The main advantage of studying the evolution of air pollution in the same country over the years is that this allows us to control for fixed effects and to better study the latent process of interest that relates the four pollution components.
+In our analysis we will focus on the four times series for the state of \textbf{Louisiana}, recorded weekly from 2000-01-01 to 2016-04-27, for a total of 852 observations. The main advantage of studying the evolution of air pollution in the same country over the years is that this allows us to control for fixed effects and to better study the latent process of interest that relates the four pollution components.
 
-We report the first five observations of the dataset in Table \ref{tab:louisiana_df}.
+We report the first five observations of the restricted dataset in Table \ref{tab:louisiana_df}.
 
 ```{r echo=FALSE}
 # Import the dataset
@@ -432,8 +434,11 @@ knitr::kable(louisiana_df[1:5, 1:5], "latex", booktabs=T,
              caption="Dataset structure\\label{tab:louisiana_df}") %>%
   kable_styling(latex_options="hold_position")
 ```
+\bigskip
 
-As explained before, the four variables are related by a common latent process. Hence, we report in table \ref{tab:louisiana_corr} their correlation coefficients. Provided that correlation between pollutants show significant differnces in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution (Logan et al., 1981), a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field (A. Voulgarakis et al., 2011). Other studies report that in the US $\text{O}_3$ is, on average, positively correlated with $\text{NO}_2$, which is opposite to our empirical findings about Louisiana, where they are slightly negative correlated. A possible explanation can be given by substitution effects: an increase of nitrogen dioxide levels can be associated to the use of more fossil fuels that produce $\text{NO}_2$ and less fuels that produce other pollutants. This can be due to e.g. particular industries and factories located in Louisiana. A detailed research should be done to confirm this idea, but it would be beyond the purpose of our study.     
+\textbf{Correlation table}
+
+As explained before, the four variables are related by a common latent process. Hence, we report in Table \ref{tab:louisiana_corr} their correlation coefficients.
 
 ```{r}
 # Correlation plot
@@ -446,7 +451,7 @@ row.names(cormat) <- c("$\\text{O}_{3}$",
                        "$\\text{SO}_{2}$")
 
 knitr::kable(cormat, "latex", booktabs=T, align="c", escape=F,
-             caption="Correlation coefficients of $\\text{O}_{3}$, $\\text{NO}_{2}$, $\\text{CO}$ and $\\text{SO}_{2}$ \\label{tab:louisiana_corr}",
+             caption="Correlation table \\label{tab:louisiana_corr}",
              col.names=c("$\\text{O}_{3}$",
                          "$\\text{NO}_{2}$",
                          "$\\text{CO}$",
@@ -454,6 +459,13 @@ knitr::kable(cormat, "latex", booktabs=T, align="c", escape=F,
   column_spec(1:4, width="5em") %>%
 kable_styling(latex_options="hold_position")
 ```
+
+Provided that the correlation between pollutants show significant differences in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution [@Logan1981], a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field [@Voulgarakis2011].
+
+Other studies report that, in the US, $\text{O}_3$ is on average positively correlated with $\text{NO}_2$, which is opposite to our empirical findings about Louisiana, where they are slightly negative correlated. A possible explanation can be given by substitution effects: an increase of nitrogen dioxide levels can be associated to the use of more fossil fuels that produce $\text{NO}_2$ and less fuels that produce other pollutants. This can be due to e.g. particular industries and factories located in Louisiana. A detailed research should be done to confirm this idea, but it would be beyond the purpose of our study.
+\bigskip
+
+\textbf{Time series plots}
 
 We plot in Figure \ref{fig:louisiana_plots} the time series for the four pollutants under study.
 
@@ -499,6 +511,9 @@ ggarrange(O3, NO2, CO, SO2,
 We restrict our attention to the \textbf{sulfur dioxide $\text{SO}_{2}$} data.
 
 It is possible to see that the time series does not look stationary and that several change points characterize the plot. Indeed the mean of the series change over the years. Therefore, it is not possible to analyse this series with the well-known ARMA models, which require stationarity (or non-stationary time series that can be easily trasformed into stationary ones). A suitable class of models for these cases is given by the Hidden Markov Models.
+\bigskip
+
+\textbf{Hidden Markov Model analysis}
 
 Let's indeed model the series using a \textit{homogeneous} HMM, with a latent process $(S_{t})_{t\geq0}$ representing the industrialization activity or traffic level, as explained in the introduction.
 \bigskip
@@ -641,3 +656,6 @@ ggplot(df_to_plot_SO2, aes(x=xtime, y=yvalue)) +
         axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
+
+\section{References}
+
