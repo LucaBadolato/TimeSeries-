@@ -517,7 +517,7 @@ It is possible to see that the time series does not look stationary and that sev
 \bigskip
 
 \newpage
-\textbf{Hidden Markov Model analysis}
+\subsection{Hidden Markov Model analysis}
 
 Let's indeed model the series using a \textit{homogeneous} HMM, with a latent process $(S_{t})_{t\geq0}$ representing the industrialization activity or traffic level, as explained in the introduction.
 \bigskip
