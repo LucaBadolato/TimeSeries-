@@ -421,7 +421,7 @@ Our idea for the final project is to use the dataset \texttt{US\_pollution}, whi
 \item \textbf{Carbon monoxide $\text{CO}$} (\texttt{CO}):  It forms when the carbon in flues does not completely burn. The principal causes are given by vehicle exhaust (it contributes roughly 75 percent of all carbon monoxide emissions nationwide, up to 95 percent in cities) and fuel combustion in industrial processes and natural sources such as wildfires. Cold temperatures make combustion less complete and cause inversions that trap the CO close to the ground, therefore we expect also in this case a seasonal behavior. 
 \item \textbf{Sulfur dioxide $\text{SO}_{2}$} (\texttt{SO2}): It is produced when sulfur-containing fuels such as coal and oil are burned. Tha major cause of this pollutant are large industrial complexes such as power plants, refineries and industrial boilers. 
 \end{itemize}
-\bigskip
+\medskip
 
 Hence, the four variables of interest are interconnected and are the building blocks of a more general phenomenon, that is air pollution. Furthermore, they are related by a common latent process that can be summarized by several components: industrialization, car traffic and regulation. 
 
