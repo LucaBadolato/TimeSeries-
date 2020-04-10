@@ -42,16 +42,18 @@ library(knitr)
 library(tseries)
 library(tinytex)
 library(scales)
-library(dlm)
 library(magrittr)
 library(stringr)
-library(depmixS4)
 library(tidyverse)
+library(ggplot2)
+library(ggfortify)
+library(ggpubr)
 library(ggthemes)
 library(latex2exp)
 library(kableExtra)
-library(ggpubr)
 library(reshape2)
+library(depmixS4)
+library(dlm)
 
 # Settings
 knitr::opts_chunk$set(message = FALSE, 
@@ -64,7 +66,17 @@ knitr::opts_chunk$set(message = FALSE,
 
 \section{Exercise}
 
-```{r}
-install.packages("dlm")
+In this exercise we consider the \textbf{Nile} data, available in R. This provides the measurements of the annual flow of the river Nile at Ashwan, for the period 1871-1970.
+
+We first plot the data in Figure \ref{fig:Nile_plot}.
+
+```{r, fig.width=6, fig.height=2.5, fig.cap="\\label{fig:Nile_plot}Annual flow of the river Nile (Ashwan)"}
+
+# Dataframe creation
+Nile_df <- Nile
+
+# Time series plot
+
 ```
 
+The data appears non-stationary, presenting an evident change point.
