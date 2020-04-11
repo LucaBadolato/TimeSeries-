@@ -61,11 +61,9 @@ knitr::opts_chunk$set(message = FALSE,
                       echo    = FALSE,
                       include = TRUE,
                       fig.pos = "H",
-                      fig.align = "center"
-                     )
+                      fig.align = "center",
+                      out.width = '60%')
 ```
-
-\section{Exercise}
 
 In this exercise we consider the \textbf{Nile} data, available in R. This provides the measurements of the annual flow of the river Nile at Ashwan, for the period 1871-1970.
 
@@ -100,23 +98,26 @@ ggplot(df_nile, aes(x=years_Nile, y=Nile)) +
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 
-\subsection{Question 1}
+\section{Question 1}
 
 Let's consider to model the series with a random walk plus noise (or local level) model, a time-invariant DLM with univariate Gaussian observation and state process, i.e. $\underset{1 \times 1}{Y_t}$ and $\underset{1 \times 1}{\theta_t}$, and with constant system matrices $F=1, G=1$:
+
 \begin{eqnarray*} 
 Y_t &= \theta_t + v_t \quad    & v_t \overset{i.i.d.}\sim N(0, 15100)\\
 \theta_t &= \theta_{t-1} + w_t \quad   & v_t \overset{i.i.d.}\sim N(0, 1470)
 \end{eqnarray*}
+
 where variances of these processes are constant and set at $V=\sigma^2_v=15100$ $W=\sigma^2_w=1470$. The initial distribution as well is assumed to be Gaussian with parameters $m_0=1000$ and $C_0=1000$.
 
-Our goal is to compute the filtering states esimates $m_t = \E (\theta_t | y_{1:t})$ obtained by implementing the Kalman filter. Particularly, we recall that the Kalman filter procedure is divided in the following two steps:
+Our goal is to compute the filtering states esimates $m_t = \E (\theta_t | y_{1:t})$ obtained by implementing the Kalman filter. Particularly, we recall that the Kalman filter procedure, given the \textit{filtering distribution} in the previous iteration, $\theta_{t-1} \mid \sim N(m_{t-1},C_{t-1})$, is divided in the following three steps:
 \begin{itemize}
-\item forecasting step: 
+\item State forecasting step: 
 $$ \theta_t \mid y_{1:t-1} \sim N(a_t, R_t), \quad \mbox{state prediction}$$
-$$ Y_t \mid y_{1:t-1} \sim N(f_t, Q_t) \quad \mbox{obs prediction}$$
+\item Observation forecasting step:
+$$ Y_t \mid y_{1:t-1} \sim N(f_t, Q_t), \quad \mbox{observation prediction}$$
 
-\item filtering step: once $y_t$ becomes available
-$$ \theta_t \mid y_{1:t} \sim N(m_t, C_t) \quad \mbox{filtering distribution}. 
+\item Filtering step: once $y_t$ becomes available
+$$ \theta_t \mid y_{1:t} \sim N(m_t, C_t), \quad \mbox{filtering distribution}. 
  $$
 \end{itemize}
  
@@ -138,7 +139,7 @@ vol_C <- sqrt(unlist(list_c))
 
 ```
 
-We report in Figure \ref{fig:filtering states estimates} the filtering estimates $(m_0, m_1, \ldots, m_T)$ (red line) together with the observed series (blue line). 
+We report in Figure \ref{fig:filtering states estimates} the filtering estimates $(m_1, \ldots, m_T)$ (red line) together with the observed series (blue line).Notice that the initial guess on the location parameter of the state distribution, $m_0$, is to be removed from the series of states estimates and, therefore, it is not included in the plot. 
 
 ```{r, fig.width=6, fig.height=4, fig.cap="\\label{fig:filtering states estimates} Filtering states estimates"}
 
@@ -164,10 +165,18 @@ ggplot(df_nile_filt, aes(x=years_Nile)) +
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 
-We now compute the filtering variances $(C_0, C_1, \ldots, C_T)$ by the recursive formulae of Kalman filter. In Figure \ref{Fig:standard deviations} we report the standard deviations $\sqrt{C_{t}} = V(\theta_t | y_{1:t-1})^{\frac{1}{2}}$. 
+We now compute the filtering variances $(C_1, \ldots, C_T)$, that in principle could be determined through the recursive formulas of Kalman filter. However, due to potential numerical issues in the application of such recursive approach, the computation of state variances relies on the Singular Value Decomposition procedure. In Figure \ref{Fig:standard deviations} we report the standard deviations $\sqrt{C_{t}} = V(\theta_t | y_{1:t-1})^{\frac{1}{2}}$. 
+
+```{r}
+vol_C_plot <- vol_C[2:101]
+
+# vol_C_plot<-dropFirst(vol_C)
+```
+
+Interestingly, the filterd standard deviations are increasing at  a decreasing pace until converging to a limit value equal to `r round(vol_C_plot[7], 2)` after six iterations.
 
 ```{r, fig.width=6, fig.height=4, fig.cap="\\label{Fig:standard deviations} Standard deviations of states estimates"}
-vol_C_plot <- vol_C[2:101]
+
 df_nile_sd <-data.frame(years_Nile, vol_C_plot)
    
  ggplot(df_nile_sd, aes(x=years_Nile))+
@@ -191,8 +200,9 @@ df_nile_sd <-data.frame(years_Nile, vol_C_plot)
 
 
 Finally, we compute the $1 - \alpha$ Bayesian credible intervals for the filtering states estimates, which are given by:
+
 \begin{align*}
-[ m_t - Z_{1 - \frac{\alpha}{2}} \sqrt{C_{t}},  m_t - Z_{1 - \frac{\alpha}{2}}\sqrt{C_{t}} ]
+[ m_t - Z_{1 - \frac{\alpha}{2}} \sqrt{C_{t}}, \quad m_t - Z_{1 - \frac{\alpha}{2}}\sqrt{C_{t}} ]
 \end{align*}
 
 with $\alpha = 0.05$. We report in Figure \ref{Filtering_est_ci} the filtering estimates with the credible intervals. 
@@ -225,3 +235,39 @@ df_nile_ci <-data.frame(years_Nile, Nile, filt_est, upper, lower)
         axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
+
+\newpage
+\section{Question 2}
+
+We now plot along with the data the one-step ahead forecasts for the observation process, i.e. $\hat{y}_{t}=\E{Y_{t} | y_{1:t-1}}=f_t$, where $f_t$ is the location parameter of the observation's forecast distribution. We plot also the credible interval at $1-\alpha$ level that are given by:
+
+\begin{align*}
+[ f_t - Z_{1 - \frac{\alpha}{2}} \sqrt{Q_{t}}, \quad f_t - Z_{1 - \frac{\alpha}{2}}\sqrt{Q_{t}} ]
+\end{align*}
+
+with $\alpha=0.05$.
+
+The variances $Q_t's$ are just a byproduct of the procedure outlined in Question 1. Indeed, they are obtained as
+
+\begin{align*}
+Q_t = F_t \, R_t \, F_{t}'+ V_t = C_{t-1}+\sigma_{v}^2+\sigma_{w}^2
+\end{align*}
+
+with $F_t=1$.
+
+```{r}
+# Create the vector of means for the observation process.
+# Notice that here we do not have to remove the first element of the series
+mean_forecast<-filt_Nile$f
+
+# Obtain the variance Q
+filt_Q <- unlist(list_c) + as.vector(rw_Nile$V) + as.vector(rw_Nile$W)
+filt_Q <- filt_Q[-1]
+
+# Create upper and lower bounds of the credible interval
+upper <- mean_forecast + 1.96*sqrt(filt_Q) 
+lower <- mean_forecast - 1.96*sqrt(filt_Q) 
+
+# plot
+```
+
