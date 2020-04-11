@@ -239,7 +239,7 @@ df_nile_ci <-data.frame(years_Nile, Nile, filt_est, upper, lower)
 \newpage
 \section{Question 2}
 
-We now plot along with the data the one-step ahead forecasts for the observation process, i.e. $\hat{y}_{t}=\E{Y_{t} | y_{1:t-1}}=f_t$, where $f_t$ is the location parameter of the observation's forecast distribution. We plot also the credible interval at $1-\alpha$ level that are given by:
+We now plot in Figure \ref{Fig:Forecast with ci} along with the data the one-step ahead forecasts for the observation process (green line), i.e. $\hat{y}_{t}=\E{Y_{t} | y_{1:t-1}}=f_t$, where $f_t$ is the location parameter of the observation's forecast distribution. We plot also the credible interval at $1-\alpha$ level that are given by:
 
 \begin{align*}
 [ f_t - Z_{1 - \frac{\alpha}{2}} \sqrt{Q_{t}}, \quad f_t - Z_{1 - \frac{\alpha}{2}}\sqrt{Q_{t}} ]
@@ -265,9 +265,37 @@ filt_Q <- unlist(list_c) + as.vector(rw_Nile$V) + as.vector(rw_Nile$W)
 filt_Q <- filt_Q[-1]
 
 # Create upper and lower bounds of the credible interval
-upper <- mean_forecast + 1.96*sqrt(filt_Q) 
-lower <- mean_forecast - 1.96*sqrt(filt_Q) 
-
-# plot
+upper_for <- mean_forecast + 1.96*sqrt(filt_Q) 
+lower_for <- mean_forecast - 1.96*sqrt(filt_Q) 
 ```
 
+```{r, fig.width=6, fig.height=4, fig.cap="\\label{Fig:Forecast with ci} One-step ahead forecasts with credible intervals"}
+
+df_nile_for <-data.frame(years_Nile, Nile, mean_forecast, upper_for, lower_for)
+   
+ ggplot(df_nile_for, aes(x=years_Nile))+
+  geom_line(aes(y=Nile), color = "steelblue") +
+  geom_line(aes(y=mean_forecast), color = "green") +
+  geom_line(aes(y=upper_for), color = "green", linetype = "dashed" )+
+  geom_line(aes(y=lower_for), color = "green", linetype = "dashed")+
+  geom_vline(xintercept = as.Date('1899/01/01'), color= "black")+
+  theme_classic(base_size=9) +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(y="", x="Year") +
+  scale_x_date(date_breaks="20 years",
+               date_minor_breaks="10 year",
+               limits=as.Date(c('1871_01_01','1970_01_01'),
+                              tryFormats=c("%Y_%m_%d"),
+                              optional=FALSE),
+               labels=date_format("%Y")) +
+  scale_y_continuous(breaks = seq(0,1500,300), limits = c(300,1500)) +
+  theme(axis.text.x=element_text(hjust=1),
+        plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+```
+
+\newpage
+\section{Question 3}
+
+The behavior of the process $(Y_t)$ is highly influenced by the ratio between the two error variances, $r = \frac{W}{V}$, which is called the *signal-to-noise ratio. For any given $C_0$, if it is small, $K_t$ is small and as a consequence $y_t$ receives little weight. On the contrary, if it is large, $y_t$ receives high weight abd the one-step-ahead forecast is close to the most recent data point.  
