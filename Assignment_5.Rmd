@@ -27,8 +27,6 @@ header-includes:
   \usepackage{color} %red, green, blue, yellow, cyan, magenta, black, white
   \definecolor{mygreen}{RGB}{28,172,0} % color values Red, Green, Blue
   \definecolor{mylilas}{RGB}{170,55,241}
-  \DeclareMathOperator*{\E}{\mathbb{E}}
-  \DeclareMathOperator*{\Ec}{\mathbb{E}_t}
 ---
 
 ```{r, include=FALSE}
@@ -61,66 +59,61 @@ knitr::opts_chunk$set(message = FALSE,
                       echo    = FALSE,
                       include = TRUE,
                       fig.pos = "H",
-                      fig.align = "center",
-                      out.width = '60%')
+                      fig.align = "center")
 ```
 
-In this exercise we consider the \textbf{Nile} data, available in R. This provides the measurements of the annual flow of the river Nile at Ashwan, for the period 1871-1970.
+\section{Exercise}
+
+In this exercise we consider the \textbf{Nile} time series, available in R, which contains the measurements of the annual flow of the river Nile at Ashwan, for the period 1871-1970.
 
 We first plot the data in Figure \ref{fig:Nile_plot}.
+\bigskip
 
-The series is clearly non-stationary and presents a break point around 1998 (black vertical line).
-
-```{r, fig.width=6, fig.height=4, fig.cap="\\label{fig:Nile_plot} Annual flow of the Nile at Ashwan "}
-# Plot the Series "Nile"
-# ts.plot(Nile, gpars = list(xlab="Year", ylab="10^8 m^3"))
-
+```{r, fig.width=5, fig.height=2.5, fig.cap="\\label{fig:Nile_plot}Annual flow of the river Nile at Ashwan"}
+# Df
 years_Nile<-seq(as.Date("1871/01/01"),as.Date("1970/01/01"), "years")
+df_Nile<-data.frame(years_Nile,Nile)
 
-df_nile<-data.frame(years_Nile,Nile)
-
-ggplot(df_nile, aes(x=years_Nile, y=Nile)) +
-  geom_line(color = "steelblue") +
-  geom_vline(xintercept = as.Date('1899/01/01'), color="black")+
-  theme_classic(base_size=9) +
-  theme(plot.title=element_text(hjust=0.5)) +
-  labs(y="10^8 m^3", x="Year") +
-  scale_x_date(date_breaks="20 years",
-               date_minor_breaks="10 year",
-               limits=as.Date(c('1871_01_01','1970_01_01'),
-                              tryFormats=c("%Y_%m_%d"),
-                              optional=FALSE),
+# Plot
+ggplot(df_Nile, aes(x=years_Nile, y=Nile)) +
+  geom_line(color="steelblue", size=0.4) +
+  geom_vline(xintercept=as.Date('1899/01/01'), color="black", size=0.3)+
+  theme_classic(base_size=9.5) +
+  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')')) +
+  scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
-  scale_y_continuous(breaks = seq(0,1500,300), limits = c(300,1500)) +
-  theme(axis.text.x=element_text(hjust=1),
-        plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
-        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+  scale_y_continuous(breaks = seq(500,1500,300), limits = c(400,1500)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 
-\section{Question 1}
+The series is clearly non-stationary and presents a change point around 1998 (black vertical line). For this reason, studying it fitting a local level model seems a good idea.
 
-Let's consider to model the series with a random walk plus noise (or local level) model, a time-invariant DLM with univariate Gaussian observation and state process, i.e. $\underset{1 \times 1}{Y_t}$ and $\underset{1 \times 1}{\theta_t}$, and with constant system matrices $F=1, G=1$:
+\subsection{Question 1}
 
+Let's indeed model the series with a random walk plus noise (or local level) model, a time-invariant DLM with univariate Gaussian observation and state process, i.e. $\underset{1 \times 1}{Y_t}$ and $\underset{1 \times 1}{\theta_t}$, and with constant system matrices $\underset{1 \times 1}F=1$ and $\underset{1 \times 1}G=1$:
 \begin{eqnarray*} 
-Y_t &= \theta_t + v_t \quad    & v_t \overset{i.i.d.}\sim N(0, 15100)\\
-\theta_t &= \theta_{t-1} + w_t \quad   & v_t \overset{i.i.d.}\sim N(0, 1470)
+& Y_t = \theta_t + v_t \quad            & v_t \overset{i.i.d.}\sim N(0, 15100) \\
+& \theta_t = \theta_{t-1} + w_t \quad   & v_t \overset{i.i.d.}\sim N(0, 1470)
 \end{eqnarray*}
+where the variances of both processes are constant and set at $V=\sigma^2_v=15100$ and $W=\sigma^2_w=1470$ respectively.
 
-where variances of these processes are constant and set at $V=\sigma^2_v=15100$ $W=\sigma^2_w=1470$. The initial distribution as well is assumed to be Gaussian with parameters $m_0=1000$ and $C_0=1000$.
+The prior distribution is also assumed to be Gaussian with parameters $m_0=1000$ and $C_0=1000$, that is:
+\begin{align*} 
+\theta_0 \sim N(1000, 1000)
+\end{align*}
 
-Our goal is to compute the filtering states esimates $m_t = \E (\theta_t | y_{1:t})$ obtained by implementing the Kalman filter. Particularly, we recall that the Kalman filter procedure, given the \textit{filtering distribution} in the previous iteration, $\theta_{t-1} \mid \sim N(m_{t-1},C_{t-1})$, is divided in the following three steps:
+Our first goal is to compute the \textit{filtering states estimates} $m_t =\mathbb{E}\;(\theta_t \mid y_{1:t})$ obtained by implementing the Kalman filter. In particular, we recall that the Kalman filter procedure, given the \textit{filtering distribution} in the previous iteration, $\theta_{t-1} \mid \sim N(m_{t-1},C_{t-1})$, follows three steps:
+
 \begin{itemize}
 \item State forecasting step: 
-$$ \theta_t \mid y_{1:t-1} \sim N(a_t, R_t), \quad \mbox{state prediction}$$
+$\theta_t \mid y_{1:t-1} \sim N(a_t, R_t), \quad \mbox{state prediction}$
 \item Observation forecasting step:
-$$ Y_t \mid y_{1:t-1} \sim N(f_t, Q_t), \quad \mbox{observation prediction}$$
-
+$Y_t \mid y_{1:t-1} \sim N(f_t, Q_t), \quad \mbox{observation prediction}$
 \item Filtering step: once $y_t$ becomes available
-$$ \theta_t \mid y_{1:t} \sim N(m_t, C_t), \quad \mbox{filtering distribution}. 
- $$
+$\theta_t \mid y_{1:t} \sim N(m_t, C_t), \quad \mbox{filtering distribution}.$
 \end{itemize}
- 
+
 ```{r}
 # Polinomial specification of the RW + noise
 rw_Nile <- dlmModPoly(order=1,dV=15100, dW=1470, m0=1000, C0=1000)
@@ -131,129 +124,115 @@ filt_Nile <- dlmFilter(Nile,rw_Nile)
 # Remove the first item (m_0) in the vector of filtered states
 filt_est=dropFirst(filt_Nile$m)
 
-#compute the vector of state variances from the Singular Variance Decomposition matrices
+# Compute the vector of state variances from the Singular Variance Decomposition matrices
 list_c <- dlmSvd2var(filt_Nile$U.C, filt_Nile$D.C)
 
 # Compute standard deviations
 vol_C <- sqrt(unlist(list_c))
 
 ```
+\medskip
 
-We report in Figure \ref{fig:filtering states estimates} the filtering estimates $(m_1, \ldots, m_T)$ (red line) together with the observed series (blue line).Notice that the initial guess on the location parameter of the state distribution, $m_0$, is to be removed from the series of states estimates and, therefore, it is not included in the plot. 
+We report in Figure \ref{fig:filter_est} the \textit{filtering states estimates} $(m_1, \ldots, m_T)$ (red line) together with the observed series (black line).
+Note that the initial guess on the location parameter of the state distribution, $m_0$, has to be removed from the series of states estimates and is, therefore, not included in the plot. 
+\bigskip
 
-```{r, fig.width=6, fig.height=4, fig.cap="\\label{fig:filtering states estimates} Filtering states estimates"}
+```{r, fig.width=5, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
+# Df
+df_Nile_filt <-data.frame(years_Nile, Nile, filt_est)
 
-df_nile_filt <-data.frame(years_Nile, Nile, filt_est)
-   
-ggplot(df_nile_filt, aes(x=years_Nile)) +
-  geom_line(aes(y=Nile), color = "steelblue") +
-  geom_line(aes(y=filt_est), color = "red")+
-  geom_vline(xintercept = as.Date('1899/01/01'), color= "black")+
-  theme_classic(base_size=9) +
-  theme(plot.title=element_text(hjust=0.5)) +
-  labs(y="10^8 m^3", x="Year") +
-  scale_x_date(date_breaks="20 years",
-               date_minor_breaks="10 year",
-               limits=as.Date(c('1871_01_01','1970_01_01'),
-                              tryFormats=c("%Y_%m_%d"),
-                              optional=FALSE),
+# Plot
+ggplot(df_Nile_filt, aes(x=years_Nile)) +
+  geom_line(aes(y=Nile), color="black", size=0.4) +
+  geom_line(aes(y=filt_est), color = "red", size=0.4) +
+  geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
+  theme_classic(base_size=9.5) +
+  labs(x="Year", y="State level") +
+  scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
-  scale_y_continuous(breaks = seq(0,1500,300), limits = c(300,1500)) +
-  theme(axis.text.x=element_text(hjust=1),
-        plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
-        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+  scale_y_continuous(breaks = seq(500,1500,300), limits = c(400,1500)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 
-We now compute the filtering variances $(C_1, \ldots, C_T)$, that in principle could be determined through the recursive formulas of Kalman filter. However, due to potential numerical issues in the application of such recursive approach, the computation of state variances relies on the Singular Value Decomposition procedure. In Figure \ref{Fig:standard deviations} we report the standard deviations $\sqrt{C_{t}} = V(\theta_t | y_{1:t-1})^{\frac{1}{2}}$. 
+Then, we compute the \textit{filtering variances} $(C_1, \ldots, C_T)$.
+In principle, they could be computed through the recursive formulas of Kalman filter. However, due to potential numerical issues in the application of such recursive approach, the computation of state variances relies on the Singular Value Decomposition procedure.
+
+In Figure \ref{fig:filter_sd} we report the filtered standard deviations $\sqrt{C_{t}} = V(\theta_t \mid y_{1:t-1})^{\frac{1}{2}}$. 
+\bigskip
 
 ```{r}
 vol_C_plot <- vol_C[2:101]
-
-# vol_C_plot<-dropFirst(vol_C)
 ```
 
-Interestingly, the filterd standard deviations are increasing at  a decreasing pace until converging to a limit value equal to `r round(vol_C_plot[7], 2)` after six iterations.
+```{r, fig.width=5, fig.height=2, fig.cap="\\label{fig:filter_sd} Standard deviations of states estimates"}
 
-```{r, fig.width=6, fig.height=4, fig.cap="\\label{Fig:standard deviations} Standard deviations of states estimates"}
-
-df_nile_sd <-data.frame(years_Nile, vol_C_plot)
+df_Nile_sd <-data.frame(years_Nile, vol_C_plot)
    
- ggplot(df_nile_sd, aes(x=years_Nile))+
-  geom_line(aes(y=vol_C_plot), color = "steelblue") +
-  geom_vline(xintercept = as.Date('1899/01/01'), color= "black")+
-  theme_classic(base_size=9) +
-  theme(plot.title=element_text(hjust=0.5)) +
-  labs(y="", x="Year") +
-  scale_x_date(date_breaks="20 years",
-               date_minor_breaks="10 year",
-               limits=as.Date(c('1871_01_01','1970_01_01'),
-                              tryFormats=c("%Y_%m_%d"),
-                              optional=FALSE),
+ ggplot(df_Nile_sd, aes(x=years_Nile))+
+  geom_line(aes(y=vol_C_plot), color = "darkgreen", size=0.4) +
+  geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
+  theme_classic(base_size=9.5) +
+  labs(x="Year", y="Standard deviation") +
+  scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
-  scale_y_continuous(breaks = seq(0,100,10), limits = c(0,100)) +
-  theme(axis.text.x=element_text(hjust=1),
-        plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
-        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+  scale_y_continuous(breaks = seq(40,70,10), limits = c(40,70)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 
+Interestingly, the filtered standard deviations are increasing at a decreasing pace until converging to a limit value equal to `r round(vol_C_plot[7], 2)` after six iterations.
 
-Finally, we compute the $1 - \alpha$ Bayesian credible intervals for the filtering states estimates, which are given by:
-
+Finally, we compute the $(1-\alpha)$ Bayesian credible intervals for the filtering state estimates, which are given by:
 \begin{align*}
-[ m_t - Z_{1 - \frac{\alpha}{2}} \sqrt{C_{t}}, \quad m_t - Z_{1 - \frac{\alpha}{2}}\sqrt{C_{t}} ]
+\bigg[ m_t - Z_{1 - \frac{\alpha}{2}} \sqrt{C_{t}}, \quad m_t - Z_{1 - \frac{\alpha}{2}}\sqrt{C_{t}} \bigg]
 \end{align*}
+with $\alpha=0.05$.
 
-with $\alpha = 0.05$. We report in Figure \ref{Filtering_est_ci} the filtering estimates with the credible intervals. 
+We plot in Figure \ref{fig:filter_est_ci} the observations with their filtering state estimates and their 95% level credible intervals.
+\bigskip
 
-```{r, fig.width=6, fig.height=4, fig.cap="\\label{Filtering_est_ci} Filtering estimates with credible intervals"}
+```{r, fig.width=5, fig.height=2.5, fig.cap="\\label{fig:filter_est_ci} Filtering estimates with credible intervals"}
 
 upper <- filt_est + 1.96*vol_C_plot 
 lower <- filt_est - 1.96*vol_C_plot 
 
-df_nile_ci <-data.frame(years_Nile, Nile, filt_est, upper, lower)
+df_Nile_ci <-data.frame(years_Nile, Nile, filt_est, upper, lower)
    
- ggplot(df_nile_sd, aes(x=years_Nile))+
-  geom_line(aes(y=Nile), color = "steelblue") +
-  geom_line(aes(y=filt_est), color = "red") +
-  geom_line(aes(y=upper), color = "red", linetype = "dashed" )+
-  geom_line(aes(y=lower), color = "red", linetype = "dashed")+
-  geom_vline(xintercept = as.Date('1899/01/01'), color= "black")+
-  theme_classic(base_size=9) +
-  theme(plot.title=element_text(hjust=0.5)) +
-  labs(y="", x="Year") +
-  scale_x_date(date_breaks="20 years",
-               date_minor_breaks="10 year",
-               limits=as.Date(c('1871_01_01','1970_01_01'),
-                              tryFormats=c("%Y_%m_%d"),
-                              optional=FALSE),
+ ggplot(df_Nile_sd, aes(x=years_Nile))+
+  geom_line(aes(y=Nile), color = "black", size=0.3) +
+  geom_line(aes(y=filt_est), color = "red", size=0.5) +
+  geom_line(aes(y=upper), color = "red", linetype = "dashed", size=0.3) +
+  geom_line(aes(y=lower), color = "red", linetype = "dashed", size=0.3) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=.1, fill="red") +
+  geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
+  theme_classic(base_size=9.5) +
+  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')')) +
+  scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
-  scale_y_continuous(breaks = seq(0,1500,300), limits = c(300,1500)) +
-  theme(axis.text.x=element_text(hjust=1),
-        plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
-        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+  scale_y_continuous(breaks = seq(500,1500,300), limits = c(400,1500)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 
-\newpage
-\section{Question 2}
+\subsection{Question 2}
 
-We now plot in Figure \ref{Fig:Forecast with ci} along with the data the one-step ahead forecasts for the observation process (green line), i.e. $\hat{y}_{t}=\E{Y_{t} | y_{1:t-1}}=f_t$, where $f_t$ is the location parameter of the observation's forecast distribution. We plot also the credible interval at $1-\alpha$ level that are given by:
+We now plot in Figure \ref{fig:forecast_ci} the Nile time series alongside with the one-step-ahead forecasts for the observation process (blue line), i.e. $\hat{y}_{t}=\mathbb{E}\;({Y_{t} \mid y_{1:t-1})}=f_t$, where $f_t$ is the location parameter of the observation's forecast distribution and the relative credible intervals. The credible intervals at the $(1-\alpha)$ level are given by:
 
 \begin{align*}
-[ f_t - Z_{1 - \frac{\alpha}{2}} \sqrt{Q_{t}}, \quad f_t - Z_{1 - \frac{\alpha}{2}}\sqrt{Q_{t}} ]
+\bigg[ f_t - Z_{1 - \frac{\alpha}{2}} \sqrt{Q_{t}}, \quad f_t - Z_{1 - \frac{\alpha}{2}}\sqrt{Q_{t}} \bigg]
 \end{align*}
 
 with $\alpha=0.05$.
 
-The variances $Q_t's$ are just a byproduct of the procedure outlined in Question 1. Indeed, they are obtained as
+The variances $Q_t's$ are just a byproduct of the procedure outlined in Question 1. Indeed, they are obtained as:
 
 \begin{align*}
 Q_t = F_t \, R_t \, F_{t}'+ V_t = C_{t-1}+\sigma_{v}^2+\sigma_{w}^2
 \end{align*}
 
 with $F_t=1$.
+\bigskip
 
 ```{r}
 # Create the vector of means for the observation process.
@@ -269,33 +248,179 @@ upper_for <- mean_forecast + 1.96*sqrt(filt_Q)
 lower_for <- mean_forecast - 1.96*sqrt(filt_Q) 
 ```
 
-```{r, fig.width=6, fig.height=4, fig.cap="\\label{Fig:Forecast with ci} One-step ahead forecasts with credible intervals"}
+```{r, fig.width=5, fig.height=2.5, fig.cap="\\label{fig:forecast_ci} One-step ahead forecasts with credible intervals"}
+# Df
+df_Nile_for <-data.frame(years_Nile, Nile, mean_forecast, upper_for, lower_for)
 
-df_nile_for <-data.frame(years_Nile, Nile, mean_forecast, upper_for, lower_for)
-   
- ggplot(df_nile_for, aes(x=years_Nile))+
-  geom_line(aes(y=Nile), color = "steelblue") +
-  geom_line(aes(y=mean_forecast), color = "green") +
-  geom_line(aes(y=upper_for), color = "green", linetype = "dashed" )+
-  geom_line(aes(y=lower_for), color = "green", linetype = "dashed")+
-  geom_vline(xintercept = as.Date('1899/01/01'), color= "black")+
-  theme_classic(base_size=9) +
-  theme(plot.title=element_text(hjust=0.5)) +
-  labs(y="", x="Year") +
-  scale_x_date(date_breaks="20 years",
-               date_minor_breaks="10 year",
-               limits=as.Date(c('1871_01_01','1970_01_01'),
-                              tryFormats=c("%Y_%m_%d"),
-                              optional=FALSE),
+# Plot
+ggplot(df_Nile_for, aes(x=years_Nile)) +
+  geom_line(aes(y=Nile), color = "black", size=0.3) +
+  geom_line(aes(y=mean_forecast), color = "blue", size=0.5) +
+  geom_line(aes(y=upper_for), color = "blue", linetype = "dashed", size=0.3) +
+  geom_line(aes(y=lower_for), color = "blue", linetype = "dashed", size=0.3) +
+  geom_ribbon(aes(ymin=lower_for, ymax=upper_for), alpha=.1, fill="blue") +
+  geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
+  theme_classic(base_size=9.5) +
+  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')')) +
+  scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
-  scale_y_continuous(breaks = seq(0,1500,300), limits = c(300,1500)) +
-  theme(axis.text.x=element_text(hjust=1),
-        plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
-        axis.title.x=element_text(family="Times", margin=margin(t=5)),
+  scale_y_continuous(breaks = seq(500,1500,300), limits = c(400,1500)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 
-\newpage
-\section{Question 3}
+\subsection{Question 3}
 
-The behavior of the process $(Y_t)$ is highly influenced by the ratio between the two error variances, $r = \frac{W}{V}$, which is called the *signal-to-noise ratio. For any given $C_0$, if it is small, $K_t$ is small and as a consequence $y_t$ receives little weight. On the contrary, if it is large, $y_t$ receives high weight abd the one-step-ahead forecast is close to the most recent data point.  
+The behavior of the process $(Y_t)$ is highly influenced by the ratio between the evolution and the observations error variances, $r=\frac{W}{V}=\frac{\sigma^2_w}{\sigma^2_v}$, that is the so-called \textit{signal-to-noise ratio}.
+
+For any given $C_0$, if the \textit{signal-to-noise ratio} is small, $K_t$ is small and as a consequence $y_t$ receives little weight. On the contrary, if the ratio is large, $y_t$ receives large weight and the one-step-ahead forecast is close to the most recent data point.
+
+We repeat the same analysis of Questions 1 and 2 choosing two different values for the abovementioned process variances in order to find evidence that this is actually the case.
+\bigskip
+
+\textbf{1. Model specification}
+
+Let's consider the following random walk plus noise model:
+\begin{eqnarray*} 
+& Y_t = \theta_t + v_t \quad            & v_t \overset{i.i.d.}\sim N(0, 2000) \\
+& \theta_t = \theta_{t-1} + w_t \quad   & v_t \overset{i.i.d.}\sim N(0, 8000)
+\end{eqnarray*}
+where, differently from the previous exercise, we have set the process variances equal to $V=\sigma^2_v=2000$ and $W=\sigma^2_w=8000$.
+The \textit{signal-to-noise ratio} is thus $r=\frac{W}{V}=\frac{8000}{2000}=4$.
+
+The prior distribution is the same as before, that is:
+\begin{align*} 
+\theta_0 \sim N(1000, 1000)
+\end{align*}
+
+\textbf{2. Estimation}
+
+Given this model specification, we compute the filtering state estimates $m_t =\mathbb{E}\;(\theta_t \mid y_{1:t})$ for $t=1,2,...,T$ obtained by implementing the Kalman filter. The estimates $(m_1, \ldots, m_T)$ are plotted in Figure \ref{fig:filter_est_2}.
+\bigskip
+
+```{r}
+# Polinomial specification of the RW + noise
+rw_Nile_2 <- dlmModPoly(order=1,dV=2000, dW=8000, m0=1000, C0=1000)
+
+# Kalman filter
+filt_Nile_2 <- dlmFilter(Nile,rw_Nile_2)
+
+# Remove the first item (m_0) in the vector of filtered states
+filt_est_2=dropFirst(filt_Nile_2$m)
+
+# Compute the vector of state variances from the Singular Variance Decomposition matrices
+list_c_2 <- dlmSvd2var(filt_Nile_2$U.C, filt_Nile_2$D.C)
+
+# Compute standard deviations
+vol_C_2 <- sqrt(unlist(list_c_2))
+```
+
+```{r, fig.width=5, fig.height=2, fig.cap="\\label{fig:filter_est_2} Filtering states estimates"}
+# Df
+df_Nile_filt_2 <-data.frame(years_Nile, Nile, filt_est_2)
+
+# Plot
+ggplot(df_Nile_filt_2, aes(x=years_Nile)) +
+  geom_line(aes(y=filt_est_2), color = "red", size=0.4) +
+  geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
+  theme_classic(base_size=9.5) +
+  labs(x="Year", y="State level") +
+  scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous(breaks = seq(500,1500,300), limits = c(400,1500)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+```
+
+The standard deviations $\sqrt{C_{t}} = V(\theta_t \mid y_{1:t-1})^{\frac{1}{2}}$ obtained using the Singular Value Decomposition procedure are reported in Figure \ref{fig:filter_sd_2}.
+\bigskip
+
+```{r}
+# Sd
+vol_C_plot_2 <- vol_C_2[2:101]
+```
+
+```{r, fig.width=5, fig.height=2, fig.cap="\\label{fig:filter_sd_2} Standard deviations of states estimates"}
+# Df
+df_Nile_sd_2 <-data.frame(years_Nile, vol_C_plot_2)
+
+# Plot
+ggplot(df_Nile_sd_2, aes(x=years_Nile)) +
+  geom_line(aes(y=vol_C_plot_2), color = "darkgreen", size=0.4) +
+  geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
+  theme_classic(base_size=9.5) +
+  labs(x="Year", y="Standard deviation") +
+  scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
+               labels=date_format("%Y")) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+```
+
+In Figure \ref{fig:filter_est_ci_2} we plot the 95% level Bayesian credible intervals for the filtering states estimates.
+\bigskip
+
+```{r, fig.width=5, fig.height=2.5, fig.cap="\\label{fig:filter_est_ci_2} Filtering estimates with credible intervals"}
+
+upper_2 <- filt_est_2 + 1.96*vol_C_plot_2 
+lower_2 <- filt_est_2 - 1.96*vol_C_plot_2 
+
+df_Nile_ci_2 <-data.frame(years_Nile, Nile, filt_est_2, upper_2, lower_2)
+   
+ ggplot(df_Nile_sd_2, aes(x=years_Nile))+
+  geom_line(aes(y=Nile), color = "black", size=0.3) +
+  geom_line(aes(y=filt_est_2), color = "red", size=0.5) +
+  geom_line(aes(y=upper_2), color = "red", linetype = "dashed", size=0.3) +
+  geom_line(aes(y=lower_2), color = "red", linetype = "dashed", size=0.3) +
+  geom_ribbon(aes(ymin=lower_2, ymax=upper_2), alpha=.1, fill="red") +
+  geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
+  theme_classic(base_size=9.5) +
+  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')')) +
+  scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous(breaks = seq(400,1600,400), limits = c(250,1700)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+```
+\bigskip
+
+\textbf{3. Forecasting}
+
+Finally, in Figure \ref{fig:forecast_ci_2} we plot Nile time series with the one-step-ahead forecasts, i.e. $\hat{y}_{t}=\mathbb{E}\;({Y_{t} \mid y_{1:t-1})}=f_t$, and the credible intervals at the 95% level.
+\bigskip
+
+```{r}
+# Create the vector of means for the observation process.
+# Notice that here we do not have to remove the first element of the series
+mean_forecast_2 <- filt_Nile_2$f
+
+# Obtain the variance Q
+filt_Q_2 <- unlist(list_c_2) + as.vector(rw_Nile_2$V) + as.vector(rw_Nile_2$W)
+filt_Q_2 <- filt_Q_2[-1]
+
+# Create upper and lower bounds of the credible interval
+upper_for_2 <- mean_forecast_2 + 1.96*sqrt(filt_Q_2) 
+lower_for_2 <- mean_forecast_2 - 1.96*sqrt(filt_Q_2) 
+```
+
+```{r, fig.width=5, fig.height=2.5, fig.cap="\\label{fig:forecast_ci_2} One-step ahead forecasts with credible intervals"}
+# Df
+df_nile_for_2 <-data.frame(years_Nile, Nile, mean_forecast_2, upper_for_2, lower_for_2)
+
+# Plot
+ggplot(df_nile_for_2, aes(x=years_Nile)) +
+  geom_line(aes(y=Nile), color = "black", size=0.3) +
+  geom_line(aes(y=mean_forecast_2), color = "blue", size=0.5) +
+  geom_line(aes(y=upper_for_2), color = "blue", linetype = "dashed", size=0.3) +
+  geom_line(aes(y=lower_for_2), color = "blue", linetype = "dashed", size=0.3) +
+  geom_ribbon(aes(ymin=lower_for_2, ymax=upper_for_2), alpha=.1, fill="blue") +
+  geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
+  theme_classic(base_size=9.5) +
+  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')')) +
+  scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous(breaks = seq(400,1600,400), limits = c(250,1700)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+```
+
+As we expected, \dots
