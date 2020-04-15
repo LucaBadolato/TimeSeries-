@@ -69,16 +69,17 @@ In this exercise we consider the \textbf{Nile} time series, available in R, whic
 We first plot the data in Figure \ref{fig:Nile_plot}.
 \bigskip
 
-```{r, fig.width=5, fig.height=2.5, fig.cap="\\label{fig:Nile_plot}Annual flow of the river Nile at Ashwan"}
+```{r, fig.width=5, fig.height=2, fig.cap="\\label{fig:Nile_plot}Annual flow of the river Nile at Ashwan"}
 # Df
 years_Nile<-seq(as.Date("1871/01/01"),as.Date("1970/01/01"), "years")
 df_Nile<-data.frame(years_Nile,Nile)
 
 # Plot
 ggplot(df_Nile, aes(x=years_Nile, y=Nile)) +
-  geom_line(color="steelblue", size=0.4) +
+  geom_line(color="black", size=0.4) +
   geom_vline(xintercept=as.Date('1899/01/01'), color="black", size=0.3)+
   theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')')) +
   scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
@@ -137,22 +138,27 @@ We report in Figure \ref{fig:filter_est} the \textit{filtering states estimates}
 Note that the initial guess on the location parameter of the state distribution, $m_0$, has to be removed from the series of states estimates and is, therefore, not included in the plot. 
 \bigskip
 
-```{r, fig.width=5, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
+```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
 # Df
 df_Nile_filt <-data.frame(years_Nile, Nile, filt_est)
 
 # Plot
+colors <- c("Observed data" = "black", "Filtering estimates" = "red")
 ggplot(df_Nile_filt, aes(x=years_Nile)) +
-  geom_line(aes(y=Nile), color="black", size=0.4) +
-  geom_line(aes(y=filt_est), color = "red", size=0.4) +
+  geom_line(aes(y=Nile, color="Observed data"), size=0.4) +
+  geom_line(aes(y=filt_est, color = "Filtering estimates"), size=0.4) +
   geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
   theme_classic(base_size=9.5) +
-  labs(x="Year", y="State level") +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="State level", color = "") +
   scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous(breaks = seq(500,1500,300), limits = c(400,1500)) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
+        scale_color_manual(values = colors)+
+        theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
 Then, we compute the \textit{filtering variances} $(C_1, \ldots, C_T)$.
@@ -168,11 +174,12 @@ vol_C_plot <- vol_C[2:101]
 ```{r, fig.width=5, fig.height=2, fig.cap="\\label{fig:filter_sd} Standard deviations of states estimates"}
 
 df_Nile_sd <-data.frame(years_Nile, vol_C_plot)
-   
+
  ggplot(df_Nile_sd, aes(x=years_Nile))+
   geom_line(aes(y=vol_C_plot), color = "darkgreen", size=0.4) +
   geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
   theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Standard deviation") +
   scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
@@ -192,27 +199,32 @@ with $\alpha=0.05$.
 We plot in Figure \ref{fig:filter_est_ci} the observations with their filtering state estimates and their 95% level credible intervals.
 \bigskip
 
-```{r, fig.width=5, fig.height=2.5, fig.cap="\\label{fig:filter_est_ci} Filtering estimates with credible intervals"}
+```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est_ci} Filtering estimates with credible intervals"}
 
 upper <- filt_est + 1.96*vol_C_plot 
 lower <- filt_est - 1.96*vol_C_plot 
 
 df_Nile_ci <-data.frame(years_Nile, Nile, filt_est, upper, lower)
    
+colors <- c("Observed data" = "black", "Filtering estimates" = "red")
+
  ggplot(df_Nile_sd, aes(x=years_Nile))+
-  geom_line(aes(y=Nile), color = "black", size=0.3) +
-  geom_line(aes(y=filt_est), color = "red", size=0.5) +
+  geom_line(aes(y=Nile, color = "Observed data"), size=0.3) +
+  geom_line(aes(y=filt_est, color = "Filtering estimates with C.I."), size=0.5) +
   geom_line(aes(y=upper), color = "red", linetype = "dashed", size=0.1) +
   geom_line(aes(y=lower), color = "red", linetype = "dashed", size=0.1) +
   geom_ribbon(aes(ymin=lower, ymax=upper), alpha=.1, fill="red") +
   geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
   theme_classic(base_size=9.5) +
-  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')')) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')'), color = "") +
   scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous(breaks = seq(500,1500,300), limits = c(400,1500)) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
+        theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
 \subsection{Question 2}
@@ -248,25 +260,30 @@ upper_for <- mean_forecast + 1.96*sqrt(filt_Q)
 lower_for <- mean_forecast - 1.96*sqrt(filt_Q) 
 ```
 
-```{r, fig.width=5, fig.height=2.5, fig.cap="\\label{fig:forecast_ci} One-step ahead forecasts with credible intervals"}
+```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:forecast_ci} One-step ahead forecasts with credible intervals"}
 # Df
 df_Nile_for <-data.frame(years_Nile, Nile, mean_forecast, upper_for, lower_for)
 
+colors <- c("Observed data" = "black", "Forecast with C.I." = "blue")
+
 # Plot
 ggplot(df_Nile_for, aes(x=years_Nile)) +
-  geom_line(aes(y=Nile), color = "black", size=0.3) +
-  geom_line(aes(y=mean_forecast), color = "blue", size=0.5) +
+  geom_line(aes(y=Nile, color = "Observed data"), size=0.3) +
+  geom_line(aes(y=mean_forecast, color = "Forecast with C.I."), size=0.5) +
   geom_line(aes(y=upper_for), color = "blue", linetype = "dashed", size=0.1) +
   geom_line(aes(y=lower_for), color = "blue", linetype = "dashed", size=0.1) +
   geom_ribbon(aes(ymin=lower_for, ymax=upper_for), alpha=.1, fill="blue") +
   geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
   theme_classic(base_size=9.5) +
-  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')')) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')'), color = "") +
   scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous(breaks = seq(500,1500,300), limits = c(400,1500)) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
+      theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
 \subsection{Question 3}
@@ -293,7 +310,7 @@ The adaptive coefficient, that clearly depends on the signal-to-noise ratio, is 
 
 where $(y_t - a_t)$ is, in fact, the error correction.
 
-Therefore ,for any given $C_0$, if the signal-to-noise ratio is small, $K_t$ is small and as a consequence $y_t$ receives little weight as error correction. On the contrary, if the ratio is large, $y_t$ receives large weight and the one-step-ahead forecast is close to the most recent data point.
+Therefore, for any given $C_0$, if the signal-to-noise ratio is small, $K_t$ is small and as a consequence $y_t$ receives little weight as error correction. On the contrary, if the ratio is large, $y_t$ receives large weight and the one-step-ahead forecast is close to the most recent data point.
 
 We repeat the same analysis of Questions 1 and 2 choosing two different values for the abovementioned variances in order to find evidence that this is actually the case.
 \bigskip
@@ -344,6 +361,7 @@ ggplot(df_Nile_filt_2, aes(x=years_Nile)) +
   geom_line(aes(y=filt_est_2), color = "red", size=0.4) +
   geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
   theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="State level") +
   scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
@@ -369,6 +387,7 @@ ggplot(df_Nile_sd_2, aes(x=years_Nile)) +
   geom_line(aes(y=vol_C_plot_2), color = "darkgreen", size=0.4) +
   geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
   theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Standard deviation") +
   scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
@@ -379,27 +398,32 @@ ggplot(df_Nile_sd_2, aes(x=years_Nile)) +
 In Figure \ref{fig:filter_est_ci_2} we plot the 95% level Bayesian credible intervals for the filtering states estimates.
 \bigskip
 
-```{r, fig.width=5, fig.height=2.5, fig.cap="\\label{fig:filter_est_ci_2} Filtering estimates with credible intervals"}
+```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est_ci_2} Filtering estimates with credible intervals"}
 
 upper_2 <- filt_est_2 + 1.96*vol_C_plot_2 
 lower_2 <- filt_est_2 - 1.96*vol_C_plot_2 
 
 df_Nile_ci_2 <-data.frame(years_Nile, Nile, filt_est_2, upper_2, lower_2)
-   
+
+colors <- c("Observed data" = "black", "Filtering estimates with C.I." = "red")
+
  ggplot(df_Nile_sd_2, aes(x=years_Nile))+
-  geom_line(aes(y=Nile), color = "black", size=0.3) +
-  geom_line(aes(y=filt_est_2), color = "red", size=0.5) +
+  geom_line(aes(y=Nile, color = "Observed data"), size=0.3) +
+  geom_line(aes(y=filt_est_2, color = "Filtering estimates with C.I."), size=0.5) +
   geom_line(aes(y=upper_2), color = "red", linetype = "dashed", size=0.1) +
   geom_line(aes(y=lower_2), color = "red", linetype = "dashed", size=0.1) +
   geom_ribbon(aes(ymin=lower_2, ymax=upper_2), alpha=.1, fill="red") +
   geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
   theme_classic(base_size=9.5) +
-  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')')) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')'), color = "") +
   scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous(breaks = seq(400,1600,400), limits = c(250,1700)) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
+      theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 \bigskip
 
@@ -422,25 +446,30 @@ upper_for_2 <- mean_forecast_2 + 1.96*sqrt(filt_Q_2)
 lower_for_2 <- mean_forecast_2 - 1.96*sqrt(filt_Q_2) 
 ```
 
-```{r, fig.width=5, fig.height=2.5, fig.cap="\\label{fig:forecast_ci_2} One-step ahead forecasts with credible intervals"}
+```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:forecast_ci_2} One-step ahead forecasts with credible intervals"}
 # Df
 df_nile_for_2 <-data.frame(years_Nile, Nile, mean_forecast_2, upper_for_2, lower_for_2)
 
+colors <- c("Observed data" = "black", "Forecast with C.I." = "blue")
+
 # Plot
 ggplot(df_nile_for_2, aes(x=years_Nile)) +
-  geom_line(aes(y=Nile), color = "black", size=0.3) +
-  geom_line(aes(y=mean_forecast_2), color = "blue", size=0.5) +
+  geom_line(aes(y=Nile, color = "Observed data"), size=0.3) +
+  geom_line(aes(y=mean_forecast_2, color = "Forecast with C.I."), size=0.5) +
   geom_line(aes(y=upper_for_2), color = "blue", linetype = "dashed", size=0.1) +
   geom_line(aes(y=lower_for_2), color = "blue", linetype = "dashed", size=0.1) +
   geom_ribbon(aes(ymin=lower_for_2, ymax=upper_for_2), alpha=.1, fill="blue") +
   geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
   theme_classic(base_size=9.5) +
-  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')')) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')'), color = "") +
   scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous(breaks = seq(400,1600,400), limits = c(250,1700)) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
+      theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
 As we could expect, a low signal-to-noise ratio (as of Figures \ref{fig:filter_est_ci} and \ref{fig:forecast_ci}) implies a rather smooth state process (the signal) against rather imprecise observation process (the noise). On the contrary, a high signal-to-noise ratio (as in Figures \ref{fig:filter_est_ci_2} and \ref{fig:forecast_ci_2}) implies a noisy state process against a rather precise observation process.
