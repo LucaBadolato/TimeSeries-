@@ -230,19 +230,15 @@ colors <- c("Observed data" = "black", "Filtering estimates" = "red")
 \subsection{Question 2}
 
 We now plot in Figure \ref{fig:forecast_ci} the Nile time series alongside with the one-step-ahead forecasts for the observation process (blue line), i.e. $\hat{y}_{t}=\mathbb{E}\;({Y_{t} \mid y_{1:t-1})}=f_t$, where $f_t$ is the location parameter of the observation's forecast distribution. The credible intervals is also showed, where the credible intervals at the $(1-\alpha)$ level are given by:
-
 \begin{align*}
 \bigg[ f_t - Z_{1 - \frac{\alpha}{2}} \sqrt{Q_{t}}, \quad f_t - Z_{1 - \frac{\alpha}{2}}\sqrt{Q_{t}} \bigg]
 \end{align*}
-
 with $\alpha=0.05$.
 
 The variances $Q_t's$ are just a byproduct of the procedure outlined in Question 1. Indeed, they are obtained as:
-
 \begin{align*}
 Q_t = F_t \, R_t \, F_{t}'+ V_t = C_{t-1}+\sigma_{v}^2+\sigma_{w}^2
 \end{align*}
-
 with $F_t=1$.
 \bigskip
 
@@ -291,23 +287,18 @@ ggplot(df_Nile_for, aes(x=years_Nile)) +
 The behavior of the process $(Y_t)$ is highly influenced by the ratio between the variances of the state and the observations error, $r=\frac{W}{V}=\frac{\sigma^2_w}{\sigma^2_v}$, that is the so-called \textit{signal-to-noise ratio}.
 
 Let us now define the \textit{adaptive coefficient}, $K_t$, as
-
 \begin{align*}
   K_t = R_t F'_t Q_t^{-1}
 \end{align*}
-
 which in our simplified case is just
-
 \begin{align*}
-  K_t = \frac{R_t}{R_t + \sigma_{v}^{2}} = \frac{C_{t-1}+\sigma_{w}^{2}}{C_{t-1}+\sigma_{w}^{2}+\sigma_{v}^{2}}
+K_t = \frac{R_t}{R_t + \sigma_{v}^{2}} = \frac{C_{t-1}+\sigma_{w}^{2}}{C_{t-1}+\sigma_{w}^{2}+\sigma_{v}^{2}}
 \end{align*}
 
 The adaptive coefficient, that clearly depends on the signal-to-noise ratio, is the weight associated to the error correction in the equation of the posterior mean obtained at the filtering step of the Kalman filter, i.e.
-
 \begin{align*}
   m_t = a_t + K_t (y_t - a_t)
 \end{align*}
-
 where $(y_t - a_t)$ is, in fact, the error correction.
 
 Therefore, for any given $C_0$, if the signal-to-noise ratio is small, $K_t$ is small and as a consequence $y_t$ receives little weight as error correction. On the contrary, if the ratio is large, $y_t$ receives large weight and the one-step-ahead forecast is close to the most recent data point.
@@ -323,7 +314,7 @@ Let's consider the following random walk plus noise model:
 & \theta_t = \theta_{t-1} + w_t \quad   & v_t \overset{i.i.d.}\sim N(0, 8000)
 \end{eqnarray*}
 where, differently from the previous exercise, we set the process variances equal to $V=\sigma^2_v=2000$ and $W=\sigma^2_w=8000$.
-The \textit{signal-to-noise ratio} is thus $r=\frac{W}{V}=\frac{8000}{2000}=4$, whereas with the original data it was only $r=\frac{W}{V}=\frac{1470}{15100}=0.097$.
+The \textit{signal-to-noise ratio} is thus $r=\frac{W}{V}=\frac{8000}{2000}=4$, whereas with the original data it was only $r=\frac{W}{V}=\frac{1470}{15100} \simeq 0.097$.
 
 The prior distribution is the same as before, that is:
 \begin{align*} 
@@ -425,7 +416,7 @@ colors <- c("Observed data" = "black", "Filtering estimates with C.I." = "red")
       theme(legend.justification = c("left", "top"),
               legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
-\bigskip
+\newpage
 
 \textbf{3. Forecasting}
 
@@ -467,12 +458,13 @@ ggplot(df_nile_for_2, aes(x=years_Nile)) +
                labels=date_format("%Y")) +
   scale_y_continuous(breaks = seq(400,1600,400), limits = c(250,1700)) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
-      theme(legend.justification = c("left", "top"),
-              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+  theme(legend.justification = c("left", "top"),
+        legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
-As we could expect, a low signal-to-noise ratio (as of Figures \ref{fig:filter_est_ci} and \ref{fig:forecast_ci}) implies a rather smooth state process (the signal) against rather imprecise observation process (the noise). On the contrary, a high signal-to-noise ratio (as in Figures \ref{fig:filter_est_ci_2} and \ref{fig:forecast_ci_2}) implies a noisy state process against a rather precise observation process.
-Moreover, comparing figures from Questions 1 and 2 with those from Question 3, we notice that credible intervals have been affected as well by the change in the signal-to-noise ratio. That is not only due to $m_t$ (and consequently $f_t$) being affected by variances'change through the adaptive coefficient, as just explained, but also due to the the variances $C_t$ and $Q_t$.
+As expected, a low signal-to-noise ratio (as of Figures \ref{fig:filter_est_ci} and \ref{fig:forecast_ci}, for which the ratio is $r \simeq 0.097$) implies a rather smooth state process (the signal) against rather imprecise observation process (the noise). On the other side, a high signal-to-noise ratio (as in Figures \ref{fig:filter_est_ci_2} and \ref{fig:forecast_ci_2}, for which the ratio is $r = 4$) implies a noisy state process against a rather precise observation process.
+
+Moreover, comparing figures from Questions 1 and 2 with those from Question 3, we notice that credible intervals have been affected as well by the change in the signal-to-noise ratio. This is not only due to $m_t$ (and consequently $f_t$) being affected by the variances' change through the adaptive coefficient, as just explained, but also to the variances $C_t$ and $Q_t$.
 
 Finally, comparing Figures \ref{fig:filter_sd} and \ref{fig:filter_sd_2}, we notice once again that the filtered standard deviation, $\sqrt{C_t}$ in the latter converges at a lower limit level than in the former (doing so also with a higher speed of convergence).
