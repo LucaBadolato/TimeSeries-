@@ -466,4 +466,5 @@ ggplot(df_nile_for_2, aes(x=years_Nile)) +
 As expected, a low signal-to-noise ratio (as of Figures \ref{fig:filter_est_ci} and \ref{fig:forecast_ci}, for which the ratio is $r \simeq 0.097$) implies a rather smooth state process (the signal) against rather imprecise observation process (the noise). On the other side, a high signal-to-noise ratio (as in Figures \ref{fig:filter_est_ci_2} and \ref{fig:forecast_ci_2}, for which the ratio is $r = 4$) implies a noisy state process against a rather precise observation process.
 
 Moreover, comparing figures from Questions 1 and 2 with those from Question 3, we notice that credible intervals have been affected as well by the change in the signal-to-noise ratio. This is not only due to $m_t$ (and consequently $f_t$) being affected by the variances' change through the adaptive coefficient, as just explained, but also to the variances $C_t$ and $Q_t$.
+
 Finally, comparing Figures \ref{fig:filter_sd} and \ref{fig:filter_sd_2}, we notice once again that the filtered standard deviation, $\sqrt{C_t}$ in the latter converges at a lower limit level than in the former (doing so also with a higher speed of convergence).
