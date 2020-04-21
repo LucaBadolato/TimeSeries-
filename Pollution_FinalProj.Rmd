@@ -12,8 +12,7 @@ bibliography: References.bib
 header-includes:
   \usepackage[utf8]{inputenc}
   \usepackage{setspace}
-  \setlength{\parskip}{\medskipamount}
-  \setlength{\parindent}{0cm}
+  \usepackage{parskip}
   \usepackage{apacite}
   \usepackage{natbib}
   \usepackage{algpseudocode}
@@ -39,6 +38,9 @@ header-includes:
   \definecolor{orange}{RGB}{255,165,0}
   \DeclareMathOperator*{\E}{\mathbb{E}}
   \DeclareMathOperator*{\Ec}{\mathbb{E}_t}
+  \setlength{\parindent}{0pt}
+  \setlength\parskip{1.0pt}
+  
 ---
 
 ```{r, include=FALSE}
@@ -264,7 +266,7 @@ Finally, we find the "optimal" state sequence associated with the observed $\tex
 estStates_SO2 <- posterior(fmodel_SO2)
 ```
 
-```{r, fig.width=7, fig.height=3, fig.cap="\\label{fig:model_fit_ost_SO2}Optimal state trajectory"}
+```{r, fig.width=7, fig.height=3, out.width='60%', fig.cap="\\label{fig:model_fit_ost_SO2}Optimal state trajectory"}
 
 # Plot the optimal path, that is stored in the first column of estStates
 results_df_SO2 <- data.frame(time_index=louisiana_df$n_weeks,
@@ -286,9 +288,10 @@ plotobj_SO2 <- ggplot(results_df_SO2, aes(time_index, value)) +
   scale_y_continuous(breaks=my_breaks) +
   scale_x_continuous(breaks=seq(0,900,100))+
   theme_classic(base_size=9) +
-  theme(axis.title.x=element_text(family="Times", margin=margin(5,0,0,0)),
+  theme(axis.text=element_text(size=13),
+        axis.title.x=element_text(size=16,family="Times", margin=margin(5,0,0,0)),
         axis.title.y=element_blank(),
-        strip.text.x=element_text(family="Times", face="bold",
+        strip.text.x=element_text(size=16,family="Times", face="bold",
                                   margin=margin(10,0,0,0)),
         strip.background=element_rect(colour="black", fill=NA),
         strip.placement="outside")
@@ -310,7 +313,7 @@ df_to_plot_SO2 %<>%
   mutate(xtime=louisiana_df$n_weeks, yvalue=louisiana_df$weekly_SO2_mean)
 
 ggplot(df_to_plot_SO2, aes(x=xtime, y=yvalue)) +
-  geom_line() +
+  geom_line(size=.2,aplha=.3) +
   geom_point(aes(x=xtime, y=mu_SO2), col="blue", size=.05) +
   geom_ribbon(aes(ymin=mu_SO2-2*sigma_SO2, ymax=mu_SO2+2*sigma_SO2), alpha=.1) +
   theme_classic(base_size=9) +
