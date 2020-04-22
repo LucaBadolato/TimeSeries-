@@ -12,7 +12,6 @@ bibliography: References.bib
 header-includes:
   \usepackage[utf8]{inputenc}
   \usepackage{setspace}
-  \usepackage{parskip}
   \usepackage{apacite}
   \usepackage{natbib}
   \usepackage{algpseudocode}
@@ -38,8 +37,7 @@ header-includes:
   \definecolor{orange}{RGB}{255,165,0}
   \DeclareMathOperator*{\E}{\mathbb{E}}
   \DeclareMathOperator*{\Ec}{\mathbb{E}_t}
-  \setlength{\parindent}{0pt}
-  \setlength\parskip{1.0pt}
+  \setlength\parindent{0pt}
   
 ---
 
@@ -71,7 +69,8 @@ knitr::opts_chunk$set(message = FALSE,
                       echo    = FALSE,
                       include = TRUE,
                       fig.pos = "H",
-                      fig.align = "center")
+                      fig.align = "center",
+                      out.width='60%')
 ```
 
 \abstract{INSERT ABSTRACT HERE}
@@ -111,6 +110,10 @@ knitr::kable(louisiana_df[1:5, 1:5], "latex", booktabs=T,
 
 As explained in above, the four variables are related by a common latent process. Hence, we report in Table \ref{tab:louisiana_corr} their correlation coefficients.
 
+Provided that the correlation between pollutants show significant differences in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution [@Logan1981], a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field [@Voulgarakis2011].
+
+Other studies report that, in the US, $\text{O}_3$ is on average positively correlated with $\text{NO}_2$, which is opposite to our empirical findings about Louisiana, where they are slightly negatively correlated. A possible explanation can be given by substitution effects: an increase of nitrogen dioxide levels can be associated to the use of more fossil fuels that produce $\text{NO}_2$ instead of others. This might be related to Louisiana's fixed effects, however further rasearches would be beyond the purpose of our study.
+
 ```{r}
 # Correlation plot
 datacor = subset(louisiana_df, select=c(weekly_O3_mean, weekly_NO2_mean, weekly_CO_mean, weekly_SO2_mean))
@@ -131,13 +134,10 @@ knitr::kable(cormat, "latex", booktabs=T, align="c", escape=F,
 kable_styling(latex_options="hold_position")
 ```
 
-Provided that the correlation between pollutants show significant differences in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution [@Logan1981], a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field [@Voulgarakis2011].
-
-Other studies report that, in the US, $\text{O}_3$ is on average positively correlated with $\text{NO}_2$, which is opposite to our empirical findings about Louisiana, where they are slightly negatively correlated. A possible explanation can be given by substitution effects: an increase of nitrogen dioxide levels can be associated to the use of more fossil fuels that produce $\text{NO}_2$ instead of others. This might be related to Louisiana's fixed effects, however further rasearches would be beyond the purpose of our study.
 
 We plot in Figure \ref{fig:louisiana_plots} the time series for the four pollutants under study to give a first qualitative description of the phenomenon.
 
-```{r, fig.width=20, fig.height=6, fig.cap="\\label{fig:louisiana_plots} Air pollution in the state of Louisiana"}
+```{r, fig.width=20, fig.height=6, out.width='100%', fig.cap="\\label{fig:louisiana_plots} Air pollution in the state of Louisiana"}
 
 # Time series plot
 O3 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_O3_mean)) +
@@ -145,49 +145,61 @@ O3 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_O3_mean)) +
   theme_classic(base_size=9) +
   labs(y=expression(O[3]~(ppm)), x="Week") +
   scale_x_continuous(breaks=seq(0,900,100)) +
-  theme(axis.text=element_text(size=13),
-        axis.title.x=element_text(size=16,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=16,family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=17),
+        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)))
 
 NO2 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_NO2_mean)) +
   geom_line(color="steelblue") +
   theme_classic(base_size=9) +
   labs(y=expression(NO[2]~(ppb)), x="Week") +
   scale_x_continuous(breaks=seq(0,900,100)) +
-  theme(axis.text=element_text(size=13),
-        axis.title.x=element_text(size=16,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=16, family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=17),
+        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=19, family="Times", margin=margin(r=5)))
 
 CO <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_CO_mean)) +
   geom_line(color="steelblue") +
   theme_classic(base_size=9) +
   labs(y=expression(CO~(ppm)), x="Week") +
   scale_x_continuous(breaks=seq(0,900,100)) +
-  theme(axis.text=element_text(size=13),
-        axis.title.x=element_text(size=16,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=16,family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=17),
+        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)))
 
 SO2 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_SO2_mean)) +
   geom_line(color="steelblue") +
   theme_classic(base_size=9) +
   labs(y=expression(SO[2]~(ppb)), x="Week") +
   scale_x_continuous(breaks=seq(0,900,100)) +
-  theme(axis.text=element_text(size=13),
-        axis.title.x=element_text(size=16,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=16,family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=17),
+        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)))
 
 ggarrange(O3, NO2, CO, SO2,
           ncol=2, nrow=2)
 ```
-
-We restrict our attention to the \textbf{sulfur dioxide $\text{SO}_{2}$} data.
-
-The time series does not look stationary and several change points characterize the plot. Indeed the mean of the series change over the years. Therefore, it is not possible to analyse it with the well-known ARMA models, which require stationarity. A suitable class of models for these cases is given by Hidden Markov Models.
+The time series, each with its specific complexities, do not in general look stationary. For instance, time_varying mean and variances can be identified basically in all the series with different changing patterns. Hence, they cannot be analized with the well-known ARMA models, which require covariance-stationarity.
 
 \section{$\text{SO}_{2}$ series}
-\subsection{Model specification}
 
-Firstly, we model the series using a \textit{homogeneous} HMM, with a latent process $(S_{t})_{t\geq0}$ representing the industrialization activity or traffic level, as explained in the introduction.
+Looking at Figure \ref {fig:louisiana_plots} we can already guess the presence of non-stationarity due to change points and not constant mean and variance functions.
+
+Firstly, as exploratory step, we decompose the time series in its structural component, namely trend, seasonality and erratic, by using an additive model. Figure \ref{fig:decompose_SO2}, that plots together the time series with such components, shows that, in fact, a seasonal factor seems to be present. Secondly, the series is characterized by a non-constant and non-monotonic trend, suggesting that the process may be summarized by a time-varying mean function, $\mu(t)$. Finally, the random component clearly shows that the process has a variance function, $\sigma^2(t)$, that changes over time.
+
+These preliminary findings confirm the idea of non-stationarity of the series that we guessed by simply looking at the time series plot. Hence, we will further analyze it with models that allow to treat non-stationarity. 
+
+```{r, fig.width=8, fig.height=5, fig.cap="\\label{fig:decompose_SO2}Additive decomposition into structural components"}
+ts_SO2<-ts(louisiana_df$weekly_SO2_mean,start=c(2000,1,1),end = c(2016,4,27),frequency = 48)
+dec_SO2<-decompose(ts_SO2,type=c("additive"))
+plot(dec_SO2)
+
+#des_ts_SO2<-ts_SO2 - dec_SO2$seasonal
+```
+
+\subsection{Homogeneous Hidden Markov Model}
+
+A first possibility is to model the series of $\text{SO}_{2}$ using a \textit{homogeneous} HMM, with a latent process $(S_{t})_{t\geq0}$ that represents the industrialization activity or traffic level, following what explained in the introduction.
 
 Let's assume:
 \begin{itemize}
@@ -210,8 +222,6 @@ nstates_us <- 3
 set.seed(61)
 model_SO2 <- depmixS4::depmix(y ~ 1, data=data.frame(y), nstates=nstates_us)
 ```
-
-\subsection{Estimation of the unknown parameters}
 
 We estimate the unknown parameters by maximum likelihood, using an \textit{Expectation-Maximization (EM) algorithm}. In Table \ref{tab:HMM_MLE_SO2} we report the estimated means and standard deviations of the three states with the associated standard errors. 
 
@@ -257,16 +267,14 @@ knitr::kable(MLEsum_SO2, "latex", booktabs=T, align="c",
   kable_styling(latex_options="hold_position")
 ```
 
-\subsection{Decoding}
-
-Finally, we find the "optimal" state sequence associated with the observed $\text{SO}_{2}$ time series. The optimization problem is solved using the \textit{Viterbi algorithm} and the results are shown in Figure \ref{fig:model_fit_ost_SO2}.
+Finally, we find the "optimal" state sequence associated with the observed $\text{SO}_{2}$ time series, the so called \textit{decoding} procedure. The optimization problem is solved using the \textit{Viterbi algorithm} and the results are shown in Figure \ref{fig:model_fit_ost_SO2}.
 
 ```{r}
 # Get the estimated state for each timestep 
 estStates_SO2 <- posterior(fmodel_SO2)
 ```
 
-```{r, fig.width=7, fig.height=3, out.width='60%', fig.cap="\\label{fig:model_fit_ost_SO2}Optimal state trajectory"}
+```{r, fig.width=7, fig.height=3, fig.cap="\\label{fig:model_fit_ost_SO2}Optimal state trajectory"}
 
 # Plot the optimal path, that is stored in the first column of estStates
 results_df_SO2 <- data.frame(time_index=louisiana_df$n_weeks,
@@ -323,6 +331,20 @@ ggplot(df_to_plot_SO2, aes(x=xtime, y=yvalue)) +
   theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
         axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
+```
+
+\subsection{DLM - Linear growth model}
+Given the complexity of the series, the flexibility provided by \textit{Dinamic Linear models} may lead to a better fit compared with the HMM estimated in the previous section.
+
+\bigskip
+\section{$\text{CO}$ series}
+As exploratory step, we decompose the time series in its structural component by using an additive model. Figure \ref{fig:decompose_CO}, that plots together the time series with such components, shows that, in fact, a seasonal factor seems to be present. Secondly, the series is characterized by a negative and slightly noisy trend up to a clear breakponit around $2010$. After this break, indeed, the trend line flattens and the trend disappears, as could be guessed also looking at the observed series. Finally, the random component, although seeming really erratic, clearly shows another braekpoint affecting in this case the variance slightly before $2010$. These features suggest that the process may be well described by a Hidden Markov Model.  
+
+```{r fig.width=8, fig.height=5, fig.cap="\\label{fig:decompose_CO}Additive decomposition into structural components"}
+
+ts_CO<-ts(louisiana_df$weekly_CO_mean,start=c(2000,1,1),end = c(2016,4,27),frequency = 48)
+dec_CO<-decompose(ts_CO,type=c("additive"))
+plot(dec_CO)
 ```
 
 \newpage
