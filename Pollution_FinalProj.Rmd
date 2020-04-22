@@ -336,6 +336,16 @@ ggplot(df_to_plot_SO2, aes(x=xtime, y=yvalue)) +
 \subsection{DLM - Linear growth model}
 Given the complexity of the series, the flexibility provided by \textit{Dinamic Linear models} may lead to a better fit compared with the HMM estimated in the previous section.
 
+```{r}
+# Polinomial specification of the RW + noise
+rw_SO2 <- StructTS(y,type=c('level'))
+rw_SO2$coef
+
+ggplot(data.frame(louisiana_df$n_weeks, rw_SO2$data,rw_SO2$fitted), aes(x=louisiana_df$n_weeks))+
+  geom_line(aes(y=rw_SO2$data))+
+  geom_line(aes(y=rw_SO2$fitted), col='red')
+```
+
 \bigskip
 \section{$\text{CO}$ series}
 As exploratory step, we decompose the time series in its structural component by using an additive model. Figure \ref{fig:decompose_CO}, that plots together the time series with such components, shows that, in fact, a seasonal factor seems to be present. Secondly, the series is characterized by a negative and slightly noisy trend up to a clear breakponit around $2010$. After this break, indeed, the trend line flattens and the trend disappears, as could be guessed also looking at the observed series. Finally, the random component, although seeming really erratic, clearly shows another braekpoint affecting in this case the variance slightly before $2010$. These features suggest that the process may be well described by a Hidden Markov Model.  
