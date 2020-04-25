@@ -370,8 +370,7 @@ Let's model the series with a random walk plus noise (or local level) model. Thi
 & Y_t = \theta_t + v_t \quad            & v_t \overset{i.i.d.}\sim N(0, V) \\
 & \theta_t = \theta_{t-1} + w_t \quad   & v_t \overset{i.i.d.}\sim N(0, W)
 \end{eqnarray*}
-where the variances of both processes are constant and the prior distribution is also assumed to be Gaussian with mean $m_0$ and variance $C_0$. We stimate the unknown variances $V=\sigma_v^2$ and $W=\sigma_w^2$ by maximum likelihood setting, with a slightly abuse of freedom, the mean of the initial distribution $m_0$ equal to the first observation. Notice that the advantage of considering this model with respect with the HMM is that now the latent state process $\theta_t$ is a continuous random varible and hence, as previously discussed, allows to better caputure the phenomenon of interest.      
-
+where the variances of both processes are constant and the prior distribution is also assumed to be Gaussian with mean $m_0$ and variance $C_0$. Furthermore, we assume that the error sequences $(v_t)$ and $(w_t)$ are independent, both within them and between them (pg. 42). We estimate the unknown variances $V=\sigma_v^2$ and $W=\sigma_w^2$ by maximum likelihood setting, with a slightly abuse of freedom, the mean of the initial distribution $m_0$ equal to the first observation.Indeed, the physical representation of the underlying state of the dynamic system in our study is not so evident, and as a consequence we can't rely on known variances. Notice that the advantage of considering this model with respect with the HMM is that now the latent state process $\theta_t$ is a continuous random varible and hence, as previously discussed, allows to better caputure the phenomenon of interest. Another possible interpretation that we can give to the random walk plus noise model is to consider the observed $CO$ level as measurements of the unobservable average $CO$ level plus a random error.
 \subsection{Estimation of unknown parameters by MLE}
 
 ```{r} 
@@ -408,7 +407,7 @@ Particularly, we check the consistency of our estimates trying different initial
 
 \subsection{Model estimation and filtering}
 
-Our first goal is to compute the \textit{filtering states estimates} $m_t =\mathbb{E}\;(\theta_t \mid y_{1:t})$ obtained by implementing the Kalman filter. In particular, we recall that the Kalman filter procedure, given the \textit{filtering distribution} in the previous iteration, $\theta_{t-1} \mid y_{1:t-1} \sim N(m_{t-1},C_{t-1})$, follows three steps:
+Our first goal is to compute the \textit{filtering states estimates} $m_t =\mathbb{E}\;(\theta_t \mid y_{1:t})$ obtained by implementing the Kalman filter. Indeed, our data are suppose to arrive sequentially in time every week. In particular, we recall that the Kalman filter procedure, given the \textit{filtering distribution} in the previous iteration, $\theta_{t-1} \mid y_{1:t-1} \sim N(m_{t-1},C_{t-1})$, follows three steps:
 
 \begin{itemize}
 \item State forecasting step: 
@@ -433,22 +432,28 @@ list_c <- dlmSvd2var(filt_CO$U.C, filt_CO$D.C)
 # Compute standard deviations
 vol_C <- sqrt(unlist(list_c))
 
+# Kalman smoother
+smooth_CO <- dlmSmooth(louisiana_df$weekly_CO_mean,rw_CO)
+
+# Remove the first item (m_0) in the vector of moothed states
+smooth_est <- dropFirst(smooth_CO$s)
 ```
 \medskip
 
-We report in Figure \ref{fig:filter_est} the \textit{filtering states estimates} $(m_1, \ldots, m_T)$ (red line) together with the observed series (black line).
+Importantly, notice that we can consider to have observations on the the $CO$ time series for a certain period with the aim of retrospectively study the behavior of the system underlying the observations. As such, it seems at least desirable to consider the problem of smoothing, solved computing the conditional distribution of $\theta_{1:t}$ given $y_{1:t}$. Hence, even if we focus our attention on the filtering estimates, we also apply to our data the Kalman smoother.We report in Figure \ref{fig:filter_est} the \textit{filtering states estimates} $(m_1, \ldots, m_T)$ (red line) and the \textit{smoothing states estimates} $(m_1, \ldots, m_T)$ (blue line)  together with the observed series (black line) (è quello che viene fatto a pagina 65, che ne pensate? meglio solo filter/solo smoothing? l'ho fatto per sperimentare un pò).
 Note that the initial guess on the location parameter of the state distribution, $m_0$, has to be removed from the series of states estimates and is, therefore, not included in the plot. 
 \bigskip
 
 ```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
 # Df
-df_CO_filt <-data.frame(louisiana_df$n_weeks, louisiana_df$weekly_CO_mean, filt_est)
-colnames(df_CO_filt) <- c("week", "CO", "filt_est")
+df_CO_filt <-data.frame(louisiana_df$n_weeks, louisiana_df$weekly_CO_mean, filt_est, smooth_est)
+colnames(df_CO_filt) <- c("week", "CO", "filt_est", "smooth_est")
 # Plot
-colors <- c("Observed data" = "black", "Filtering estimates" = "red")
+colors <- c("Observed data" = "black", "Filtering estimates" = "red", "Smoothing estimates" = "blue")
 ggplot(df_CO_filt, aes(x=week)) +
   geom_line(aes(y=CO, color="Observed data"), size=0.4) +
   geom_line(aes(y=filt_est, color = "Filtering estimates"), size=0.4) +
+  geom_line(aes(y=smooth_est, color = "Smoothing estimates"), size=0.4) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(y=expression(CO~(ppm)), x="Week", color = "") +
@@ -574,13 +579,18 @@ ggplot(df_CO_for, aes(x=week)) +
               legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
+COMMENTI: \bigskip
+Commentare quello che otteniamo \\
+Ruolo signal to noise \\
+aggiungere smoothing (possiamo pensare di avere batch data)   \bigskip
+.......................
 
-
+We can expand the previous model considering a linear growth model, which has the same observation equation as the local level model above, but includes a time-varying slope in the dynamics for $\theta_t$ (R code at page 44, but have to understand how to estimate the variances with the MLE algorithm). Possiamo provare a considerare la varianza non costante, infatti si vede bene che a metà diventa molto minore. per questo possiamo provare a vedere il codice a pagina 47. A pagina 66 c'è un codice R figo per fare un DLM con local level plus a quarterly seasonal component con un bel grafico, da approfondire. 
 
 
 
 ........................
-
+PROVE
 Modelling the trend: linear growth model.
 
 \begin{eqnarray*} 
@@ -650,10 +660,7 @@ seas <- dlmModSeas(frequency = 52, dV = 1, dW = c(1, rep(0, 50)),
 #               legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
-COMMENTI: \bigskip
-Commentare quello che otteniamo \\
-Ruolo signal to noise \\
-aggiungere smoothing (possiamo pensare di avere batch data)
+
 
 \newpage
 \section{References}
