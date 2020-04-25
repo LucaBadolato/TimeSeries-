@@ -360,19 +360,53 @@ plot(dec_CO)
 \section{Some experiments}
 Given the $CO$ decomposition seen in last paragraph and the presence of a latent state process discussed above it is suitable to explore the flexibility of DLMs to take into account such results. We have seen that an HMM can be a good first way to take into account the latent state process, hovewer, it has the limit of considering the latent state process $\theta_t$ discrete. Given the the nature of the latent state process that we are considering, i.e. car traffic or level of economic activities, it seems natural to consider a continuos latent state process. In our first application we look at the family of structural DLMs. Linearity and Gaussian assumptions simplify the computations and have been proved powerful and usuful tools in many applications. Furthermore, we can easily include in our model a trend and a seasonal component. \bigskip
 
-Iniziamo con modelli semplici e poi mano a mano li complichiamo per renderli più adeguati alla nostra serie. Inizio ad adattare il random walk plus noise dell'esercizio 5: per ora ho messo i parametri "a caso", poi provo a utilizzare gli MLE presentati nell'ultimo lab. \bigskip
+Iniziamo con modelli semplici e poi mano a mano li complichiamo per renderli più adeguati alla nostra serie. Inizio ad adattare il random walk plus noise dell'esercizio 5:  \bigskip
+
+
+\section{Randon walk plus noise model}
 
 Let's model the series with a random walk plus noise (or local level) model. This is a time-invariant DLM with univariate Gaussian observation and state process, i.e. $\underset{1 \times 1}{Y_t}$ and $\underset{1 \times 1}{\theta_t}$, as well as with constant system matrices $\underset{1 \times 1}F=1$ and $\underset{1 \times 1}G=1$:
 \begin{eqnarray*} 
 & Y_t = \theta_t + v_t \quad            & v_t \overset{i.i.d.}\sim N(0, V) \\
 & \theta_t = \theta_{t-1} + w_t \quad   & v_t \overset{i.i.d.}\sim N(0, W)
 \end{eqnarray*}
-where the variances of both processes are constant and set at $V=\sigma^2_v=500$ and $W=\sigma^2_w=100$ respectively.
+where the variances of both processes are constant and the prior distribution is also assumed to be Gaussian with mean $m_0$ and variance $C_0$. We stimate the unknown variances $V=\sigma_v^2$ and $W=\sigma_w^2$ by maximum likelihood setting, with a slightly abuse of freedom, the mean of the initial distribution $m_0$ equal to the first observation. Notice that the advantage of considering this model with respect with the HMM is that now the latent state process $\theta_t$ is a continuous random varible and hence, as previously discussed, allows to better caputure the phenomenon of interest.      
 
-The prior distribution is also assumed to be Gaussian with parameters $m_0=0$ and $C_0=1$, that is:
-\begin{align*} 
-\theta_0 \sim N(0.75, 10)
-\end{align*}
+\subsection{Estimation of unknown parameters by MLE}
+
+```{r} 
+#definition of the funtion of the rw which for each possible parameters build the dlm of interest. We assume that our initial distibution is centered at the first actual observation for simplicity. 
+buildrw <- function(param){
+    dlmModPoly(order=1, dV=param[1], dW=param[2], m0=louisiana_df$weekly_CO_mean[1])}
+
+#MLE computation
+outMLE <- dlmMLE(louisiana_df$weekly_CO_mean, parm = rep(200, 2), buildrw, lower=c(0.00001, 0), hessian=TRUE)
+
+#output of the optimization algorithm:
+#names(outMLE)
+#outMLE$par  # MLE estimates 
+#outMLE$value  # negative loglikelihood $-loglik(MLE)$
+#outMLE$counts # number of iterations of the optimization algorithm
+#outMLE$convergence # an integer code. 0 indicates successful convergence
+#outMLE$hessian #Hessian matrix of - liglik(MLE)
+AsymCov=solve(outMLE$hessian) #asymptotic covariance matrix of the MLEs
+#sqrt(diag(AsymCov)) # asymptotic standard errors
+
+#model
+rw_CO <- buildrw(outMLE$par)
+
+```
+
+We can estimate, using the package *dlm*, the unknown variances, that we report with the asymptotic standard errors: 
+
+\begin{eqnarray*} 
+v_t = V = \sigma^2_v = 0.00954 \quad (\pm 0.0011) \\
+w_t = w = \sigma^2_w = 100 0.00468 \quad (\pm 0.00095)
+\end{eqnarray*}
+
+Particularly, we check the consistency of our estimates trying different initial values of the optimization algorithm and verifyng its convergence.  
+
+\subsection{Model estimation and filtering}
 
 Our first goal is to compute the \textit{filtering states estimates} $m_t =\mathbb{E}\;(\theta_t \mid y_{1:t})$ obtained by implementing the Kalman filter. In particular, we recall that the Kalman filter procedure, given the \textit{filtering distribution} in the previous iteration, $\theta_{t-1} \mid y_{1:t-1} \sim N(m_{t-1},C_{t-1})$, follows three steps:
 
@@ -387,9 +421,6 @@ $\theta_t \mid y_{1:t} \sim N(m_t, C_t), \quad \mbox{filtering distribution}.$
 
 
 ```{r}
-# Polinomial specification of the RW + noise
-rw_CO <- dlmModPoly(order=1,dV=0.11, dW=0.25, m0=0.75, C0=0.1)
-
 # Kalman filter
 filt_CO <- dlmFilter(louisiana_df$weekly_CO_mean,rw_CO)
 
@@ -454,7 +485,7 @@ colnames(df_CO_sd) <- c("week", "vol_C_plot")
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 
-Interestingly, the filtered standard deviations are increasing at a decreasing pace until converging to a limit value equal to `r round(vol_C_plot[7], 2)` after six iterations.
+Interestingly, the filtered standard deviations decrease with a fast pace until converging to a limit value equal to `r round(vol_C_plot[7], 2)` after few iterations.
 
 Finally, we compute the $(1-\alpha)$ Bayesian credible intervals for the filtering state estimates, which are given by:
 \begin{align*}
@@ -491,7 +522,7 @@ colors <- c("Observed data" = "black", "Filtering estimates with C.I." = "red")
               legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
-We now plot in Figure \ref{fig:forecast_ci} the Nile time series alongside with the one-step-ahead forecasts for the observation process (blue line), i.e. $\hat{y}_{t}=\mathbb{E}\;({Y_{t} \mid y_{1:t-1})}=f_t$, where $f_t$ is the location parameter of the observation's forecast distribution. The credible intervals is also showed, where the credible intervals at the $(1-\alpha)$ level are given by:
+We now plot in Figure \ref{fig:forecast_ci} the Lousiana CO time series alongside with the one-step-ahead forecasts for the observation process (blue line), i.e. $\hat{y}_{t}=\mathbb{E}\;({Y_{t} \mid y_{1:t-1})}=f_t$, where $f_t$ is the location parameter of the observation's forecast distribution. The credible intervals is also showed, where the credible intervals at the $(1-\alpha)$ level are given by:
 \begin{align*}
 \bigg[ f_t - Z_{1 - \frac{\alpha}{2}} \sqrt{Q_{t}}, \quad f_t - Z_{1 - \frac{\alpha}{2}}\sqrt{Q_{t}} \bigg]
 \end{align*}
@@ -619,7 +650,10 @@ seas <- dlmModSeas(frequency = 52, dV = 1, dW = c(1, rep(0, 50)),
 #               legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
-
+COMMENTI: \bigskip
+Commentare quello che otteniamo \\
+Ruolo signal to noise \\
+aggiungere smoothing (possiamo pensare di avere batch data)
 
 \newpage
 \section{References}
