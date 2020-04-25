@@ -360,6 +360,196 @@ plot(dec_CO)
 \section{Some experiments}
 Given the $CO$ decomposition seen in last paragraph and the presence of a latent state process discussed above it is suitable to explore the flexibility of DLMs to take into account such results. We have seen that an HMM can be a good first way to take into account the latent state process, hovewer, it has the limit of considering the latent state process $\theta_t$ discrete. Given the the nature of the latent state process that we are considering, i.e. car traffic or level of economic activities, it seems natural to consider a continuos latent state process. In our first application we look at the family of structural DLMs. Linearity and Gaussian assumptions simplify the computations and have been proved powerful and usuful tools in many applications. Furthermore, we can easily include in our model a trend and a seasonal component. \bigskip
 
+Iniziamo con modelli semplici e poi mano a mano li complichiamo per renderli più adeguati alla nostra serie. Inizio ad adattare il random walk plus noise dell'esercizio 5: per ora ho messo i parametri "a caso", poi provo a utilizzare gli MLE presentati nell'ultimo lab. \bigskip
+
+Let's model the series with a random walk plus noise (or local level) model. This is a time-invariant DLM with univariate Gaussian observation and state process, i.e. $\underset{1 \times 1}{Y_t}$ and $\underset{1 \times 1}{\theta_t}$, as well as with constant system matrices $\underset{1 \times 1}F=1$ and $\underset{1 \times 1}G=1$:
+\begin{eqnarray*} 
+& Y_t = \theta_t + v_t \quad            & v_t \overset{i.i.d.}\sim N(0, V) \\
+& \theta_t = \theta_{t-1} + w_t \quad   & v_t \overset{i.i.d.}\sim N(0, W)
+\end{eqnarray*}
+where the variances of both processes are constant and set at $V=\sigma^2_v=500$ and $W=\sigma^2_w=100$ respectively.
+
+The prior distribution is also assumed to be Gaussian with parameters $m_0=0$ and $C_0=1$, that is:
+\begin{align*} 
+\theta_0 \sim N(0.75, 10)
+\end{align*}
+
+Our first goal is to compute the \textit{filtering states estimates} $m_t =\mathbb{E}\;(\theta_t \mid y_{1:t})$ obtained by implementing the Kalman filter. In particular, we recall that the Kalman filter procedure, given the \textit{filtering distribution} in the previous iteration, $\theta_{t-1} \mid y_{1:t-1} \sim N(m_{t-1},C_{t-1})$, follows three steps:
+
+\begin{itemize}
+\item State forecasting step: 
+$\theta_t \mid y_{1:t-1} \sim N(a_t, R_t), \quad \mbox{state prediction}$
+\item Observation forecasting step:
+$Y_t \mid y_{1:t-1} \sim N(f_t, Q_t), \quad \mbox{observation prediction}$
+\item Filtering step: once $y_t$ becomes available
+$\theta_t \mid y_{1:t} \sim N(m_t, C_t), \quad \mbox{filtering distribution}.$
+\end{itemize}
+
+
+```{r}
+# Polinomial specification of the RW + noise
+rw_CO <- dlmModPoly(order=1,dV=0.11, dW=0.25, m0=0.75, C0=0.1)
+
+# Kalman filter
+filt_CO <- dlmFilter(louisiana_df$weekly_CO_mean,rw_CO)
+
+# Remove the first item (m_0) in the vector of filtered states
+filt_est=dropFirst(filt_CO$m)
+
+# Compute the vector of state variances from the Singular Variance Decomposition matrices
+list_c <- dlmSvd2var(filt_CO$U.C, filt_CO$D.C)
+
+# Compute standard deviations
+vol_C <- sqrt(unlist(list_c))
+
+```
+\medskip
+
+We report in Figure \ref{fig:filter_est} the \textit{filtering states estimates} $(m_1, \ldots, m_T)$ (red line) together with the observed series (black line).
+Note that the initial guess on the location parameter of the state distribution, $m_0$, has to be removed from the series of states estimates and is, therefore, not included in the plot. 
+\bigskip
+
+```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
+# Df
+df_CO_filt <-data.frame(louisiana_df$n_weeks, louisiana_df$weekly_CO_mean, filt_est)
+colnames(df_CO_filt) <- c("week", "CO", "filt_est")
+# Plot
+colors <- c("Observed data" = "black", "Filtering estimates" = "red")
+ggplot(df_CO_filt, aes(x=week)) +
+  geom_line(aes(y=CO, color="Observed data"), size=0.4) +
+  geom_line(aes(y=filt_est, color = "Filtering estimates"), size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(y=expression(CO~(ppm)), x="Week", color = "") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
+        scale_color_manual(values = colors)+
+        theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+```
+
+Then, we compute the \textit{filtering variances} $(C_1, \ldots, C_T)$.
+In principle, they could be computed through the recursive formulas of Kalman filter. However, due to potential numerical issues in the application of such recursive approach, the computation of state variances relies on the Singular Value Decomposition procedure.
+
+In Figure \ref{fig:filter_sd} we report the filtered standard deviations $\sqrt{C_{t}} = V(\theta_t \mid y_{1:t-1})^{\frac{1}{2}}$. 
+\bigskip
+
+```{r}
+vol_C_plot <- vol_C[2:853]
+```
+
+```{r, fig.width=5, fig.height=2, fig.cap="\\label{fig:filter_sd} Standard deviations of states estimates"}
+
+df_CO_sd <-data.frame(louisiana_df$n_weeks, vol_C_plot)
+colnames(df_CO_sd) <- c("week", "vol_C_plot")
+ ggplot(df_CO_sd, aes(x=week))+
+  geom_line(aes(y=vol_C_plot), color = "darkgreen", size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Standard deviation") +
+  labs(y="Standard deviation", x="Week", color = "") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+```
+
+Interestingly, the filtered standard deviations are increasing at a decreasing pace until converging to a limit value equal to `r round(vol_C_plot[7], 2)` after six iterations.
+
+Finally, we compute the $(1-\alpha)$ Bayesian credible intervals for the filtering state estimates, which are given by:
+\begin{align*}
+\bigg[ m_t - Z_{1 - \frac{\alpha}{2}} \sqrt{C_{t}}, \quad m_t - Z_{1 - \frac{\alpha}{2}}\sqrt{C_{t}} \bigg]
+\end{align*}
+with $\alpha=0.05$.
+
+We plot in Figure \ref{fig:filter_est_ci} the observations with their filtering state estimates and their 95% level credible intervals.
+\bigskip
+
+```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est_ci} Filtering estimates with credible intervals"}
+
+upper <- filt_est + 1.96*vol_C_plot 
+lower <- filt_est - 1.96*vol_C_plot 
+
+df_CO_ci <-data.frame(louisiana_df$n_weeks, louisiana_df$weekly_CO_mean, filt_est, upper, lower)
+colnames(df_CO_ci) <- c("week", "CO", "filt_est", "upper", "lower")  
+colors <- c("Observed data" = "black", "Filtering estimates with C.I." = "red")
+
+ ggplot(df_CO_ci, aes(x=week))+
+  geom_line(aes(y=CO, color = "Observed data"), size=0.3) +
+  geom_line(aes(y=filt_est, color = "Filtering estimates with C.I."), size=0.5) +
+  geom_line(aes(y=upper), color = "red", linetype = "dashed", size=0.1) +
+  geom_line(aes(y=lower), color = "red", linetype = "dashed", size=0.1) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=.1, fill="red") +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(y=expression(CO~(ppm)), x="Week") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
+   scale_color_manual(values = colors)+
+        theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+```
+
+We now plot in Figure \ref{fig:forecast_ci} the Nile time series alongside with the one-step-ahead forecasts for the observation process (blue line), i.e. $\hat{y}_{t}=\mathbb{E}\;({Y_{t} \mid y_{1:t-1})}=f_t$, where $f_t$ is the location parameter of the observation's forecast distribution. The credible intervals is also showed, where the credible intervals at the $(1-\alpha)$ level are given by:
+\begin{align*}
+\bigg[ f_t - Z_{1 - \frac{\alpha}{2}} \sqrt{Q_{t}}, \quad f_t - Z_{1 - \frac{\alpha}{2}}\sqrt{Q_{t}} \bigg]
+\end{align*}
+with $\alpha=0.05$.
+
+The variances $Q_t's$ are just a byproduct of the procedure outlined in Question 1. Indeed, they are obtained as:
+\begin{align*}
+Q_t = F_t \, R_t \, F_{t}'+ V_t = C_{t-1}+\sigma_{v}^2+\sigma_{w}^2
+\end{align*}
+with $F_t=1$.
+\bigskip
+
+```{r}
+# Create the vector of means for the observation process.
+# Notice that here we do not have to remove the first element of the series
+mean_forecast<-filt_CO$f
+
+# Obtain the variance Q
+filt_Q <- unlist(list_c) + as.vector(rw_CO$V) + as.vector(rw_CO$W)
+filt_Q <- filt_Q[-1]
+
+# Create upper and lower bounds of the credible interval
+upper_for <- mean_forecast + 1.96*sqrt(filt_Q) 
+lower_for <- mean_forecast - 1.96*sqrt(filt_Q) 
+```
+
+```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:forecast_ci} One-step ahead forecasts with credible intervals"}
+# Df
+df_CO_for <-data.frame(louisiana_df$n_weeks, louisiana_df$weekly_CO_mean,  mean_forecast, upper_for, lower_for)
+
+colnames(df_CO_for) <- c("week", "CO", "mean_forecast", "upper_for", "lower_for")
+colors <- c("Observed data" = "black", "Forecast with C.I." = "blue")
+
+# Plot
+ggplot(df_CO_for, aes(x=week)) +
+  geom_line(aes(y=CO, color = "Observed data"), size=0.3) +
+  geom_line(aes(y=mean_forecast, color = "Forecast with C.I."), size=0.5) +
+  geom_line(aes(y=upper_for), color = "blue", linetype = "dashed", size=0.1) +
+  geom_line(aes(y=lower_for), color = "blue", linetype = "dashed", size=0.1) +
+  geom_ribbon(aes(ymin=lower_for, ymax=upper_for), alpha=.1, fill="blue") +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(y=expression(CO~(ppm)), x="Week") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
+  scale_color_manual(values = colors)+
+      theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+```
+
+
+
+
+
+
+........................
+
 Modelling the trend: linear growth model.
 
 \begin{eqnarray*} 
@@ -390,42 +580,43 @@ seas <- dlmModSeas(frequency = 52, dV = 1, dW = c(1, rep(0, 50)),
 
 ```{r}
 # Model 
-mod = trend + seas
-
-# Kalman filter
-filt_mod <- dlmFilter(louisiana_df$weekly_CO_mean, mod)
-
-# Remove the first item (m_0) in the vector of filtered states
-filt_est=dropFirst(filt_mod$m)
-
-# Compute the vector of state variances from the Singular Variance Decomposition matrices
-list_c <- dlmSvd2var(filt_mod$U.C, filt_mod$D.C)
-
-# Compute standard deviations
-vol_C <- sqrt(unlist(list_c))
+# mod = trend + seas
+# 
+# # Kalman filter
+# filt_mod <- dlmFilter(louisiana_df$weekly_CO_mean, mod)
+# 
+# # Remove the first item (m_0) in the vector of filtered states
+# filt_est=dropFirst(filt_mod$m)
+# 
+# # Compute the vector of state variances from the Singular Variance Decomposition matrices
+# list_c <- dlmSvd2var(filt_mod$U.C, filt_mod$D.C)
+# 
+# # Compute standard deviations
+# vol_C <- sqrt(unlist(list_c))
 
 ```
+
 ```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
 # Df
-df_mod_filt <-data.frame(louisiana_df$n_weeks, louisiana_df$weekly_CO_mean, filt_est)
-
-# Plot
-colors <- c("Observed data" = "black", "Filtering estimates" = "red")
-ggplot(df_mod_filt, aes(x=louisiana_df.n_weeks)) +
-  geom_line(aes(y=louisiana_df.weekly_CO_mean, color="Observed data"), size=0.4) +
-  geom_line(aes(y=filt_est, color = "Filtering estimates"), size=0.4) +
-  geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor = element_line(size=0.5)) +
-  labs(x="Year", y="State level", color = "") +
-  scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
-               labels=date_format("%Y")) +
-  scale_y_continuous(breaks = seq(500,1500,300), limits = c(400,1500)) +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
-        scale_color_manual(values = colors)+
-        theme(legend.justification = c("left", "top"),
-              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+# df_mod_filt <-data.frame(louisiana_df$n_weeks, louisiana_df$weekly_CO_mean, filt_est)
+# 
+# # Plot
+# colors <- c("Observed data" = "black", "Filtering estimates" = "red")
+# ggplot(df_mod_filt, aes(x=louisiana_df.n_weeks)) +
+#   geom_line(aes(y=louisiana_df.weekly_CO_mean, color="Observed data"), size=0.4) +
+#   geom_line(aes(y=filt_est, color = "Filtering estimates"), size=0.4) +
+#   geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
+#   theme_classic(base_size=9.5) +
+#   theme(panel.grid.minor = element_line(size=0.5)) +
+#   labs(x="Year", y="State level", color = "") +
+#   scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
+#                labels=date_format("%Y")) +
+#   scale_y_continuous(breaks = seq(500,1500,300), limits = c(400,1500)) +
+#   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+#         axis.title.y=element_text(family="Times", margin=margin(r=5)))+
+#         scale_color_manual(values = colors)+
+#         theme(legend.justification = c("left", "top"),
+#               legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
 
