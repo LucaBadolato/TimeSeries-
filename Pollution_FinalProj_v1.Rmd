@@ -1,0 +1,218 @@
+---
+title: "20236 Time Series Analysis - Final project"
+author:
+- Simone Arrigoni (1794692)
+- Luca Badolato (3086040)
+- Simone Valle (3088281)
+subtitle: "Bocconi University"
+date: "21/4/2020"
+output: pdf_document
+nocite: '@*'
+bibliography: References.bib
+header-includes:
+  \usepackage[utf8]{inputenc}
+  \usepackage{setspace}
+  \usepackage{apacite}
+  \usepackage{natbib}
+  \usepackage{algpseudocode}
+  \usepackage{algorithm}
+  \usepackage{bm}
+  \usepackage{amsmath}
+  \usepackage{amssymb}
+  \usepackage{graphicx}
+  \usepackage{subfig}
+  \usepackage{booktabs, caption}
+  \usepackage{array}
+  \usepackage{threeparttable}
+  \usepackage{listings}
+  \usepackage{physics}
+  \usepackage{float}
+  
+  \floatplacement{figure}{H}
+  \usepackage{color} %red, green, blue, yellow, cyan, magenta, black, white
+  \definecolor{mygreen}{RGB}{28,172,0} % color values Red, Green, Blue
+  \definecolor{mylilas}{RGB}{170,55,241}
+  \definecolor{codegray}{RGB}{0.5,0.5,0.5}
+  \definecolor{orange}{RGB}{255,165,0}
+  \DeclareMathOperator*{\E}{\mathbb{E}}
+  \DeclareMathOperator*{\Ec}{\mathbb{E}_t}
+  \setlength\parindent{0pt}
+  
+---
+
+```{r, include=FALSE}
+
+# Load useful packages
+library(utf8)
+library(labeling)
+library(rmarkdown)
+library(httr)
+library(knitr)
+library(tseries)
+library(tinytex)
+library(scales)
+library(dlm)
+library(magrittr)
+library(stringr)
+library(depmixS4)
+library(tidyverse)
+library(ggthemes)
+library(latex2exp)
+library(kableExtra)
+library(ggpubr)
+library(reshape2)
+library(dlm)
+# Settings
+knitr::opts_chunk$set(message = FALSE, 
+                      warning = FALSE,
+                      echo    = FALSE,
+                      include = TRUE,
+                      fig.pos = "H",
+                      fig.align = "center",
+                      out.width='60%')
+```
+
+\abstract{INSERT ABSTRACT HERE}
+
+\section{Introduction}
+
+Pollution is one of the most debated social issues of our times. It has been attracting more and more attention given its serious implications on the health of both the Earth and human beings. The economic activity under the model of production and consumption that has been characterizing the last century is, with no doubt, at the very basis of such complex phenomenon. Only in the last fifteen years some consciousness about the importance of pollution in the long-run has evolved and serious interventions have been made. Moreover, among the numerous component which pollution can be split into, air pollution is certainly one of the most important and tightly linked to strict economic activity.
+
+Therefore, the purpose of the present work is to model through common statistical techniques the evolution of air pollution during this last crucial fifteen years in a developped economy, i.e. the United States, trying to grasp some intuition about this fundamental phenomenon.
+
+\section{Data}
+
+The dataset \texttt{US\_pollution} contains monthly and daily data about air pollution for each state in the United States. It is provided by the United States Environmental Protection Agency (EPA). Specifically, four key indicators of air pollution are considered: 
+
+\begin{itemize}
+\item \textbf{Ground level ozone $\text{O}_{3}$} (\texttt{O3}): Bad ozone forms near the ground when pollutants (emitted by sources such as cars, power plants, industrial boilers, refineries, and chemical plants) react chemically in sunlight. Since it is more likely to form during warmer months, we expect to see a seasonal component. 
+\item \textbf{Nitrogen dioxide $\text{NO}_{2}$} (\texttt{NO2}): It is produced as a result of road traffic and other fossil fuel combustion processes. Furthermore, its presence in air contributes to the formation and modification of other air pollutants, such as particle pollution.
+\item \textbf{Carbon monoxide $\text{CO}$} (\texttt{CO}):  It forms from incomplete combustions mainly from vehicle exhausts (roughly 75\% of all carbon monoxide emissions nationwide and up to 95\% in cities), fuel combustion in industrial processes and natural sources. Cold temperatures make combustion less complete, therefore we expect also in this case a seasonal behavior. 
+\item \textbf{Sulfur dioxide $\text{SO}_{2}$} (\texttt{SO2}): It is produced when sulfur-containing fuels are burned. It is common mainly in large industrial complexes. 
+\end{itemize}
+\medskip
+
+Hence, the four variables of interest are interconnected and are the building blocks of a more general phenomenon, that is air pollution. Furthermore, they are related by a common latent process that can be summarized by several components such as industrialization, car traffic and regulation.
+
+The preliminary analysis that led us from the raw data to the current dataset is made available in the GitHub repository https://github.com/SimoneArrigoni/US_pollution. 
+
+We will be focusing on measures for \textbf{Louisiana}, recorded weekly from 01/01/2000 to 27/04/2016, for a total of 852 observations. The main advantage of studying the evolution of air pollution in the same country over the years is that this allows us to control for fixed effects and to better study the latent process of interest that relates the four pollution components.The first five observations of the dataset are reported in Table \ref{tab:louisiana_df}.
+
+```{r echo=FALSE}
+# Import the dataset
+louisiana_df <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_pollution/master//Louisiana_dataset.csv"), sep = ",", header=T)
+```
+
+```{r}
+# How the dataset looks like
+knitr::kable(louisiana_df[1:5, 1:5], "latex", booktabs=T,
+             caption="Dataset structure\\label{tab:louisiana_df}") %>%
+  kable_styling(latex_options="hold_position")
+```
+\bigskip
+
+As explained in above, the four variables are related by a common latent process. Hence, we report in Table \ref{tab:louisiana_corr} their correlation coefficients.
+
+Provided that the correlation between pollutants show significant differences in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution [@Logan1981], a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field [@Voulgarakis2011].
+
+Other studies report that, in the US, $\text{O}_3$ is on average positively correlated with $\text{NO}_2$, which is opposite to our empirical findings about Louisiana, where they are slightly negatively correlated. A possible explanation can be given by substitution effects: an increase of nitrogen dioxide levels can be associated to the use of more fossil fuels that produce $\text{NO}_2$ instead of others. This might be related to Louisiana's fixed effects, however further rasearches would be beyond the purpose of our study.
+
+```{r}
+# Correlation plot
+datacor = subset(louisiana_df, select=c(weekly_O3_mean, weekly_NO2_mean, weekly_CO_mean, weekly_SO2_mean))
+cor.datacor = cor(datacor, use="complete.obs")
+cormat = round(cor(datacor),2)
+row.names(cormat) <- c("$\\text{O}_{3}$",
+                       "$\\text{NO}_{2}$",
+                       "$\\text{CO}$",
+                       "$\\text{SO}_{2}$")
+
+knitr::kable(cormat, "latex", booktabs=T, align="c", escape=F,
+             caption="Correlation table \\label{tab:louisiana_corr}",
+             col.names=c("$\\text{O}_{3}$",
+                         "$\\text{NO}_{2}$",
+                         "$\\text{CO}$",
+                         "$\\text{SO}_{2}$")) %>%
+  column_spec(1:4, width="5em") %>%
+kable_styling(latex_options="hold_position")
+```
+
+
+We plot in Figure \ref{fig:louisiana_plots} the time series for the four pollutants under study to give a first qualitative description of the phenomenon.
+
+```{r, fig.width=20, fig.height=6, out.width='100%', fig.cap="\\label{fig:louisiana_plots} Air pollution in the state of Louisiana"}
+
+# Time series plot
+O3 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_O3_mean)) +
+  geom_line(color="steelblue") +
+  theme_classic(base_size=9) +
+  labs(y=expression(O[3]~(ppm)), x="Week") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(axis.text=element_text(size=17),
+        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)))
+
+NO2 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_NO2_mean)) +
+  geom_line(color="steelblue") +
+  theme_classic(base_size=9) +
+  labs(y=expression(NO[2]~(ppb)), x="Week") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(axis.text=element_text(size=17),
+        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=19, family="Times", margin=margin(r=5)))
+
+CO <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_CO_mean)) +
+  geom_line(color="steelblue") +
+  theme_classic(base_size=9) +
+  labs(y=expression(CO~(ppm)), x="Week") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(axis.text=element_text(size=17),
+        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)))
+
+SO2 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_SO2_mean)) +
+  geom_line(color="steelblue") +
+  theme_classic(base_size=9) +
+  labs(y=expression(SO[2]~(ppb)), x="Week") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(axis.text=element_text(size=17),
+        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)))
+
+ggarrange(O3, NO2, CO, SO2,
+          ncol=2, nrow=2)
+```
+The time series, each with its specific complexities, do not in general look stationary. For instance, time_varying mean and variances can be identified basically in all the series with different changing patterns. Hence, they cannot be analized with the common models based on the assumption of covariance-stationarity, such as the well-known ARMA models.
+
+
+\bigskip
+\section{$\text{CO}$ series}
+As explained also in the Introduction, $\text{CO}$ is perhaps the pollutant more tightly linked with the economic and industrial network of a country. Consequently, we select the $\text{CO}$ series as the one of main interest for our analysis being the purpose of this work tracking the evolution of air pollution related to an underlying economic process.
+
+As exploratory step, we decompose the time series in its structural component by using an additive model. Figure \ref{fig:decompose_CO}, that plots together the time series with such components, shows that, in fact, a seasonal factor seems to be present. Secondly, the series is characterized by a negative and slightly noisy trend up to a clear breakponit around $2010$. After this break, indeed, the trend line flattens and the trend disappears, as could be guessed also looking at the observed series. Finally, the random component, although seeming really erratic, clearly shows another braekpoint affecting in this case the variance slightly before $2010$. These features suggest that the process may be well described by a Hidden Markov Model.  
+
+```{r fig.width=8, fig.height=5, fig.cap="\\label{fig:decompose_CO}Additive decomposition into structural components"}
+
+ts_CO<-ts(louisiana_df$weekly_CO_mean,start=c(2000,1,1),end = c(2016,4,27),frequency = 48)
+dec_CO<-decompose(ts_CO,type=c("additive"))
+plot(dec_CO)
+```
+
+\subsection{Model 1}
+
+INSERT HERE EVERITHING ON MODEL 1 FOR CO
+
+\subsection{Model 2}
+
+INSERT HERE EVERITHING ON MODEL 2 FOR CO
+
+\section{Multivariate problem}
+
+INSERT HERE MULTIVARIATE TIME SERIES MODEL
+
+\section{Conclusion}
+
+INSERT HERE CONCLUSIONS
+
+\newpage
+\section{References}
