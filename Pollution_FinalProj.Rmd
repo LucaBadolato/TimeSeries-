@@ -362,6 +362,19 @@ Given the $CO$ decomposition seen in last paragraph and the presence of a latent
 
 Iniziamo con modelli semplici e poi mano a mano li complichiamo per renderli più adeguati alla nostra serie. Inizio ad adattare il random walk plus noise dell'esercizio 5:  \bigskip
 
+\section{HMM with trend}
+The series shows a clear break around week 400
+
+We could specify the model as
+
+\begin{align*}
+\begin{cases}
+Y_{t}=\mu_{1} + \beta_{1,t}t + \varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{1}^2) \qquad \text{if} \; S_{t}=1 \\
+Y_{t}=\mu_{2}+ + \beta_{2,t}t + \varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{2}^2) \qquad \text{if} \; S_{t}=2 \\
+\end{cases}
+\end{align*}
+
+we will expect in particular a $\mu_1 > \mu_2$ and $\beta_1<0$  $\beta_2=0$
 
 \section{Randon walk plus noise model}
 
