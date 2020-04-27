@@ -446,10 +446,14 @@ list_c <- dlmSvd2var(filt_CO$U.C, filt_CO$D.C)
 vol_C <- sqrt(unlist(list_c))
 
 # Kalman smoother
-smooth_CO <- dlmSmooth(louisiana_df$weekly_CO_mean,rw_CO)
+smooth_CO <- dlmSmooth(filt_CO)
 
+str(smooth_CO, 1)
+attach(smooth_CO)
 # Remove the first item (m_0) in the vector of moothed states
 smooth_est <- dropFirst(smooth_CO$s)
+vol_S_smooth <-sqrt(unlist(dlmSvd2var(smooth_CO$U.S, smooth_CO$D.S)))
+
 ```
 \medskip
 
@@ -596,6 +600,87 @@ COMMENTI: \bigskip
 Commentare quello che otteniamo \\
 Ruolo signal to noise \\
 aggiungere smoothing (possiamo pensare di avere batch data)   \bigskip
+
+GRAFICI INTERESSANTI CHE POSSIAMO UTILIZZARE PER PRESENTARE IN MANIERA SCHEMATICA E RIASSUNTIVA I RISULTATI: (PAG.92 E 93 )
+
+```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:prova} Figure at page 92"}
+
+upper <- filt_est + 1.96*vol_C_plot 
+lower <- filt_est - 1.96*vol_C_plot 
+
+df_CO_ci <-data.frame(louisiana_df$n_weeks, louisiana_df$weekly_CO_mean, filt_est, upper, lower)
+colnames(df_CO_ci) <- c("week", "CO", "filt_est", "upper", "lower")  
+colors <- c("Observed data" = "black", "Filtering estimates with C.I." = "red")
+
+ A <- ggplot(df_CO_ci, aes(x=week))+
+  geom_line(aes(y=CO, color = "Observed data"), size=0.3) +
+  geom_line(aes(y=filt_est, color = "Filtering estimates with C.I."), size=0.5) +
+  geom_line(aes(y=upper), color = "red", linetype = "dashed", size=0.1) +
+  geom_line(aes(y=lower), color = "red", linetype = "dashed", size=0.1) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=.1, fill="red") +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(y=expression(CO~(ppm)), x="Week") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
+   scale_color_manual(values = colors)+
+        theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+ 
+df_CO_sd <-data.frame(louisiana_df$n_weeks, vol_C_plot)
+colnames(df_CO_sd) <- c("week", "vol_C_plot")
+
+B <- ggplot(df_CO_sd, aes(x=week))+
+  geom_line(aes(y=vol_C_plot), color = "darkgreen", size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Standard deviation") +
+  labs(y="Standard deviation", x="Week", color = "") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+vol_S_plot <- vol_C[2:853] 
+upper_smooth <- smooth_est + 1.96*vol_S_plot 
+lower_smooth <- smooth_est - 1.96*vol_S_plot
+
+df_CO_ci_smooth <-data.frame(louisiana_df$n_weeks, louisiana_df$weekly_CO_mean, smooth_est, upper_smooth, lower_smooth)
+colnames(df_CO_ci_smooth) <- c("week", "CO", "smooth_est", "upper", "lower")  
+colors <- c("Observed data" = "black", "Smoothing estimates with C.I." = "red")
+
+ C <- ggplot(df_CO_ci_smooth, aes(x=week))+
+  geom_line(aes(y=CO, color = "Observed data"), size=0.3) +
+  geom_line(aes(y=smooth_est, color = "Smoothing estimates with C.I."), size=0.5) +
+  geom_line(aes(y=upper_smooth), color = "red", linetype = "dashed", size=0.1) +
+  geom_line(aes(y=lower_smooth), color = "red", linetype = "dashed", size=0.1) +
+  geom_ribbon(aes(ymin=lower_smooth, ymax=upper_smooth), alpha=.1, fill="red") +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(y=expression(CO~(ppm)), x="Week", colors = "") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
+   scale_color_manual(values = colors)+
+        theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+ 
+df_CO_sd_smooth <-data.frame(louisiana_df$n_weeks, vol_S_plot)
+colnames(df_CO_sd_smooth) <- c("week", "vol_S_plot")
+
+D <- ggplot(df_CO_sd_smooth, aes(x=week))+
+  geom_line(aes(y=vol_S_plot), color = "darkgreen", size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Standard deviation") +
+  labs(y="Standard deviation", x="Week", color = "") +
+  scale_x_continuous(breaks=seq(0,900,100)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+ggarrange(A, B, C, D,
+          ncol=2, nrow=2)
+```
 .......................
 
 We can expand the previous model considering a linear growth model, which has the same observation equation as the local level model above, but includes a time-varying slope in the dynamics for $\theta_t$ (R code at page 44, but have to understand how to estimate the variances with the MLE algorithm). Possiamo provare a considerare la varianza non costante, infatti si vede bene che a metà diventa molto minore. per questo possiamo provare a vedere il codice a pagina 47. A pagina 66 c'è un codice R figo per fare un DLM con local level plus a quarterly seasonal component con un bel grafico, da approfondire. 
