@@ -1,0 +1,142 @@
+---
+title: "20236 Time Series Analysis - Assignment 6"
+author:
+- Simone Arrigoni (1794692)
+- Luca Badolato (3086040)
+- Simone Valle (3088281)
+subtitle: "Bocconi University"
+date: May 4, 2020
+output: pdf_document
+
+header-includes:
+  \usepackage[utf8]{inputenc}
+  \usepackage{setspace}
+  \usepackage{apacite}
+  \usepackage{natbib}
+  \usepackage{algpseudocode}
+  \usepackage{algorithm}
+  \usepackage{bm}
+  \usepackage{amsmath}
+  \usepackage{amssymb}
+  \usepackage{graphicx}
+  \usepackage{subfig}
+  \usepackage{booktabs, caption}
+  \usepackage{array}
+  \usepackage{threeparttable}
+  \usepackage{listings}
+  \usepackage{physics}
+  \usepackage{float}
+  
+  \floatplacement{figure}{H}
+  \usepackage{color} %red, green, blue, yellow, cyan, magenta, black, white
+  \definecolor{mygreen}{RGB}{28,172,0} % color values Red, Green, Blue
+  \definecolor{mylilas}{RGB}{170,55,241}
+  \definecolor{codegray}{RGB}{0.5,0.5,0.5}
+  \definecolor{orange}{RGB}{255,165,0}
+  \DeclareMathOperator*{\E}{\mathbb{E}}
+  \DeclareMathOperator*{\Ec}{\mathbb{E}_t}
+  \setlength\parindent{0pt}
+  
+---
+
+```{r, include=FALSE}
+
+# Load useful packages
+library(utf8)
+library(labeling)
+library(rmarkdown)
+library(httr)
+library(knitr)
+library(tseries)
+library(tinytex)
+library(scales)
+library(dlm)
+library(magrittr)
+library(stringr)
+library(depmixS4)
+library(tidyverse)
+library(ggthemes)
+library(latex2exp)
+library(kableExtra)
+library(ggpubr)
+library(reshape2)
+library(dlm)
+# Settings
+knitr::opts_chunk$set(message = FALSE, 
+                      warning = FALSE,
+                      echo    = FALSE,
+                      include = TRUE,
+                      fig.pos = "H",
+                      fig.align = "center",
+                      out.width='60%')
+```
+
+\section{Exercise}
+
+In this exercise we consider the \textbf{Nile} time series, available in R, which contains the measurements of the annual flow of the river Nile at Ashwan, for the period 1871-1970.
+
+We first plot the data in Figure \ref{fig:Nile_plot}.
+\bigskip
+
+```{r, fig.width=5, fig.height=2, fig.cap="\\label{fig:Nile_plot}Annual flow of the river Nile at Ashwan"}
+# Df
+years_Nile<-seq(as.Date("1871/01/01"),as.Date("1970/01/01"), "years")
+df_Nile<-data.frame(years_Nile,Nile)
+
+# Plot
+ggplot(df_Nile, aes(x=years_Nile, y=Nile)) +
+  geom_line(color="black", size=0.4) +
+  geom_vline(xintercept=as.Date('1899/01/01'), color="black", size=0.3)+
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')')) +
+  scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous(breaks = seq(500,1500,300), limits = c(400,1500)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+```
+
+The series is clearly non-stationary and presents a change point around 1998 (black vertical line). For this reason, studying it fitting a local level model seems a good idea.
+
+\subsection{Question 1: Model definition and Smoothing}
+
+Let's model the series with a random walk plus noise (or local level) model. This is a time-invariant DLM with univariate Gaussian observation and state process, i.e. $\underset{1 \times 1}{Y_t}$ and $\underset{1 \times 1}{\theta_t}$, as well as with constant system matrices $\underset{1 \times 1}F=1$ and $\underset{1 \times 1}G=1$:
+\begin{eqnarray*} 
+& Y_t = \theta_t + v_t \quad            & v_t \overset{i.i.d.}\sim N(0, V) \\
+& \theta_t = \theta_{t-1} + w_t \quad   & v_t \overset{i.i.d.}\sim N(0, W)
+\end{eqnarray*}
+where the variances of both processes are constant and the prior distribution is also assumed to be Gaussian with mean $m_0$ and variance $C_0$. Furthermore, we assume that the error sequences $(v_t)$ and $(w_t)$ are independent, both within them and between them. We estimate the unknown variances $V=\sigma_v^2$ and $W=\sigma_w^2$ by maximum likelihood setting, with a slightly abuse of freedom, the mean of the initial distribution $m_0$ equal to the first observation.
+
+```{r} 
+#definition of the funtion of the rw which for each possible parameters build the dlm of interest. We assume that our initial distibution is centered at the first actual observation for simplicity. 
+buildrw <- function(param){
+    dlmModPoly(order=1, dV=param[1], dW=param[2], m0=Nile[1])}
+
+#MLE computation
+outMLE <- dlmMLE(Nile, parm = rep(100, 2), buildrw, lower=c(0.00001, 0), hessian=TRUE)
+
+#output of the optimization algorithm:
+#names(outMLE)
+#outMLE$par  # MLE estimates 
+#outMLE$value  # negative loglikelihood $-loglik(MLE)$
+#outMLE$counts # number of iterations of the optimization algorithm
+#outMLE$convergence # an integer code. 0 indicates successful convergence
+#outMLE$hessian #Hessian matrix of - liglik(MLE)
+#AsymCov=solve(outMLE$hessian) #asymptotic covariance matrix of the MLEs
+#sqrt(diag(AsymCov)) # asymptotic standard errors
+
+#model
+NileMod <- buildrw(outMLE$par)
+#NileMod$V
+#NileMod$W
+```
+
+It is possible to estimate the unknown variances through the package *dlm*. Without entering into details, we create a function (**buildrw**) that for each possible unknown parameters (the variances $V=\sigma_v^2$ and $W=\sigma_w^2$  in our case) computes the likelihood, which is maximized using numerical optimiziation (via the R function **optim**). Furthermore, the asymptotic standard erros of the MLEs are based on the Hessian matrix of the loglikelihood, computed at the MLEs. We obtained the following estimates (standard errors in parentheses):
+
+\begin{eqnarray*} 
+\hat{v_t} = \hat{V}= \hat{\sigma^2_v} = 15098.7 \quad (4076.131) \\
+\hat{w_t} = \hat{w} = \hat{\sigma^2_w} =  1469.021 \quad (1398.101) .
+\end{eqnarray*} 
+
+\subsection{Question 2: Model checking}
