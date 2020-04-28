@@ -139,4 +139,56 @@ It is possible to estimate the unknown variances through the package *dlm*. With
 \hat{w_t} = \hat{w} = \hat{\sigma^2_w} =  1469.021 \quad (1398.101) .
 \end{eqnarray*} 
 
+Having estimated the variances, we can now compute and plot the smoothing state estimates $s_t =\mathbb{E}\;(\theta_t \mid y_{1:T})$ obtained by implementing the Kalman smoother. Indeed, we want to retrospectively reconstruct the behaviour of the system given the full (observed) series up to time $T$. Using the Kalman smoother we can use a backward-recursive algorithm to compute the conditional distribution $\pi(\theta_t \mid y_{1:T})$) for any $t < T$, starting from the filtering distribution $\pi(\theta_T \mid y_{1:T})$) and estimating backward the states' history. We plot in figure \ref{fig:smoothing} the smoothing state estimates with $90 \%$ credible intervals. 
+
+
+```{r, fig.width=9, fig.height=2.5, fig.cap="\\label{fig:smoothing} Smoothing states estimates with credible intervals"}
+# Df
+years_Nile<-seq(as.Date("1871/01/01"),as.Date("1970/01/01"), "years")
+
+#Kalman Filter
+NileFilt<-dlmFilter(Nile,NileMod)
+m_T<-NileFilt$m[length(as.list(NileFilt$m))]
+filt_est=dropFirst(NileFilt$m)
+
+#Kalman Smoother
+NileSmooth<-dlmSmooth(NileFilt)
+s_T<-NileSmooth$s[length(as.list(NileSmooth$s))]
+smooth_est<-NileSmooth$s[-1]
+
+# Obtain the Smoothed variances
+S<-dlmSvd2var(NileSmooth$U.S,NileSmooth$D.S)
+sqrtS<-sqrt(unlist(S))
+sqrtS_est<-sqrtS[-1]
+
+# Calculate and plot confidence bands at 90% level
+upper <- smooth_est + 1.65*sqrtS_est 
+lower <- smooth_est - 1.65*sqrtS_est
+
+df_Nile_ci <-data.frame(years_Nile, Nile, smooth_est, upper, lower)
+   
+colors <- c("Observed data" = "black", "Smoothed estimates" = "blue")
+
+ ggplot(df_Nile_ci, aes(x=years_Nile))+
+  geom_line(aes(y=Nile, color = "Observed data"), size=0.3) +
+  geom_line(aes(y=smooth_est, color = "Smoothed estimates"), size=0.5) +
+  geom_line(aes(y=upper), color = "red", linetype = "dashed", size=0.01) +
+  geom_line(aes(y=lower), color = "red", linetype = "dashed", size=0.01) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=.1, fill="red") +
+  geom_vline(xintercept = as.Date('1899/01/01'), color= "black", size=0.3) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y=expression('Annual flow (10'^"8"*' m'^"3"*')'), color = "") +
+  scale_x_date(date_breaks="20 years", limits=as.Date(c('1871/01/01','1970/01/01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous(breaks = seq(500,1500,300), limits = c(400,1500)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
+   scale_color_manual(values = colors)+
+        theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+
+
+```
+
 \subsection{Question 2: Model checking}
