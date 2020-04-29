@@ -1,0 +1,144 @@
+---
+title: "20236 Time Series Analysis - Assignment 6"
+author:
+- Simone Arrigoni (1794692)
+- Luca Badolato (3086040)
+- Simone Valle (3088281)
+subtitle: "Bocconi University"
+date: May 4, 2020
+output: pdf_document
+header-includes:
+  \usepackage[utf8]{inputenc}
+  \usepackage{setspace}
+  \usepackage{apacite}
+  \usepackage{natbib}
+  \usepackage{algpseudocode}
+  \usepackage{algorithm}
+  \usepackage{bm}
+  \usepackage{amsmath}
+  \usepackage{amssymb}
+  \usepackage{graphicx}
+  \usepackage{subfig}
+  \usepackage{booktabs, caption}
+  \usepackage{array}
+  \usepackage{threeparttable}
+  \usepackage{listings}
+  \usepackage{physics}
+  \usepackage{float}
+  \floatplacement{figure}{H}
+  \usepackage{color} %red, green, blue, yellow, cyan, magenta, black, white
+  \definecolor{mygreen}{RGB}{28,172,0} % color values Red, Green, Blue
+  \definecolor{mylilas}{RGB}{170,55,241}
+  \definecolor{codegray}{RGB}{0.5,0.5,0.5}
+  \definecolor{orange}{RGB}{255,165,0}
+  \DeclareMathOperator*{\E}{\mathbb{E}}
+  \DeclareMathOperator*{\Ec}{\mathbb{E}_t}
+  \setlength\parindent{0pt}
+  \newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
+  \def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+---
+
+```{r, include=FALSE}
+# Load useful packages
+library(utf8)
+library(labeling)
+library(rmarkdown)
+library(httr)
+library(knitr)
+library(tseries)
+library(tinytex)
+library(scales)
+library(dlm)
+library(magrittr)
+library(stringr)
+library(depmixS4)
+library(tidyverse)
+library(ggthemes)
+library(latex2exp)
+library(kableExtra)
+library(ggpubr)
+library(reshape2)
+library(dlm)
+# Settings
+knitr::opts_chunk$set(message = FALSE, 
+                      warning = FALSE,
+                      echo    = FALSE,
+                      include = TRUE,
+                      fig.pos = "H",
+                      fig.align = "center",
+                      out.width='60%')
+```
+
+\section{Exercise}
+
+In this exercise we implement in R a DLM for regression. In particular, we consider the **capital asset pricing model (CAPM)**, a popular model in financial applications.
+
+This model assumes that the *excess returns* $Y_t$ of a financial asset depend linearly on the *market excess returns* $x_t$, that is:
+\begin{eqnarray*}
+Y_t = \alpha + \beta x_t + v_t \qquad v_t \overset{i.i.d.}\sim N(0, \sigma^2)
+\end{eqnarray*}
+where
+\begin{itemize}
+\item $Y_t= r_t - r_t^{(f)}$, with $r_t$ and $r_t^{(f)}$ being the returns at time $t$ of the asset of interest and of a risk-free asset, respectively;  
+\item $x_t = r_t^{(M)}- r_t^{(f)}$, with $r_t^{(M)}$ being the return at time $t$ of the market.
+\end{itemize}
+
+The dataset we use includes the monthly returns from January 1978 to December 1987 of four stocks (Mobil, IBM, Weyer, Citicorp), and the 30-days Treasury Bill as a proxy for the risk-free asset, and of the value-weighted average returs for all the stocks listed at the New York and American Stock Exchanges, representing the overall market returns.
+
+```{r, include=FALSE}
+CAPM = read.table("dati-ch3-CAPM.txt", header=TRUE)
+is.ts(CAPM[,"WEYER"])
+CAPM = ts(CAPM, frequency=12, start=c(1978,1))
+```
+
+The time series of the stocks are plotted in Figure \ref{fig:stock_plots}
+
+```{r, fig.cap="\\label{fig:stock_plots} Stock plots"}
+# Plot
+ggplot(CAPM) +
+  geom_line(color="black", size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Return") +
+  scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous() +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+```
+
+We will focus on the Weyer stock.
+
+Let us now write the CAPM as a DLM with static coefficients.
+This means writing the linear regression in the following DLM form:
+
+\begin{eqnarray*} 
+y_t &=& \alpha_t + \beta_t x_t + v_t , \quad v_t \overset{i.i.d.}\sim  N(0 , \sigma^2_v) \\
+\theta_t &=& G \theta_{t-1} + w_t , \quad w_t \overset{i.i.d.}\sim N_2 (0, W)
+\end{eqnarray*}
+where
+\begin{eqnarray*}
+\theta_t=[\alpha_t, \beta_t]', \qquad  \theta_0 \sim N_2(m_0, C_0), \qquad \theta_0 \independent (v_t) \independent (w_t)
+\end{eqnarray*}
+
+Let us use the simple specification $G=I_2$, $W=diag(\sigma^2_{w_1}, \sigma^2_{w_2})$, that is, $(\alpha_t)$ and $(\beta_t)$ are independent random walks.
+For static regression coefficients, we set $\sigma^2_{w_1}=0$, $\sigma^2_{w_2}=0$.
+
+```{r, include=FALSE}
+# Returns
+y = CAPM[, "WEYER"] - CAPM[, "RKFREE"]  # IMB excess returns
+x = CAPM[, "MARKET"]- CAPM[, "RKFREE"]  # market excess returns
+```
+
+```{r}
+# 
+lmCAPM = lm(y ~ x)
+lmCAPM$coef
+# DLM
+buildCAPM <- function(param){dlmModReg(x, addInt=TRUE, dV=param, dW=c(0,0))}
+# MLE
+fit=dlmMLE(y, parm=1, buildCAPM)
+```
+
+
+
