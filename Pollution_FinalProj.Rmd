@@ -100,6 +100,8 @@ louisiana_df <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/U
 ```
 
 ```{r}
+# create a vector of sates
+n_dates<-seq(as.Date("2000/1/1"), as.Date("2016/4/27"), "week")
 # How the dataset looks like
 knitr::kable(louisiana_df[1:5, 1:5], "latex", booktabs=T,
              caption="Dataset structure\\label{tab:louisiana_df}") %>%
@@ -362,7 +364,8 @@ Given the $CO$ decomposition seen in last paragraph and the presence of a latent
 
 Iniziamo con modelli semplici e poi mano a mano li complichiamo per renderli più adeguati alla nostra serie. Inizio ad adattare il random walk plus noise dell'esercizio 5:  \bigskip
 
-\section{Non-homogeneous HMM for modelling trend}
+\section{HMM for modelling trend}
+
 The series shows a clear break around week 400
 
 We could specify the model as
@@ -374,9 +377,64 @@ Y_{t}=\mu_{2}+ + \beta_{2}t + \varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i
 \end{cases}
 \end{align*}
 
-that is, in fact, a \textit{non-homogeneous} HMM, where the covariate which we allow to correlate with the observation process is simply the time. Indeed, a common way to construct models belonging to this class is to let $Y_t$ be distributed as $N(\alpha_i + x\beta_i, \; \sigma_j^2)$, where the location parameter is specified as a state-dependent linear regression.
+that is, in fact, a \textit{homogeneous} HMM, where we allow the observation process to linearly depend on time.
 
 we will expect in particular a $\mu_1 > \mu_2$ and $\beta_1<0, \; \beta_2=0$
+
+```{r}
+# Model specification
+y <- as.numeric(louisiana_df$weekly_CO_mean)
+nstates <- 2
+set.seed(2)
+HMM_CO <- depmixS4::depmix(y ~ 1 + louisiana_df$n_weeks, data=data.frame(y), nstates=nstates)
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+# 2) Estimation of the unknown parameters
+HMM_CO_fit <- depmixS4::fit(HMM_CO)
+```
+
+```{r}
+# MLE
+mu1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
+mu2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
+
+beta1hat<-paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters[["coefficients"]][["louisiana_df$n_weeks"]],3))
+beta2hat<-paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters[["coefficients"]][["louisiana_df$n_weeks"]],3))
+
+sd1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters$sd,3))
+sd2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters$sd,3))
+
+# se(MLE)
+MLE_st.err=depmixS4::standardError(HMM_CO_fit)
+st.err_mu1hat <- paste0('(', round(MLE_st.err$se[7],3), ')')
+st.err_mu2hat <- paste0('(', round(MLE_st.err$se[10],3), ')')
+
+st.err_beta1hat<-paste0('(', round(MLE_st.err$se[8],3), ')')
+st.err_beta2hat<-paste0('(', round(MLE_st.err$se[11],3), ')')
+
+st.err_sd1hat <- paste0('(', round(MLE_st.err$se[9],3), ')')
+st.err_sd2hat <- paste0('(', round(MLE_st.err$se[12],3), ')')
+
+```
+```{r}
+# Build a summary table
+MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2)),
+                     mu=c(mu1hat, st.err_mu1hat, mu2hat, st.err_mu2hat),
+                     beta=c(beta1hat, st.err_beta1hat,beta2hat,st.err_beta2hat),
+                     sd=c(sd1hat, st.err_sd1hat, sd2hat, st.err_sd2hat))
+knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+             col.names = c("State", "$\\hat{\\mu}_{MLE}$","$\\hat{\\beta}_{MLE}$","$\\hat{\\sigma}_{MLE}$"),
+             escape=F, caption="Maximum Likelihood estimates of the state-dependent
+             parameters \\label{tab:HMM_MLE}") %>%
+  column_spec(1:4, width="5em") %>%
+  collapse_rows(columns=1, latex_hline="none") %>%
+  footnote(general="Standard errors in parentheses",
+           general_title="Note:",
+           footnote_as_chunk=T, escape=F) %>%
+  kable_styling(latex_options="hold_position")
+```
+
 
 \section{Randon walk plus noise model}
 
