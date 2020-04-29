@@ -1,4 +1,4 @@
-             MOBIL     IBM       WEYER    CITCRP    MARKET   RKFREE
+ TIME            MOBIL     IBM       WEYER    CITCRP    MARKET   RKFREE
  1978.01    -0.046    -0.029    -0.116    -0.115    -0.045   0.00487
  1978.02    -0.017    -0.043    -0.135    -0.019     0.010   0.00494
  1978.03     0.049    -0.063     0.084     0.059     0.050   0.00526

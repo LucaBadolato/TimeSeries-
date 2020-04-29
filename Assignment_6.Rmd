@@ -69,11 +69,12 @@ knitr::opts_chunk$set(message = FALSE,
                       out.width='60%')
 ```
 
-\section{Exercise}
+In this exercise we implement in R a DLM for regression. In particular, we consider the **capital asset pricing model (CAPM)**, a basic but popular model in financial applications.
 
-In this exercise we implement in R a DLM for regression. In particular, we consider the **capital asset pricing model (CAPM)**, a popular model in financial applications.
+This model assumes that the *excess returns*, $Y_t$, of a risky financial asset depend linearly on *market excess returns*, $x_t$, or, stated differently, it assumes that the only relevant source of risk for pricing purposes is the systematic risk, namely the one that cannot be diversified away. 
 
-This model assumes that the *excess returns* $Y_t$ of a financial asset depend linearly on the *market excess returns* $x_t$, that is:
+The model is specified as:
+
 \begin{eqnarray*}
 Y_t = \alpha + \beta x_t + v_t \qquad v_t \overset{i.i.d.}\sim N(0, \sigma^2)
 \end{eqnarray*}
@@ -81,31 +82,108 @@ where
 \begin{itemize}
 \item $Y_t= r_t - r_t^{(f)}$, with $r_t$ and $r_t^{(f)}$ being the returns at time $t$ of the asset of interest and of a risk-free asset, respectively;  
 \item $x_t = r_t^{(M)}- r_t^{(f)}$, with $r_t^{(M)}$ being the return at time $t$ of the market.
+\item $\alpha$ is not significantly different from zero under the model. Hence, a $\hat{\alpha}$ significantly different from zero is regarded as *pricing error* (or *Jensen's $\alpha$*).
 \end{itemize}
 
 The dataset we use includes the monthly returns from January 1978 to December 1987 of four stocks (Mobil, IBM, Weyer, Citicorp), and the 30-days Treasury Bill as a proxy for the risk-free asset, and of the value-weighted average returs for all the stocks listed at the New York and American Stock Exchanges, representing the overall market returns.
 
 ```{r, include=FALSE}
 CAPM = read.table("dati-ch3-CAPM.txt", header=TRUE)
-is.ts(CAPM[,"WEYER"])
-CAPM = ts(CAPM, frequency=12, start=c(1978,1))
+CAPM$TIME <- seq(as.Date("1978/1/1"), as.Date("1987/12/1"), "month")
 ```
 
 The time series of the stocks are plotted in Figure \ref{fig:stock_plots}
 
 ```{r, fig.cap="\\label{fig:stock_plots} Stock plots"}
 # Plot
-ggplot(CAPM) +
-  geom_line(color="black", size=0.4) +
+G1 <- ggplot(CAPM, aes(x=TIME)) +
+  geom_line(aes(y=MOBIL),color="black", size=0.4) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
-  labs(x="Year", y="Return") +
+  labs(x="Year", y="Mobil") +
   scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+G2 <- ggplot(CAPM, aes(x=TIME)) +
+  geom_line(aes(y=CITCRP),color="black", size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Citicorp") +
+  scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous() +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+G3 <- ggplot(CAPM, aes(x=TIME)) +
+  geom_line(aes(y=IBM),color="black", size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Ibm") +
+  scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous() +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+G4 <- ggplot(CAPM, aes(x=TIME)) +
+  geom_line(aes(y=MARKET),color="black", size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Market") +
+  scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous() +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+G5 <- ggplot(CAPM, aes(x=TIME)) +
+  geom_line(aes(y=WEYER),color="black", size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Weyer") +
+  scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous() +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+G6 <- ggplot(CAPM, aes(x=TIME)) +
+  geom_line(aes(y=RKFREE),color="black", size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="30-day T-Bill") +
+  scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous() +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+gg_series <- ggarrange(G1, G2, G3, G4, G5, G6,
+          ncol=2, nrow=3)
+gg_series
 ```
+
+\section{Exercise 1}
+\subsection{Question (a)}
+
+As in point $1$ of the Video LAB, we are here considering excess returns for IBM. 
+
+```{r}
+y = CAPM[, "IBM"] - CAPM[, "RKFREE"]  # IMB excess returns
+x = CAPM[, "MARKET"]- CAPM[, "RKFREE"] # market excess returns
+
+RegCAPM = lm( y ~ x)  # Fit a simple linear regression
+```
+
+If we were to estimate with Maximum likelihood the parameters $\alpha$ and $\beta$, they would coincide with the $OLS$ estimates.
+
+
+
+\section{Exercise 2}
 
 We will focus on the Weyer stock.
 
