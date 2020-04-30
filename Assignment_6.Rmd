@@ -8,7 +8,6 @@ subtitle: "Bocconi University"
 date: May 4, 2020
 output: 
   pdf_document
-  
 header-includes:
   \usepackage[utf8]{inputenc}
   \usepackage{setspace}
@@ -17,6 +16,7 @@ header-includes:
   \usepackage{bm}
   \usepackage{amsmath}
   \usepackage{amssymb}
+  \usepackage{enumitem}
   \usepackage{graphicx}
   \usepackage{subfig}
   \usepackage{booktabs, caption}
@@ -29,7 +29,7 @@ header-includes:
   \usepackage{color} %red, green, blue, yellow, cyan, magenta, black, white
   \definecolor{mygreen}{RGB}{28,172,0} % color values Red, Green, Blue
   \definecolor{mylilas}{RGB}{170,55,241}
-  ---
+---
 
 ```{r, include=FALSE}
 
@@ -52,7 +52,7 @@ library(latex2exp)
 library(kableExtra)
 library(ggpubr)
 library(reshape2)
-library(dlm)
+
 # Settings
 knitr::opts_chunk$set(message = FALSE, 
                       warning = FALSE,
@@ -63,15 +63,17 @@ knitr::opts_chunk$set(message = FALSE,
                       out.width='60%')
 ```
 
+\section{An example of a DLM for regression: CAPM}
+
 In this exercise we implement in R a DLM for regression. In particular, we consider the **capital asset pricing model (CAPM)**, a basic but popular model in financial applications.
 
 This model assumes that the \textit{excess returns}, $Y_t$, of a risky financial asset depend linearly on \textit{market excess returns}, $x_t$, or, stated differently, it assumes that the only relevant source of risk for pricing purposes is the systematic risk, namely the one that cannot be diversified away. 
 
 The model is specified as:
-
-\begin{eqnarray*}
-Y_t = \alpha + \beta x_t + v_t \qquad v_t \overset{i.i.d.}\sim N(0, \sigma^2)
-\end{eqnarray*}
+\begin{eqnarray}
+Y_t = \alpha + \beta x_t + v_t, \qquad v_t \overset{i.i.d.}\sim N(0, \sigma^2)
+\label{eq:CAPM}
+\end{eqnarray}
 where
 \begin{itemize}
 \item $Y_t= r_t - r_t^{(f)}$, with $r_t$ and $r_t^{(f)}$ being the returns at time $t$ of the asset of interest and of a risk-free asset, respectively;  
@@ -79,141 +81,311 @@ where
 \item $\alpha$ is not significantly different from zero under the model. Hence, a $\hat{\alpha}$ significantly different from zero is regarded as \textit{pricing error} (or \textit{Jensen's $\alpha$}).
 \end{itemize}
 
-The dataset we use includes the monthly returns from January 1978 to December 1987 of four stocks (Mobil, IBM, Weyer, Citicorp), and the 30-days Treasury Bill as a proxy for the risk-free asset, and of the value-weighted average returs for all the stocks listed at the New York and American Stock Exchanges, representing the overall market returns.
+The dataset we use includes the monthly returns from January 1978 to December 1987 of four stocks (Mobil, IBM, Weyer, Citicorp) and the 30-days Treasury Bill as a proxy for the risk-free asset, and of the value-weighted average returs for all the stocks listed at the New York and American Stock Exchanges, representing the overall market returns.
 
 ```{r, include=FALSE}
-CAPM = read.table("dati-ch3-CAPM.txt", header=TRUE)
-CAPM$TIME <- seq(as.Date("1978/1/1"), as.Date("1987/12/1"), "month")
+capm = read.table("dati-ch3-CAPM.txt", header=TRUE)
+capm$time <- seq(as.Date("1978/1/1"), as.Date("1987/12/1"), "month")
 ```
 
+The time series of the stocks are plotted in Figure \ref{fig:stock_plots}.
 
 ```{r, fig.cap="\\label{fig:stock_plots} Stock plots"}
 # Plot
-G1 <- ggplot(CAPM, aes(x=TIME)) +
+G1 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=MOBIL),color="black", size=0.4) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Mobil") +
-  scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
+  scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 
-G2 <- ggplot(CAPM, aes(x=TIME)) +
+G2 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=CITCRP),color="black", size=0.4) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Citicorp") +
-  scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
+  scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 
-G3 <- ggplot(CAPM, aes(x=TIME)) +
+G3 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=IBM),color="black", size=0.4) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Ibm") +
-  scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
+  scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 
-G4 <- ggplot(CAPM, aes(x=TIME)) +
+G4 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=MARKET),color="black", size=0.4) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Market") +
-  scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
+  scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 
-G5 <- ggplot(CAPM, aes(x=TIME)) +
+G5 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=WEYER),color="black", size=0.4) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Weyer") +
-  scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
+  scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 
-G6 <- ggplot(CAPM, aes(x=TIME)) +
+G6 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=RKFREE),color="black", size=0.4) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="30-day T-Bill") +
-  scale_x_date(date_breaks="1 year", limits=as.Date(c('1978/01/01','1987/01/01')),
+  scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 
-gg_series <- ggarrange(G1, G2, G3, G4, G5, G6,
-          ncol=2, nrow=3)
+gg_series <- ggarrange(G1, G2, G3, G4, G5, G6, ncol=2, nrow=3)
 gg_series
-
 ```
 
-The time series of the stocks are plotted in Figure \ref{fig:stock_plots}
+\section{Exercise 1: IBM}
 
-\section{Exercise 1}
-\subsection{Question (a)}
+In this exercise we will consider the IBM stock.
 
-As in point 1 of the Video LAB, we are here considering excess returns for IBM. 
+```{r, include=FALSE}
+# IBM and market excess returns
+y_1 = capm[, "IBM"] - capm[, "RKFREE"]
+x = capm[, "MARKET"]- capm[, "RKFREE"]
 
-```{r}
-y = CAPM[, "IBM"] - CAPM[, "RKFREE"]  # IMB excess returns
-x = CAPM[, "MARKET"]- CAPM[, "RKFREE"] # market excess returns
-
-RegCAPM = lm( y ~ x)  # Fit a simple linear regression
-
+# Fit a simple linear regression
+lmCAPM = lm(y_1 ~ x)
 ```
 
-If we were to estimate with Maximum likelihood the parameters $\alpha$ and $\beta$, they would coincide with the OLS estimates, that are respectively `r round(RegCAPM$coefficients[1], 5)` and `r round(RegCAPM$coefficients[2], 5)` .
+The MLE estimates of $\alpha$ and $\beta$ in the simple CAPM are obtained estimating the linear regression of Equation \ref{eq:CAPM}. The OLS estimates of $\alpha$ and $\beta$ are respectively `r round(lmCAPM$coefficients[1], 5)` and `r round(lmCAPM$coefficients[2], 5)`.
 
-
-
-\section{Exercise 2}
-
-We will focus on the Weyer stock.
-
-Let us now write the CAPM as a DLM with static coefficients.
-This means writing the linear regression in the following DLM form:
-
+Let us now write the CAPM as a DLM with static coefficients, that is:
 \begin{eqnarray*} 
-y_t &=& \alpha_t + \beta_t x_t + v_t , \quad v_t \overset{i.i.d.}\sim  N(0 , \sigma^2_v) \\
-\theta_t &=& G \theta_{t-1} + w_t , \quad w_t \overset{i.i.d.}\sim N_2 (0, W)
+y_t &=& \alpha_t + \beta_t x_t + v_t , \quad v_t \overset{i.i.d.}\sim  N(0, V) \\
+\theta_t &=& G \theta_{t-1} + w_t , \qquad w_t \overset{i.i.d.}\sim N_2 (0, W)
 \end{eqnarray*}
 where
 \begin{eqnarray*}
-\theta_t=[\alpha_t, \beta_t]', \qquad  \theta_0 \sim N_2(m_0, C_0), \qquad \theta_0 \independent (v_t) \independent (w_t)
+\theta_t=[\alpha_t, \beta_t]', \qquad  \theta_0 \sim N_2(m_0, C_0), \qquad \theta_0 \bot (v_t) \bot (w_t)
 \end{eqnarray*}
+In particular, we set $G=I_2$ and $W=diag(\sigma^2_{w_1}, \sigma^2_{w_2})$, that is $(\alpha_t)$ and $(\beta_t)$ are independent random walks. In addition, in order to have static regression coefficients, we set $\sigma^2_{w_1}=0$ and $\sigma^2_{w_2}=0$.
+We also assume that the variance is known and equal to $V = 0.00255$ and consider as initial expectation the vector $m_{0} = (0, 1.5)$, that is taking $E(\alpha)=0$ and $E(\beta)=1.5$.
 
-Let us use the simple specification $G=I_2$, $W=diag(\sigma^2_{w_1}, \sigma^2_{w_2})$, that is, $(\alpha_t)$ and $(\beta_t)$ are independent random walks.
-For static regression coefficients, we set $\sigma^2_{w_1}=0$, $\sigma^2_{w_2}=0$.
+```{r}
+ibmCAPM = dlmModReg(x, addInt=TRUE, dV=0.00255, dW=c(0,0), m0=c(.1,1.5))
+outFilter_ibm = dlmFilter(y_1, ibmCAPM)
+
+# Posterior distribution
+TT_ibm = length(y_1)
+CT_ibm = dlmSvd2var(outFilter_ibm$U.C[[TT_ibm+1]], outFilter_ibm$D.C[TT_ibm+1, ])
+```
+
+Given this model specification, the Bayesian point estimates, with respect to quadratic loss, of $\alpha$ and $\beta$ are `r round(outFilter_ibm$m[length(y_1)+1, 1], 5)` and `r round(outFilter_ibm$m[length(y_1)+1, 2], 5)` respectively.
+
+Moreover, the filtering covariance matrix $C_{T}$ is presented in the following table:
+\begin{center}
+\begin{tabular}{|c|c|c|}
+  \hline
+                    & $\sigma^2_{w_1}$           & $\sigma^2_{w_2}$           \\
+  \hline
+  $\sigma^2_{w_1}$  & `r round(CT_ibm[1, 1], 5)` & `r round(CT_ibm[1, 2], 5)` \\
+  \hline
+  $\sigma^2_{w_2}$  & `r round(CT_ibm[2, 1], 5)` & `r round(CT_ibm[2, 2], 5)` \\
+  \hline
+\end{tabular}
+\end{center}
+\medskip
+
+Finally, the filtering distributions of $\alpha \mid y_{1:T}$ and $\beta \mid y_{1:T}$ are plotted in the following two plots.
+
+```{r, fig.height=3}
+# Plots
+post_alpha_ibm = function(alpha){dnorm(alpha, outFilter_ibm$m[length(y_1)+1,1], CT_ibm[1,1]^.5)}
+curve(post_alpha_ibm, from=-0.05, to=0.05, xlab="alpha", ylab="posterior density")
+
+post_beta_ibm = function(beta){dnorm(beta, outFilter_ibm$m[length(y_1)+1,2], CT_ibm[2,2]^.5)}
+curve(post_beta_ibm, xlab="beta", ylab="posterior density")
+```
+
+\bigskip
+
+\section{Exercise 2: Citicorp}
+
+In this exercise we will consider the Citicorp stock.
+
+\subsection{2.1 Simple CAPM}
+
+First, we fit a simple CAPM for the Citicorp stock as we did for IBM in the first part of the assignment, namely we write the CAPM as a DLM with static coefficients.
+\begin{eqnarray*} 
+y_t &=& \alpha_t + \beta_t x_t + v_t , \quad v_t \overset{i.i.d.}\sim  N(0, V) \\
+\theta_t &=& G \theta_{t-1} + w_t , \qquad w_t \overset{i.i.d.}\sim N_2 (0, W)
+\end{eqnarray*}
+where
+\begin{eqnarray*}
+\theta_t=[\alpha_t, \beta_t]', \qquad  \theta_0 \sim N_2(m_0, C_0), \qquad \theta_0 \bot (v_t) \bot (w_t)
+\end{eqnarray*}
+and $G=I_2$ and $W=diag(0, 0)$.
 
 ```{r, include=FALSE}
 # Returns
-y = CAPM[, "WEYER"] - CAPM[, "RKFREE"]  # IMB excess returns
-x = CAPM[, "MARKET"]- CAPM[, "RKFREE"]  # market excess returns
+y_2 = capm[, "CITCRP"] - capm[, "RKFREE"]  # Citicorp excess returns
+plot(cbind(x,y_2), main="excess returns") # Plot of the excess returns
+
+# Build DLM
+buildCAPM <- function(param){dlmModReg(x, addInt=TRUE, dV=param, dW=c(0,0))}
+fit = dlmMLE(y_2, parm=1, buildCAPM)
+citiCAPM = buildCAPM(fit$par)
+
+# DLM filter
+outFilter_citi = dlmFilter(y_2, citiCAPM)
+
+# Posterior distribution of alpha
+TT_citi = length(y_2)
+CT_citi = dlmSvd2var(outFilter_citi$U.C[[TT_citi+1]], outFilter_citi$D.C[TT_citi+1, ])
 ```
+
+Given this model specification, the Bayesian point estimates, with respect to quadratic loss, of $\alpha$ and $\beta$ are `r round(outFilter_citi$m[length(y_1)+1, 1], 5)` and `r round(outFilter_citi$m[length(y_1)+1, 2], 5)` respectively.
+
+Moreover, the filtering covariance matrix $C_{T}$ is presented in the following table:
+\begin{center}
+\begin{tabular}{|c|c|c|}
+  \hline
+                    & $\sigma^2_{w_1}$           & $\sigma^2_{w_2}$           \\
+  \hline
+  $\sigma^2_{w_1}$  & `r round(CT_citi[1, 1], 5)` & `r round(CT_citi[1, 2], 5)` \\
+  \hline
+  $\sigma^2_{w_2}$  & `r round(CT_citi[2, 1], 5)` & `r round(CT_citi[2, 2], 5)` \\
+  \hline
+\end{tabular}
+\end{center}
+\medskip
+
+Then, recalling that the posterior distribution of $\alpha \mid y_{1:T}$ is $N(m_T, C_T)$, we can plot the filtering distributions of $\alpha \mid y_{1:T}$ (first plot) and $\beta \mid y_{1:T}$ (second plot).
+
+```{r, fig.height=3}
+# Plots
+post_alpha_citi = function(alpha){dnorm(alpha, outFilter_citi$m[length(y_2)+1,1], CT_citi[1,1]^.5)}
+curve(post_alpha_citi, from=-0.05, to=0.05, xlab="alpha", ylab="posterior density")
+
+post_beta_citi = function(beta){dnorm(beta, outFilter_citi$m[length(y_2)+1,2], CT_citi[2,2]^.5)}
+curve(post_beta_citi, xlab="beta", ylab="posterior density")
+```
+
+Finally, in order to check the model, we look at the forecast errors.
+
+```{r, fig.height=5}
+# Model checking
+qqnorm(residuals(outFilter_citi, sd=FALSE))
+qqline(residuals(outFilter_citi, sd=FALSE))
+tsdiag(outFilter_citi)
+```
+
+\textcolor{red}{The diagnostic check on the forecast errors shows that \dots}
+
+\medskip
+
+\subsection{2.2 Dynamic CAPM}
+
+In this second part of the exercise we consider a **dynamic** version of the CAPM, that is a CAPM where coefficients $\alpha$ and $\beta$ may vary over time. For example, an asset might evolve from being *aggressive* ($\beta>1$; that is, the asset tends to amplify the changes in the market returns) to being  *conservative* ($\beta<1$).
+
+In order to achieve this, we now set non-zero variances in $W$. \textcolor{red}{Since the static model we fitted in the first part of the current exercise was fairly \textbf{good/bad}, we expect the MLEs of $(\sigma^2_{w_1}, \sigma_{w_2}^2)$ to be \textbf{close to/different from} zero.}
 
 ```{r}
-# 
-lmCAPM = lm(y ~ x)
-lmCAPM$coef
-# DLM
-buildCAPM <- function(param){dlmModReg(x, addInt=TRUE, dV=param, dW=c(0,0))}
-# MLE
-fit=dlmMLE(y, parm=1, buildCAPM)
+citiDynamicCAPM <- function(param){dlmModReg(x, dV=param[1], dW=param[2:3], m0=c(.1,1.5))}
+citiMLE = dlmMLE(y_2, c(1,.5,.5), citiDynamicCAPM, lower=c(0.000001, 0, 0), hessian=TRUE)
+AsymCov=solve(citiMLE$hessian)
 ```
 
+In Table \ref{tab:MLE} are presented the MLEs of the unknown coefficients and the associated standard errors.
 
+```{r}
+# MLE
+MLE_sigmaV  <- paste0(round(citiMLE$par[1],3))
+MLE_sigmaW1 <- paste0(round(citiMLE$par[2],3))
+MLE_sigmaW2 <- paste0(round(citiMLE$par[3],3))
 
+# se(MLE)
+se_sigmaV  <- paste0('(', round(sqrt(diag(AsymCov))[1],3), ')')
+se_sigmaW1 <- paste0('(', round(sqrt(diag(AsymCov))[2],3), ')')
+se_sigmaW2 <- paste0('(', round(sqrt(diag(AsymCov))[3],3), ')')
+
+# Summary table
+MLEsum <- data.frame(sigmaV=c(MLE_sigmaV, se_sigmaV),
+                     sigmaW1=c(MLE_sigmaW1, se_sigmaW1),
+                     sigmaW2=c(MLE_sigmaW2, se_sigmaW2))
+knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+             col.names = c("$\\hat{\\sigma}^2_{v}$",
+                           "$\\hat{\\sigma}^2_{w_1}$",
+                           "$\\hat{\\sigma}^2_{w_2}$"),
+             escape=F, caption="Maximum Likelihood estimates of the unknown
+             parameters\\label{tab:MLE}") %>%
+  column_spec(1:3, width="5em") %>%
+  collapse_rows(columns=1, latex_hline="none") %>%
+  footnote(general="Standard errors in parentheses",
+           general_title="Note:",
+           footnote_as_chunk=T, escape=F) %>%
+  kable_styling(latex_options="hold_position")
+```
+
+\textcolor{red}{Comment: The MLE and the variance of $\sigma^2_{w_1}$ are equal to zero ($\hat{\sigma}^2_{w_1}\approx 0$). This means that the $\alpha_t$ coefficient is constant.}
+
+Let's now compute the smoothing estimates of $\theta_t=(\alpha_t, \beta_t)'$, for $t=0, \ldots, T$. The smoothing estimates of $\beta_t$ are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:smooth_est}.
+
+```{r, fig.width=7, fig.height=3, fig.cap="\\label{fig:smooth_est} Smoothing estimates of beta with credible intervals"}
+
+# Smoothing estimates
+mod_citi = citiDynamicCAPM(citiMLE$par)
+citiSmooth = dlmSmooth(y_2, mod_citi)
+smooth_state_est <- dropFirst(citiSmooth$s[,2])
+
+# Smoothing variances
+smooth_var <- dlmSvd2var(citiSmooth$U.S, citiSmooth$D.S)
+smooth_sd <- (unlist(smooth_var))^.5
+beta_sd <- vector(mode = "numeric", length = length(smooth_var))
+for (i in 1:length(smooth_var)){
+  beta_sd[i] <- smooth_sd[i*4]
+}
+smooth_sd_est <- dropFirst(beta_sd)
+
+# C.I. upper and lower bounds
+upper_smooth <- smooth_state_est + 1.64*smooth_sd_est # upper bound of 90% C.I.
+lower_smooth <- smooth_state_est - 1.64*smooth_sd_est # lower bound of 90% C.I.
+
+# Create df
+df_citi_ci <- data.frame(capm$time, smooth_state_est, upper_smooth, lower_smooth)
+
+# Plot the smoothing estimates with their credible intervals
+ggplot(df_citi_ci, aes(x=capm$time)) +
+  geom_line(aes(y=smooth_state_est), size=0.5) +
+  geom_line(aes(y=upper_smooth), color = "red", linetype = "dashed", size=0.01) +
+  geom_line(aes(y=lower_smooth), color = "red", linetype = "dashed", size=0.01) +
+  geom_ribbon(aes(ymin=lower_smooth, ymax=upper_smooth), alpha=.1, fill="red") +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Beta", color = "black") +
+  scale_x_date(date_breaks="2 years", limits=as.Date(c('1978-01-01','1988-01-01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous() +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+```
+
+\textcolor{red}{Comment: While $\alpha_t$ is constant ($\hat{\sigma}^2_{w_1}\approx 0$), the smoothing estimates of $\beta_t$, $t=1, \ldots, T$, show that the stock becomes less conservative over time, becoming an  aggressive investments in the 1980's.}
