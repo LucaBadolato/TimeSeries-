@@ -16,7 +16,7 @@ header-includes:
   \usepackage{bm}
   \usepackage{amsmath}
   \usepackage{amssymb}
-  \usepackage{enumitem}
+  
   \usepackage{graphicx}
   \usepackage{subfig}
   \usepackage{booktabs, caption}
@@ -52,7 +52,7 @@ library(latex2exp)
 library(kableExtra)
 library(ggpubr)
 library(reshape2)
-
+library(cowplot)
 # Settings
 knitr::opts_chunk$set(message = FALSE, 
                       warning = FALSE,
@@ -225,6 +225,7 @@ post_beta_ibm = function(beta){dnorm(beta, outFilter_ibm$m[length(y_1)+1,2], CT_
 curve(post_beta_ibm, xlab="beta", ylab="posterior density")
 ```
 
+We remark that even if the Bayesian estimates obtained using a DLM with static coefficients and the MLE obtained with a static linear regresion are very similar (almost identical), they are substantially different. Indeed, the DLM coefficient are random, and are obtained through Bayesian inference assigning  them a prior distribution. On the contrary, the estimates obtained with a static linear regression model are constants, and are obtained through OLS, that is minimizing the sum of squares of the difference between the observed dependent variable and those predicted by a linear function.    
 \bigskip
 
 \section{Exercise 2: Citicorp}
@@ -289,13 +290,119 @@ post_beta_citi = function(beta){dnorm(beta, outFilter_citi$m[length(y_2)+1,2], C
 curve(post_beta_citi, xlab="beta", ylab="posterior density")
 ```
 
-Finally, in order to check the model, we look at the forecast errors.
+Finally, it is possible to look the forecas errors to check the model assumptions. Indeed, under well specified assumptions the standardized innovation process has the sidtribution of a Gausssian white noise. Hence, we first grafically inspect the standardized one-step-ahead forecast errors series, providing it in Figure \ref{fig:diagnostic} together with the empirical autocorrelation function (ACF) abd their normal QQ-plot.   
 
-```{r, fig.height=5}
+```{r, fig.width=20, fig.height=12, out.width='100%', fig.cap="\\label{fig:diagnostic} (a): Standardized one-step-ahead forecast errors; (b): ACF of one-step ahead forecast errors; (c): Normal probability plot of standardized one-step-ahead forecast errrs."}
 # Model checking
-qqnorm(residuals(outFilter_citi, sd=FALSE))
-qqline(residuals(outFilter_citi, sd=FALSE))
-tsdiag(outFilter_citi)
+res <- residuals(outFilter_citi, sd=FALSE)
+res = data.frame(res, capm$TIME)
+colnames(res) = c("res", "time")
+res$time <- seq(as.Date("1978/1/1"), as.Date("1987/12/1"), "month")
+
+a <- ggplot(res, aes(x=time)) +
+  geom_line(aes(y=res),color="blue", size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Residuals") +
+  scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
+               labels=date_format("%Y")) +
+  scale_y_continuous(breaks=seq(-2.5, 2.5,0.5), limits = c(-3,3)) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+
+# ggplot.corr function from https://rh8liuqy.github.io/ACF_PACF_by_ggplot2.html slightly modified for our necessities.
+ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE, horizontal = TRUE,...) {
+  
+  require(ggplot2)
+  require(dplyr)
+  require(cowplot)
+  
+  if(horizontal == TRUE) {numofrow <- 1} else {numofrow <- 2}
+  
+  list.acf <- acf(data, lag.max = lag.max, type = "correlation", plot = FALSE)
+  N <- as.numeric(list.acf$n.used)
+  df1 <- data.frame(lag = list.acf$lag, acf = list.acf$acf)
+  df1$lag.acf <- dplyr::lag(df1$acf, default = 0)
+  df1$lag.acf[2] <- 0
+  df1$lag.acf.cumsum <- cumsum((df1$lag.acf)^2)
+  df1$acfstd <- sqrt(1/N * (1 + 2 * df1$lag.acf.cumsum))
+  df1$acfstd[1] <- 0
+  df1 <- select(df1, lag, acf, acfstd)
+  
+  list.pacf <- acf(data, lag.max = lag.max, type = "partial", plot = FALSE)
+  df2 <- data.frame(lag = list.pacf$lag,pacf = list.pacf$acf)
+  df2$pacfstd <- sqrt(1/N)
+  
+  if(large.sample.size == TRUE) {
+    plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
+      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
+      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
+      geom_col(fill = "#4373B6", width = 0.7) +
+      scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
+      scale_y_continuous(name = element_blank(), 
+                         limits = c(min(df1$acf,df2$pacf),1)) +
+      theme_bw()
+    
+    plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
+      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
+      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
+      geom_col(fill = "#4373B6", width = 0.7) +
+      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm = TRUE),6)) +
+      scale_y_continuous(name = element_blank(),
+                         limits = c(min(df1$acf,df2$pacf),1)) +
+      ggtitle("PACF") +
+      theme_bw()
+  }
+  else {
+    plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
+      geom_col(fill = "#4373B6", width = 0.7) +
+      geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
+                 colour = "sandybrown",
+                 linetype = "dashed") + 
+      geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
+                 colour = "sandybrown",
+                 linetype = "dashed") + 
+      scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
+      scale_y_continuous(name = element_blank(), 
+                         limits = c(min(df1$acf,df2$pacf),1)) +
+      theme_bw()
+    
+    plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
+      geom_col(fill = "#4373B6", width = 0.7) +
+      geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
+                 colour = "sandybrown",
+                 linetype = "dashed") + 
+      geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
+                 colour = "sandybrown",
+                 linetype = "dashed") + 
+      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm = TRUE),6)) +
+      scale_y_continuous(name = element_blank(),
+                         limits = c(min(df1$acf,df2$pacf),1)) +
+      ggtitle("PACF") +
+      theme_bw()
+  }
+  cowplot::plot_grid(plot.acf)
+}
+
+b <- ggplot.corr(data = res$res, lag.max = 24, ci= 0.95, large.sample.size = FALSE, horizontal = TRUE)
+
+
+
+c <- ggplot(res, aes(sample = res))+
+  stat_qq(col="blue")+
+  stat_qq_line(col="red", lty=2, size=1)+
+  scale_y_continuous(breaks=seq(-2.5, 2.5,0.5), limits = c(-3,3))+
+  scale_x_continuous(breaks=seq(-2.5, 2.5,0.5), limits = c(-3,3))+
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Theoretical", y="Observed") +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+res_series <- plot_grid( a, ggarrange(b, c, ncol = 2, labels = c("(b)", "(c)")), nrow = 2, labels = "(a)")
+
+res_series
 ```
 
 \textcolor{red}{The diagnostic check on the forecast errors shows that \dots}
