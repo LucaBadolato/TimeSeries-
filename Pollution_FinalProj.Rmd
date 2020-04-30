@@ -180,7 +180,27 @@ SO2 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_SO2_mean)) +
 ggarrange(O3, NO2, CO, SO2,
           ncol=2, nrow=2)
 ```
-The time series, each with its specific complexities, do not in general look stationary. For instance, time_varying mean and variances can be identified basically in all the series with different changing patterns. Hence, they cannot be analized with the well-known ARMA models, which require covariance-stationarity.
+The time series, each with its specific complexities, do not in general look stationary. For instance, time_varying mean and variances can be identified basically in all the series with different changing patterns. Hence, they cannot be analized with the common models based on the assumption of covariance-stationarity, such as the well-known ARMA models.
+
+```{r}
+#Augmented Dickey-Fuller test
+ADF_results<-matrix(NA,2,4)
+
+for (col_idx in 1:4){
+  ADF<-adf.test(louisiana_df[,col_idx+1]) 
+  ADF_results[1,col_idx]<-ADF$statistic
+  ADF_results[2,col_idx]<-ADF$p.value
+}
+
+# results
+knitr::kable(ADF_results[,1:4], "latex", booktabs=T, align=c(rep('c',times=4)),
+             col.names=(c("CO","NO2","O3","SO2")),
+             caption="Augmented Dickey-Fuller test\\label{tab:ADF_test}") %>%
+  kable_styling(position = "center", latex_options="hold_position")
+
+```
+
+A formal test for presence of unit roots against the alternative of stationarity is also carried out to confirm our guess. Results for the Augmented Dickey-Fuller test are reported in table \ref{tab:ADF_test}.
 
 \section{$\text{SO}_{2}$ series}
 
@@ -366,7 +386,7 @@ Iniziamo con modelli semplici e poi mano a mano li complichiamo per renderli piÃ
 
 \section{HMM for modelling trend}
 
-The series shows a clear break around week 400
+The series shows a clear break around week 400.
 
 We could specify the model as
 
@@ -377,7 +397,7 @@ Y_{t}=\mu_{2}+ + \beta_{2}t + \varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i
 \end{cases}
 \end{align*}
 
-that is, in fact, a \textit{homogeneous} HMM, where we allow the observation process to linearly depend on time.
+that is, in fact, a \textit{non-homogeneous} HMM, where the covariate which we allow to correlate with the observation process is simply the time. Indeed, a common way to construct models belonging to this class is to let $Y_t$ be distributed as $N(\alpha_i + x\beta_i, \; \sigma_j^2)$, where the location parameter is specified as a state-dependent linear regression.
 
 we will expect in particular a $\mu_1 > \mu_2$ and $\beta_1<0, \; \beta_2=0$
 
@@ -434,7 +454,6 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
 ```
-
 
 \section{Randon walk plus noise model}
 

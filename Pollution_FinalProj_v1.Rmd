@@ -7,6 +7,7 @@ author:
 subtitle: "Bocconi University"
 date: "21/4/2020"
 output: pdf_document
+geometry: margin=2cm
 nocite: '@*'
 bibliography: References.bib
 header-includes:
@@ -72,8 +73,6 @@ knitr::opts_chunk$set(message = FALSE,
                       out.width='60%')
 ```
 
-\abstract{INSERT ABSTRACT HERE}
-
 \section{Introduction}
 
 Pollution is one of the most debated social issues of our times. It has been attracting more and more attention given its serious implications on the health of both the Earth and human beings. The economic activity under the model of production and consumption that has been characterizing the last century is, with no doubt, at the very basis of such complex phenomenon. Only in the last fifteen years some consciousness about the importance of pollution in the long-run has evolved and serious interventions have been made. Moreover, among the numerous component which pollution can be split into, air pollution is certainly one of the most important and tightly linked to strict economic activity.
@@ -104,6 +103,8 @@ louisiana_df <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/U
 ```
 
 ```{r}
+# create a vector of sates
+n_dates<-seq(as.Date("2000/1/1"), as.Date("2016/4/27"), "week")
 # How the dataset looks like
 knitr::kable(louisiana_df[1:5, 1:5], "latex", booktabs=T,
              caption="Dataset structure\\label{tab:louisiana_df}") %>%
@@ -111,7 +112,7 @@ knitr::kable(louisiana_df[1:5, 1:5], "latex", booktabs=T,
 ```
 \bigskip
 
-As explained in above, the four variables are related by a common latent process. Hence, we report in Table \ref{tab:louisiana_corr} their correlation coefficients.
+We report in Table \ref{tab:louisiana_corr} pollutants'correlation coefficients.
 
 Provided that the correlation between pollutants show significant differences in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution [@Logan1981], a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field [@Voulgarakis2011].
 
@@ -182,14 +183,15 @@ SO2 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_SO2_mean)) +
 ggarrange(O3, NO2, CO, SO2,
           ncol=2, nrow=2)
 ```
-The time series, each with its specific complexities, do not in general look stationary. For instance, time_varying mean and variances can be identified basically in all the series with different changing patterns. Hence, they cannot be analized with the common models based on the assumption of covariance-stationarity, such as the well-known ARMA models.
-
+The time series, each with its specific features, do not in general look stationary.  Hence, they cannot be analized with the common models based on the assumption of covariance-stationarity, such as the well-known ARMA models.
 
 \bigskip
-\section{$\text{CO}$ series}
-As explained also in the Introduction, $\text{CO}$ is perhaps the pollutant more tightly linked with the economic and industrial network of a country. Consequently, we select the $\text{CO}$ series as the one of main interest for our analysis being the purpose of this work tracking the evolution of air pollution related to an underlying economic process.
 
-As exploratory step, we decompose the time series in its structural component by using an additive model. Figure \ref{fig:decompose_CO}, that plots together the time series with such components, shows that, in fact, a seasonal factor seems to be present. Secondly, the series is characterized by a negative and slightly noisy trend up to a clear breakponit around $2010$. After this break, indeed, the trend line flattens and the trend disappears, as could be guessed also looking at the observed series. Finally, the random component, although seeming really erratic, clearly shows another braekpoint affecting in this case the variance slightly before $2010$. These features suggest that the process may be well described by a Hidden Markov Model.  
+\section{$\text{CO}$ series}
+$\text{CO}$ is perhaps the pollutant more tightly linked with the economic and industrial network of a country. Consequently, we select this as the series of main interest for our analysis, being the purpose of this work tracking the evolution of air pollution relative to an underlying economic process.
+
+As exploratory step, we decompose the time series in its structural component by using an additive model. Figure \ref{fig:decompose_CO}, that plots together the time series with such components, shows that, in fact, a seasonal factor seems to be present. Secondly, the series is characterized by a negative trend up to a clear breakponit in september 2007 (around week 400). The effect of this break seems to be twofold: firstly, the trend, that was negative in the pre-break period, disappears; secondly, the variance reduces markedly in the post-break period.
+These features suggest that the process may be described by a Homogeneous Hidden Markov Model with a trend component.  
 
 ```{r fig.width=8, fig.height=5, fig.cap="\\label{fig:decompose_CO}Additive decomposition into structural components"}
 
@@ -198,9 +200,141 @@ dec_CO<-decompose(ts_CO,type=c("additive"))
 plot(dec_CO)
 ```
 
-\subsection{Model 1}
+\subsection{HMM for modelling trend}
+As outlined in the previous section, given the features of the $\text{CO}$ series, a suitable HMM with two states may be specified as follows: 
 
-INSERT HERE EVERITHING ON MODEL 1 FOR CO
+\begin{align*}
+\begin{cases}
+Y_{t}=\mu_{1} + \beta_{1}t + \varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{1}^2) \qquad \text{if} \; S_{t}=1 \\
+Y_{t}=\mu_{2}+ + \beta_{2}t + \varepsilon_{t}, \quad \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{2}^2) \qquad \text{if} \; S_{t}=2 \\
+\end{cases}
+\end{align*}
+
+where there are three state-dependent parameters, namely the level, $\mu_i$, the slope, $\beta_i$, and the variance, $\sigma_i$, for $i=1,2$. If our guess was correct, we would expect $\mu_1 > \mu_2$, $\beta_1<0$, $\beta_2=0$ and $\sigma_1^2>\sigma_2^2$ .
+
+```{r echo=FALSE}
+# Model specification
+y <- as.numeric(louisiana_df$weekly_CO_mean)
+nstates <- 2
+set.seed(2)
+HMM_CO <- depmixS4::depmix(y ~ 1 + louisiana_df$n_weeks, data=data.frame(y), nstates=nstates)
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+# Estimation of the unknown parameters
+HMM_CO_fit <- depmixS4::fit(HMM_CO)
+```
+
+```{r}
+# MLE
+mu1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
+mu2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
+
+beta1hat<-paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters[["coefficients"]][["louisiana_df$n_weeks"]],3))
+beta2hat<-paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters[["coefficients"]][["louisiana_df$n_weeks"]],3))
+
+sd1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters$sd,3))
+sd2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters$sd,3))
+
+# se(MLE)
+MLE_st.err=depmixS4::standardError(HMM_CO_fit)
+st.err_mu1hat <- paste0('(', round(MLE_st.err$se[7],3), ')')
+st.err_mu2hat <- paste0('(', round(MLE_st.err$se[10],3), ')')
+
+st.err_beta1hat<-paste0('(', round(MLE_st.err$se[8],3), ')')
+st.err_beta2hat<-paste0('(', round(MLE_st.err$se[11],3), ')')
+
+st.err_sd1hat <- paste0('(', round(MLE_st.err$se[9],3), ')')
+st.err_sd2hat <- paste0('(', round(MLE_st.err$se[12],3), ')')
+
+```
+
+```{r}
+# Build a summary table
+MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2)),
+                     mu=c(mu1hat, st.err_mu1hat, mu2hat, st.err_mu2hat),
+                     beta=c(beta1hat, st.err_beta1hat,beta2hat,st.err_beta2hat),
+                     sd=c(sd1hat, st.err_sd1hat, sd2hat, st.err_sd2hat))
+knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+             col.names = c("State", "$\\hat{\\mu}_{MLE}$","$\\hat{\\beta}_{MLE}$","$\\hat{\\sigma}_{MLE}$"),
+             escape=F, caption="Maximum Likelihood estimates of the state-dependent
+             parameters \\label{tab:HMM_MLE}") %>%
+  column_spec(1:4, width="5em") %>%
+  collapse_rows(columns=1, latex_hline="none") %>%
+  footnote(general="Standard errors in parentheses",
+           general_title="Note:",
+           footnote_as_chunk=T, escape=F) %>%
+  kable_styling(latex_options="hold_position")
+```
+
+Table \ref{tab:HMM_MLE} reports, however, unexpected results. Indeed, the slope estimate in the first state, $\hat{\beta_1}_{MLE}$, is only slightly negative and very close to zero, whereas the estimate for the second state, $\hat{\beta_2}_{MLE}$ is null as we expected. Overall, the modell suggest that the trend in the two states is not different (i.e. it is equal to zero).
+The change point, instead, significantly affects both the level and the variance. In fact, what seemed to be a change in the trend is, instead, a drop in the level, i.e. $\hat{\mu_1}_{MLE}>\hat{\mu_2}_{MLE}$, followed by a sharp decline in variance,i.e. $\hat{\sigma_1}_{MLE}>\hat{\sigma_2}_{MLE}$.
+
+```{r}
+# Decoding
+# Get the estimated state for each timestep 
+estStates_CO <- posterior(HMM_CO_fit)
+```
+
+The series with HMM estimated state-dependent means and state-dependent standard deviations are shown in Figure \ref{fig:HMM_results} (left panel) along with the Viterbi states obtained through \textit{global decoding} and with the posterior probabilities (right panel).
+
+```{r, fig.width=7, fig.height=3, fig.cap="\\label{fig:HMM_results}State-dependent means and standard deviations"}
+HMM_summary<-depmixS4::summary(HMM_CO_fit)
+
+# Chart with state-dependent mean and standard deviations
+HMM_main_CO <- data.frame(state=1:nstates,
+                      mu_CO=HMM_summary[,1],
+                      sigma_CO=HMM_summary[,3])
+df_to_plot_CO <- estStates_CO %>%
+  left_join(HMM_main_CO)
+df_to_plot_CO %<>%
+  mutate(xtime=louisiana_df$n_weeks, yvalue=louisiana_df$weekly_CO_mean)
+
+HMM_main<- ggplot(df_to_plot_CO, aes(x=xtime, y=yvalue)) +
+                geom_line(size=.2,aplha=.3) +
+                geom_point(aes(x=xtime, y=mu_CO), col="blue", size=.05) +
+                geom_ribbon(aes(ymin=mu_CO-2*sigma_CO, ymax=mu_CO+2*sigma_CO), alpha=.1) +
+                theme_classic(base_size=9) +
+                theme(plot.title=element_text(hjust=0.5)) +
+                labs(y=expression(CO~(ppm)), x="Weeks") +
+                scale_x_continuous(breaks=seq(0,900,100)) +
+                scale_y_continuous(breaks=seq(0,1.5,0.25)) +
+                theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+                axis.title.x=element_text(family="Times", margin=margin(t=5)),
+                axis.title.y=element_text(family="Times", margin=margin(r=5)))
+
+# Chart with viterbi states and posterior probabilities
+HMM_additional_CO <- data.frame(time_index=louisiana_df$n_weeks,
+                           state=estStates_CO[1],
+                           S1=estStates_CO[2]) %>% 
+  gather("variable", "value", -time_index)
+
+my_breaks <- function(x) { if (max(x)>1) seq(0,2,1) else seq(0,1,1) }
+lab_names <- c('S1'="Posterior Prob.",'state'="Viterbi states")
+
+HMM_additional<-ggplot(HMM_additional_CO, aes(time_index, value)) +
+  geom_line(color="black") +
+  facet_wrap(variable~., scales="free", ncol=1,
+             strip.position="left",
+             labeller = as_labeller(lab_names)) +
+  labs(x="Week") +
+  scale_y_continuous(breaks=my_breaks) +
+  scale_x_continuous(breaks=seq(0,900,200))+
+  theme_classic(base_size=9) +
+  theme(axis.text=element_text(size=9),
+        axis.title.x=element_text(size=10,family="Times", margin=margin(5,0,0,0)),
+        axis.title.y=element_blank(),
+        strip.text.x=element_text(size=10,family="Times", face="bold",
+                                  margin=margin(10,0,0,0)),
+        strip.background=element_rect(colour="black", fill=NA),
+        strip.placement="outside")
+# Option 1
+# ggarrange(HMM_main, HMM_additional, ncol=1, widths = c(6,0.3), heights = c(1,0.8))
+
+#option 2
+ggarrange(HMM_main, HMM_additional,widths = c(2,1))
+```
+
 
 \subsection{Model 2}
 
