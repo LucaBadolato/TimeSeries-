@@ -60,7 +60,7 @@ knitr::opts_chunk$set(message = FALSE,
                       include = TRUE,
                       fig.pos = "H",
                       fig.align = "center",
-                      out.width='60%')
+                      out.width='80%')
 ```
 
 \section{An example of a DLM for regression: CAPM}
@@ -90,7 +90,7 @@ capm$time <- seq(as.Date("1978/1/1"), as.Date("1987/12/1"), "month")
 
 The time series of the stocks are plotted in Figure \ref{fig:stock_plots}.
 
-```{r, fig.cap="\\label{fig:stock_plots} Stock plots"}
+```{r, fig.width=20, fig.height=6, out.width='100%', fig.cap="\\label{fig:stock_plots} Stock plots"}
 # Plot
 G1 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=MOBIL),color="black", size=0.4) +
@@ -100,8 +100,9 @@ G1 <- ggplot(capm, aes(x=time)) +
   scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
 
 G2 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=CITCRP),color="black", size=0.4) +
@@ -111,8 +112,9 @@ G2 <- ggplot(capm, aes(x=time)) +
   scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
 
 G3 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=IBM),color="black", size=0.4) +
@@ -122,8 +124,9 @@ G3 <- ggplot(capm, aes(x=time)) +
   scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
 
 G4 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=MARKET),color="black", size=0.4) +
@@ -133,8 +136,9 @@ G4 <- ggplot(capm, aes(x=time)) +
   scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
 
 G5 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=WEYER),color="black", size=0.4) +
@@ -144,8 +148,9 @@ G5 <- ggplot(capm, aes(x=time)) +
   scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
 
 G6 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=RKFREE),color="black", size=0.4) +
@@ -155,10 +160,11 @@ G6 <- ggplot(capm, aes(x=time)) +
   scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous() +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
 
-gg_series <- ggarrange(G1, G2, G3, G4, G5, G6, ncol=2, nrow=3)
+gg_series <- ggarrange(G1, G2, G4, G3, G5, G6, ncol=3, nrow=2)
 gg_series
 ```
 
@@ -186,11 +192,11 @@ where
 \begin{eqnarray*}
 \theta_t=[\alpha_t, \beta_t]', \qquad  \theta_0 \sim N_2(m_0, C_0), \qquad \theta_0 \bot (v_t) \bot (w_t)
 \end{eqnarray*}
-In particular, we set $G=I_2$ and $W=diag(\sigma^2_{w_1}, \sigma^2_{w_2})$, that is $(\alpha_t)$ and $(\beta_t)$ are independent random walks. In addition, in order to have static regression coefficients, we set $\sigma^2_{w_1}=0$ and $\sigma^2_{w_2}=0$.
+In particular, we set $G=I_2$ and $W=diag(\sigma^2_{w_1}, \sigma^2_{w_2})$, that is $(\alpha_t)_{t \geq 0}$ and $(\beta_t)_{t \geq 0}$ are independent random walks. In addition, in order to have static regression coefficients, we set $\sigma^2_{w_1}=0$ and $\sigma^2_{w_2}=0$.
 We also assume that the variance is known and equal to $V = 0.00255$ and consider as initial expectation the vector $m_{0} = (0, 1.5)$, that is taking $E(\alpha)=0$ and $E(\beta)=1.5$.
 
 ```{r}
-ibmCAPM = dlmModReg(x, addInt=TRUE, dV=0.00255, dW=c(0,0), m0=c(.1,1.5))
+ibmCAPM = dlmModReg(x, addInt=TRUE, dV=0.00255, dW=c(0,0), m0=c(0,1.5))
 outFilter_ibm = dlmFilter(y_1, ibmCAPM)
 
 # Posterior distribution
@@ -216,18 +222,54 @@ Moreover, the filtering covariance matrix $C_{T}$ is presented in the following 
 
 Finally, the filtering distributions of $\alpha \mid y_{1:T}$ and $\beta \mid y_{1:T}$ are plotted in the following two plots.
 
-```{r, fig.height=3}
-# Plots
+```{r, include=FALSE}
 post_alpha_ibm = function(alpha){dnorm(alpha, outFilter_ibm$m[length(y_1)+1,1], CT_ibm[1,1]^.5)}
-curve(post_alpha_ibm, from=-0.05, to=0.05, xlab="alpha", ylab="posterior density")
+density1<-curve(post_alpha_ibm, from=-0.05, to=0.05, xlab="alpha", ylab="posterior density")
 
 post_beta_ibm = function(beta){dnorm(beta, outFilter_ibm$m[length(y_1)+1,2], CT_ibm[2,2]^.5)}
-curve(post_beta_ibm, xlab="beta", ylab="posterior density")
+density2<-curve(post_beta_ibm, xlab="beta", ylab="posterior density")
+```
+
+
+```{r, fig.height=5, fig.width=15, fig.cap= "Posterior densities of model's parameters"}
+# Plots
+density_plot<-data.frame(density1,density2)
+
+D1 <- ggplot(density_plot, aes(x=x, y=y)) +
+  geom_line(size=1) +
+  theme_stata(base_size=9) +
+  labs(y="Posterior density", x="alpha") +
+  scale_x_continuous(breaks=seq(-0.05,0.05,0.01)) +
+  theme(axis.text=element_text(size=17),
+        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)),
+        axis.line.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())
+
+D2 <- ggplot(density_plot, aes(x=x.1, y=y.1)) +
+  geom_line(size=1) +
+  theme_stata(base_size=9) +
+  labs(y="", x="beta") +
+  scale_x_continuous(breaks=seq(0,1,0.1)) +
+  theme(axis.text=element_text(size=17),
+        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)),
+        axis.line.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())
+
+ggarrange(D1,D2)
+
+# c<-par(mfrow=c(1,2))
+# plot(density1, type = "l", xlab = "alpha", ylab = "Posterior density")
+# plot(density2, type = "l", xlab = "beta",  ylab = "")
+
 ```
 
 We remark that even if the Bayesian estimates obtained using a DLM with static coefficients and the MLE obtained with a static linear regresion are very similar (almost identical), they are substantially different. Indeed, the DLM coefficient are random, and are obtained through Bayesian inference assigning  them a prior distribution. On the contrary, the estimates obtained with a static linear regression model are constants, and are obtained through OLS, that is minimizing the sum of squares of the difference between the observed dependent variable and those predicted by a linear function.    
-\bigskip
 
+\newpage
 \section{Exercise 2: Citicorp}
 
 In this exercise we will consider the Citicorp stock.
@@ -281,18 +323,53 @@ Moreover, the filtering covariance matrix $C_{T}$ is presented in the following 
 
 Then, recalling that the posterior distribution of $\alpha \mid y_{1:T}$ is $N(m_T, C_T)$, we can plot the filtering distributions of $\alpha \mid y_{1:T}$ (first plot) and $\beta \mid y_{1:T}$ (second plot).
 
-```{r, fig.height=3}
-# Plots
+```{r, include=FALSE}
 post_alpha_citi = function(alpha){dnorm(alpha, outFilter_citi$m[length(y_2)+1,1], CT_citi[1,1]^.5)}
-curve(post_alpha_citi, from=-0.05, to=0.05, xlab="alpha", ylab="posterior density")
+density1<-curve(post_alpha_citi, from=-0.05, to=0.05, xlab="alpha", ylab="posterior density")
 
 post_beta_citi = function(beta){dnorm(beta, outFilter_citi$m[length(y_2)+1,2], CT_citi[2,2]^.5)}
-curve(post_beta_citi, xlab="beta", ylab="posterior density")
+density2<-curve(post_beta_citi, xlab="beta", ylab="posterior density")
 ```
 
-Finally, it is possible to look the forecast errors to check the model assumptions. Indeed, under well specified assumptions the standardized innovation process has the distribution of a Gausssian white noise. Hence, we first grafically inspect the standardized one-step-ahead forecast errors series, providing it in Figure \ref{fig:diagnostic} together with the empirical autocorrelation function (ACF) abd their normal QQ-plot.   
+```{r, fig.height=5, fig.width=15, fig.cap= "Posterior densities of model's parameters"}
+# Plots
+density_plot<-data.frame(density1,density2)
 
-```{r, fig.width=20, fig.height=12, out.width='100%', fig.cap="\\label{fig:diagnostic} (a): Standardized one-step-ahead forecast errors; (b): ACF of one-step ahead forecast errors; (c): Normal probability plot of standardized one-step-ahead forecast errrs."}
+D1 <- ggplot(density_plot, aes(x=x, y=y)) +
+  geom_line(size=1) +
+  theme_stata(base_size=9) +
+  labs(y="Posterior density", x="alpha") +
+  scale_x_continuous(breaks=seq(-0.05,0.05,0.01)) +
+  theme(axis.text=element_text(size=17),
+        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)),
+        axis.line.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())
+
+D2 <- ggplot(density_plot, aes(x=x.1, y=y.1)) +
+  geom_line(size=1) +
+  theme_stata(base_size=9) +
+  labs(y="", x="beta") +
+  scale_x_continuous(breaks=seq(0,1,0.1)) +
+  theme(axis.text=element_text(size=17),
+        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)),
+        axis.line.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())
+
+ggarrange(D1,D2)
+
+# c<-par(mfrow=c(1,2))
+# plot(density1, type = "l", xlab = "alpha", ylab = "Posterior density")
+# plot(density2, type = "l", xlab = "beta",  ylab = "")
+
+```
+
+Finally, it is possible to look the forecast errors to check the model assumptions. Indeed, under well specified assumptions the standardized innovation process has the distribution of a Gausssian white noise. Hence, we first grafically inspect the standardized one-step-ahead forecast errors series, providing it in Figure \ref{fig:diagnostic} together with the empirical autocorrelation function (ACF) and their normal QQ-plot.   
+
+```{r, fig.width=20, fig.height=12, fig.cap="\\label{fig:diagnostic} (a): Standardized one-step-ahead forecast errors; (b): ACF of one-step ahead forecast errors; (c): Normal probability plot of standardized one-step-ahead forecast errrs."}
 # Model checking
 res <- residuals(outFilter_citi, sd=FALSE)
 res = data.frame(res, capm$TIME)
@@ -300,15 +377,16 @@ colnames(res) = c("res", "time")
 res$time <- seq(as.Date("1978/1/1"), as.Date("1987/12/1"), "month")
 
 a <- ggplot(res, aes(x=time)) +
-  geom_line(aes(y=res),color="blue", size=0.4) +
+  geom_line(aes(y=res), size=0.4) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Residuals") +
   scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
   scale_y_continuous(breaks=seq(-4.5, 4.5, 1), limits = c(-3,4.5)) +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
 
 
 # ggplot.corr function from https://rh8liuqy.github.io/ACF_PACF_by_ggplot2.html slightly modified for our necessities.
@@ -339,20 +417,28 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
       geom_area(aes(x = lag, y = qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
       geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
       geom_col(fill = "#4373B6", width = 0.7) +
+      theme_classic(base_size=9.5) +
       scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
       scale_y_continuous(name = element_blank(), 
                          limits = c(min(df1$acf,df2$pacf),1)) +
-      theme_bw()
+      theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
+        panel.grid.minor = element_line(size=0.5))
     
     plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
       geom_area(aes(x = lag, y = qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
       geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
+      theme_classic(base_size=9.5)+
       geom_col(fill = "#4373B6", width = 0.7) +
       scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm = TRUE),6)) +
       scale_y_continuous(name = element_blank(),
                          limits = c(min(df1$acf,df2$pacf),1)) +
       ggtitle("PACF") +
-      theme_bw()
+      theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
+        panel.grid.minor = element_line(size=0.5))
   }
   else {
     plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
@@ -363,10 +449,14 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
       geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
                  colour = "sandybrown",
                  linetype = "dashed") + 
+      theme_classic(base_size=9.5)+
       scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
       scale_y_continuous(name = element_blank(), 
                          limits = c(min(df1$acf,df2$pacf),1)) +
-      theme_bw()
+       theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
+        panel.grid.minor = element_line(size=0.5))
     
     plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
       geom_col(fill = "#4373B6", width = 0.7) +
@@ -376,11 +466,15 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
       geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
                  colour = "sandybrown",
                  linetype = "dashed") + 
+      theme_classic(base_size=9.5)+
       scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm = TRUE),6)) +
       scale_y_continuous(name = element_blank(),
                          limits = c(min(df1$acf,df2$pacf),1)) +
       ggtitle("PACF") +
-      theme_bw()
+       theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
+        panel.grid.minor = element_line(size=0.5))
   }
   cowplot::plot_grid(plot.acf)
 }
@@ -392,13 +486,14 @@ b <- ggplot.corr(data = res$res, lag.max = 24, ci= 0.95, large.sample.size = FAL
 c <- ggplot(res, aes(sample = res))+
   stat_qq(col="blue")+
   stat_qq_line(col="red", lty=2, size=1)+
-  scale_y_continuous(breaks=seq(-2.5, 2.5,0.5), limits = c(-3,3))+
-  scale_x_continuous(breaks=seq(-2.5, 2.5,0.5), limits = c(-3,3))+
+  scale_y_continuous(breaks=seq(-3, 3,1), limits = c(-3,3))+
+  scale_x_continuous(breaks=seq(-3, 3,1), limits = c(-3,3))+
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Theoretical", y="Observed") +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
 
 res_series <- plot_grid( a, ggarrange(b, c, ncol = 2, labels = c("(b)", "(c)")), nrow = 2, labels = "(a)")
 
@@ -409,7 +504,7 @@ res_series
 #Box.test(res$res, lag=20, type = "Ljung")
 ```
 
-A first graphical inspection suggest that the innovation process does not meaningful departed from the model assumptions.Indeed, the empirical autocorrelation function seems to suggest that the residual are indeed uncorrelated while from the QQ-plot we can conlude that they follow a quite normal gaussian distribution. However, the plotted time series reports a couple of outliers. We complete our diagnostc checking computing two formal commonly used statistical tests: the Shapiro-Wilk, used to test the standardized innovation for normality, and the Ljung-Box test, used to check the absence of serial correlation up to lag $k$ ( we used $k = 20$). The former reports a p-value of $0.076$, the null hypothesis of normally distributed standardized innovations cannot be rejected at a significance level of $0.05$, but we are not completely satisfied. On the other hand, the latter reports a p-value of $0.70$, confirming that the residuals are uncorrelated. We conclude that the model assumpions are satisfied, but in the following section we consider a dynamic version of the CAPM, which could be able to capture the noises we reported. 
+A first graphical inspection suggest that the innovation process does not meaningfully depart from model assumptions.Indeed, the empirical autocorrelation function suggests that the residuals are indeed uncorrelated while from the QQ-plot we can conlude that they follow a quite normal gaussian distribution. This is to some extent surprising given the wide empirical knowledge about presence of fat tailes in return's series. Moreover, the plotted time series reports a couple of outliers. Finally, we complete our diagnostc checks computing two formal commonly used statistical tests: the Shapiro-Wilk, used to test the standardized innovation for normality, and the Ljung-Box test, used to check the absence of serial correlation up to lag $k$ ( we arbitrarily used $k = 20$). The former reports a p-value of $0.076$, the null hypothesis of normally distributed standardized innovations cannot be rejected at a significance level of $0.05$. On the other hand, the latter reports a p-value of $0.70$, confirming that the residuals are uncorrelated. We conclude that the model assumpions are satisfied and in the following section we consider a dynamic version of the CAPM, which could be able to capture the noises we reported. 
 
 \medskip
 
@@ -486,8 +581,8 @@ df_citi_ci <- data.frame(capm$time, smooth_state_est, upper_smooth, lower_smooth
 # Plot the smoothing estimates with their credible intervals
 ggplot(df_citi_ci, aes(x=capm$time)) +
   geom_line(aes(y=smooth_state_est), size=0.5) +
-  geom_line(aes(y=upper_smooth), color = "red", linetype = "dashed", size=0.01) +
-  geom_line(aes(y=lower_smooth), color = "red", linetype = "dashed", size=0.01) +
+  geom_line(aes(y=upper_smooth), color = "red", linetype = "dashed", size=0.2) +
+  geom_line(aes(y=lower_smooth), color = "red", linetype = "dashed", size=0.2) +
   geom_ribbon(aes(ymin=lower_smooth, ymax=upper_smooth), alpha=.1, fill="red") +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
