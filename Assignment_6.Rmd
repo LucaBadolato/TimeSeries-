@@ -290,7 +290,7 @@ post_beta_citi = function(beta){dnorm(beta, outFilter_citi$m[length(y_2)+1,2], C
 curve(post_beta_citi, xlab="beta", ylab="posterior density")
 ```
 
-Finally, it is possible to look the forecas errors to check the model assumptions. Indeed, under well specified assumptions the standardized innovation process has the sidtribution of a Gausssian white noise. Hence, we first grafically inspect the standardized one-step-ahead forecast errors series, providing it in Figure \ref{fig:diagnostic} together with the empirical autocorrelation function (ACF) abd their normal QQ-plot.   
+Finally, it is possible to look the forecast errors to check the model assumptions. Indeed, under well specified assumptions the standardized innovation process has the distribution of a Gausssian white noise. Hence, we first grafically inspect the standardized one-step-ahead forecast errors series, providing it in Figure \ref{fig:diagnostic} together with the empirical autocorrelation function (ACF) abd their normal QQ-plot.   
 
 ```{r, fig.width=20, fig.height=12, out.width='100%', fig.cap="\\label{fig:diagnostic} (a): Standardized one-step-ahead forecast errors; (b): ACF of one-step ahead forecast errors; (c): Normal probability plot of standardized one-step-ahead forecast errrs."}
 # Model checking
@@ -306,7 +306,7 @@ a <- ggplot(res, aes(x=time)) +
   labs(x="Year", y="Residuals") +
   scale_x_date(date_breaks="2 years", limits=as.Date(c('1978/01/01','1987/01/01')),
                labels=date_format("%Y")) +
-  scale_y_continuous(breaks=seq(-2.5, 2.5,0.5), limits = c(-3,3)) +
+  scale_y_continuous(breaks=seq(-4.5, 4.5, 1), limits = c(-3,4.5)) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 
@@ -403,9 +403,13 @@ c <- ggplot(res, aes(sample = res))+
 res_series <- plot_grid( a, ggarrange(b, c, ncol = 2, labels = c("(b)", "(c)")), nrow = 2, labels = "(a)")
 
 res_series
+
+#shapiro.test(res$res)
+
+#Box.test(res$res, lag=20, type = "Ljung")
 ```
 
-\textcolor{red}{The diagnostic check on the forecast errors shows that \dots}
+A first graphical inspection suggest that the innovation process does not meaningful departed from the model assumptions.Indeed, the empirical autocorrelation function seems to suggest that the residual are indeed uncorrelated while from the QQ-plot we can conlude that they follow a quite normal gaussian distribution. However, the plotted time series reports a couple of outliers. We complete our diagnostc checking computing two formal commonly used statistical tests: the Shapiro-Wilk, used to test the standardized innovation for normality, and the Ljung-Box test, used to check the absence of serial correlation up to lag $k$ ( we used $k = 20$). The former reports a p-value of $0.076$, the null hypothesis of normally distributed standardized innovations cannot be rejected at a significance level of $0.05$, but we are not completely satisfied. On the other hand, the latter reports a p-value of $0.70$, confirming that the residuals are uncorrelated. We conclude that the model assumpions are satisfied, but in the following section we consider a dynamic version of the CAPM, which could be able to capture the noises we reported. 
 
 \medskip
 
@@ -413,7 +417,7 @@ res_series
 
 In this second part of the exercise we consider a **dynamic** version of the CAPM, that is a CAPM where coefficients $\alpha$ and $\beta$ may vary over time. For example, an asset might evolve from being *aggressive* ($\beta>1$; that is, the asset tends to amplify the changes in the market returns) to being  *conservative* ($\beta<1$).
 
-In order to achieve this, we now set non-zero variances in $W$. \textcolor{red}{Since the static model we fitted in the first part of the current exercise was fairly \textbf{good/bad}, we expect the MLEs of $(\sigma^2_{w_1}, \sigma_{w_2}^2)$ to be \textbf{close to/different from} zero.}
+In order to achieve this, we now set non-zero variances in $W$. Since the static model we fitted in the first part of the current exercise was fairly satisfactiory, we expect the MLEs of $(\sigma^2_{w_1}, \sigma_{w_2}^2)$ to be close enough to zero.}
 
 ```{r}
 citiDynamicCAPM <- function(param){dlmModReg(x, dV=param[1], dW=param[2:3], m0=c(.1,1.5))}
@@ -452,7 +456,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
   kable_styling(latex_options="hold_position")
 ```
 
-\textcolor{red}{Comment: The MLE and the variance of $\sigma^2_{w_1}$ are equal to zero ($\hat{\sigma}^2_{w_1}\approx 0$). This means that the $\alpha_t$ coefficient is constant.}
+The MLE and the variance of $\sigma^2_{w_1}$ are equal to zero ($\hat{\sigma}^2_{w_1}\approx 0$). This means that the $\alpha_t$ coefficient is constant and, in accordance with the theory we presented in the introduction, we expect it to not being significantly different from zero. On the contrary, thee $\beta_t$ coefficient is not constant over time: as said, this will allow us to measure the sensitivity of the asset excess returns to changes in the market. 
 
 Let's now compute the smoothing estimates of $\theta_t=(\alpha_t, \beta_t)'$, for $t=0, \ldots, T$. The smoothing estimates of $\beta_t$ are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:smooth_est}.
 
@@ -495,4 +499,4 @@ ggplot(df_citi_ci, aes(x=capm$time)) +
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 
-\textcolor{red}{Comment: While $\alpha_t$ is constant ($\hat{\sigma}^2_{w_1}\approx 0$), the smoothing estimates of $\beta_t$, $t=1, \ldots, T$, show that the stock becomes less conservative over time, becoming an  aggressive investments in the 1980's.}
+We obtained that the \textit{Jensen's $\alpha$} is constant  ($\hat{\sigma}^2_{w_1}\approx 0$) and close to zero. Furthermore, the smoothing estimates of $\beta_t$, $t=1, \ldots, T$, show that the stock becomes less and less conservative over time, becoming an  aggressive investments in the 1980's.
