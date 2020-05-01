@@ -220,26 +220,18 @@ Moreover, the filtering covariance matrix $C_{T}$ is presented in the following 
 \end{center}
 \medskip
 
-Finally, the filtering distributions of $\alpha \mid y_{1:T}$ and $\beta \mid y_{1:T}$ are plotted in the following two plots.
+Finally, the filtering distributions of $\alpha \mid y_{1:T}$ and $\beta \mid y_{1:T}$ are plotted in the Figure \ref{fig:post_est}.
 
-```{r, include=FALSE}
-post_alpha_ibm = function(alpha){dnorm(alpha, outFilter_ibm$m[length(y_1)+1,1], CT_ibm[1,1]^.5)}
-density1<-curve(post_alpha_ibm, from=-0.05, to=0.05, xlab="alpha", ylab="posterior density")
-
-post_beta_ibm = function(beta){dnorm(beta, outFilter_ibm$m[length(y_1)+1,2], CT_ibm[2,2]^.5)}
-density2<-curve(post_beta_ibm, xlab="beta", ylab="posterior density")
-```
-
-
-```{r, fig.height=5, fig.width=15, fig.cap= "Posterior densities of model's parameters"}
-# Plots
-density_plot<-data.frame(density1,density2)
-
-D1 <- ggplot(density_plot, aes(x=x, y=y)) +
-  geom_line(size=1) +
-  theme_stata(base_size=9) +
+```{r, fig.height=5, fig.width=15, fig.cap= "\\label{fig:post_est}Posterior densities of model's parameters"}
+D1 <- ggplot()+
+  aes(x = c(0.00049 - 4*0.00002, 0.00049 + 4*0.00002)) +
+  stat_function( fun = dnorm, n = 300, args= list(0.00049, 0.00002), color= "blue", size=0.5)+
+  geom_vline(aes(xintercept = 0.00049), color = "blue", linetype = "dashed") +
   labs(y="Posterior density", x="alpha") +
-  scale_x_continuous(breaks=seq(-0.05,0.05,0.01)) +
+  theme_stata(base_size=9) +
+  theme(panel.grid.minor = element_line(size=0.05)) +
+  scale_y_continuous() +
+  scale_x_continuous()+
   theme(axis.text=element_text(size=17),
         axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)),
@@ -247,11 +239,15 @@ D1 <- ggplot(density_plot, aes(x=x, y=y)) +
         axis.text.y=element_blank(),
         axis.ticks.y=element_blank())
 
-D2 <- ggplot(density_plot, aes(x=x.1, y=y.1)) +
-  geom_line(size=1) +
+D2 <- ggplot()+
+  aes(x = c(0.45682 - 4*0.00455, 0.45682 + 4*0.00455)) +
+  stat_function( fun = dnorm, n = 300, args= list(0.45682, 0.00455), color= "blue", size=0.5)+
+  geom_vline(aes(xintercept =0.45682), color = "blue", linetype = "dashed") +
+  labs(y="Posterior density", x="beta") +
   theme_stata(base_size=9) +
-  labs(y="", x="beta") +
-  scale_x_continuous(breaks=seq(0,1,0.1)) +
+  theme(panel.grid.minor = element_line(size=0.05)) +
+  scale_y_continuous() +
+  scale_x_continuous()+
   theme(axis.text=element_text(size=17),
         axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)),
@@ -260,7 +256,6 @@ D2 <- ggplot(density_plot, aes(x=x.1, y=y.1)) +
         axis.ticks.y=element_blank())
 
 ggarrange(D1,D2)
-
 # c<-par(mfrow=c(1,2))
 # plot(density1, type = "l", xlab = "alpha", ylab = "Posterior density")
 # plot(density2, type = "l", xlab = "beta",  ylab = "")
@@ -285,7 +280,7 @@ where
 \begin{eqnarray*}
 \theta_t=[\alpha_t, \beta_t]', \qquad  \theta_0 \sim N_2(m_0, C_0), \qquad \theta_0 \bot (v_t) \bot (w_t)
 \end{eqnarray*}
-and $G=I_2$ and $W=diag(0, 0)$.
+and $G=I_2$ and $W=diag(0, 0)$. Furthermore, given the information we obtained in the previous exercise, we follow a proper Bayesian approach considering as initial expectation the vector $m_{0} = (0, 1.5)$, that is taking $E(\alpha)=0$ and $E(\beta)=0.45$, with variance matrix $C_0 = diag(0.0002, 0.005)$. Indeed, even if we are considering a different asset, we can think that we can borrow some information. Notice that we slightly increase the variances with respect with the posterior estimates obtained in the previous section to account for the uncertainty we have in this context.
 
 ```{r, include=FALSE}
 # Returns
@@ -293,7 +288,7 @@ y_2 = capm[, "CITCRP"] - capm[, "RKFREE"]  # Citicorp excess returns
 plot(cbind(x,y_2), main="excess returns") # Plot of the excess returns
 
 # Build DLM
-buildCAPM <- function(param){dlmModReg(x, addInt=TRUE, dV=param, dW=c(0,0))}
+buildCAPM <- function(param){dlmModReg(x, addInt=TRUE, dV=param, dW=c(0,0), m0=c(0,0.45), C0=diag(c(0.0002, 0.005)))}
 fit = dlmMLE(y_2, parm=1, buildCAPM)
 citiCAPM = buildCAPM(fit$par)
 
@@ -321,25 +316,22 @@ Moreover, the filtering covariance matrix $C_{T}$ is presented in the following 
 \end{center}
 \medskip
 
-Then, recalling that the posterior distribution of $\alpha \mid y_{1:T}$ is $N(m_T, C_T)$, we can plot the filtering distributions of $\alpha \mid y_{1:T}$ (first plot) and $\beta \mid y_{1:T}$ (second plot).
+Then, recalling that the posterior distribution of $\alpha \mid y_{1:T}$ is $N(m_T, C_T)$, we plot the filtering distributions of $\alpha \mid y_{1:T}$ and $\beta \mid y_{1:T}$ in figure \ref{fig:post_est2} (blue lines). Furthermore, we plotted also the prior distributions of the model's parameters (red lines). 
 
-```{r, include=FALSE}
-post_alpha_citi = function(alpha){dnorm(alpha, outFilter_citi$m[length(y_2)+1,1], CT_citi[1,1]^.5)}
-density1<-curve(post_alpha_citi, from=-0.05, to=0.05, xlab="alpha", ylab="posterior density")
 
-post_beta_citi = function(beta){dnorm(beta, outFilter_citi$m[length(y_2)+1,2], CT_citi[2,2]^.5)}
-density2<-curve(post_beta_citi, xlab="beta", ylab="posterior density")
-```
+```{r, fig.height=5, fig.width=15, fig.cap= "\\label{fig:post_est2}Prior and posterior densities of model's parameters"}
 
-```{r, fig.height=5, fig.width=15, fig.cap= "Posterior densities of model's parameters"}
-# Plots
-density_plot<-data.frame(density1,density2)
-
-D1 <- ggplot(density_plot, aes(x=x, y=y)) +
-  geom_line(size=1) +
+D1 <- ggplot()+
+  aes(x = c(0 - 20*0.00003, 0.00102 + 5*0.00003)) +
+  stat_function( fun = dnorm, n = 300, args= list(0.00102, 0.00003), color= "blue", size=0.5)+
+  geom_vline(aes(xintercept =0.00102), color = "blue", linetype = "dashed") +
+  stat_function( fun = dnorm, n = 300, args= list(0, 0.0002), color= "red", size=0.4)+
+  geom_vline(aes(xintercept =0), color = "red", linetype = "dashed") +
+  labs(x="alpha", y="density") +
   theme_stata(base_size=9) +
-  labs(y="Posterior density", x="alpha") +
-  scale_x_continuous(breaks=seq(-0.05,0.05,0.01)) +
+  theme(panel.grid.minor = element_line(size=0.05)) +
+  scale_y_continuous() +
+  scale_x_continuous()+
   theme(axis.text=element_text(size=17),
         axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)),
@@ -347,11 +339,17 @@ D1 <- ggplot(density_plot, aes(x=x, y=y)) +
         axis.text.y=element_blank(),
         axis.ticks.y=element_blank())
 
-D2 <- ggplot(density_plot, aes(x=x.1, y=y.1)) +
-  geom_line(size=1) +
+D2 <- ggplot()+
+  aes(x = c(0.45 - 10*0.00312,  0.53157 + 5*0.00312)) +
+  stat_function( fun = dnorm, n = 300, args= list( 0.53157, 0.00312), color= "blue", size=0.5)+
+  geom_vline(aes(xintercept = 0.53157), color = "blue", linetype = "dashed") +
+  stat_function( fun = dnorm, n = 300, args= list(0.45, 0.005), color= "red", size=0.4)+
+  geom_vline(aes(xintercept =0.45), color = "red", linetype = "dashed") +
+  labs(x="beta", y="density") +
   theme_stata(base_size=9) +
-  labs(y="", x="beta") +
-  scale_x_continuous(breaks=seq(0,1,0.1)) +
+  theme(panel.grid.minor = element_line(size=0.05)) +
+  scale_y_continuous() +
+  scale_x_continuous()+
   theme(axis.text=element_text(size=17),
         axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)),
@@ -360,7 +358,6 @@ D2 <- ggplot(density_plot, aes(x=x.1, y=y.1)) +
         axis.ticks.y=element_blank())
 
 ggarrange(D1,D2)
-
 # c<-par(mfrow=c(1,2))
 # plot(density1, type = "l", xlab = "alpha", ylab = "Posterior density")
 # plot(density2, type = "l", xlab = "beta",  ylab = "")
@@ -515,7 +512,7 @@ In this second part of the exercise we consider a **dynamic** version of the CAP
 In order to achieve this, we now set non-zero variances in $W$. Since the static model we fitted in the first part of the current exercise was fairly satisfactiory, we expect the MLEs of $(\sigma^2_{w_1}, \sigma_{w_2}^2)$ to be close enough to zero.}
 
 ```{r}
-citiDynamicCAPM <- function(param){dlmModReg(x, dV=param[1], dW=param[2:3], m0=c(.1,1.5))}
+citiDynamicCAPM <- function(param){dlmModReg(x, dV=param[1], dW=param[2:3], m0=c(0,0.45), C0=diag(c(0.0002, 0.005)))}
 citiMLE = dlmMLE(y_2, c(1,.5,.5), citiDynamicCAPM, lower=c(0.000001, 0, 0), hessian=TRUE)
 AsymCov=solve(citiMLE$hessian)
 ```
