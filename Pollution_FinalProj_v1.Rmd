@@ -114,7 +114,7 @@ knitr::kable(louisiana_df[1:5, 1:5], "latex", booktabs=T,
 
 We report in Table \ref{tab:louisiana_corr} pollutants'correlation coefficients.
 
-Provided that the correlation between pollutants show significant differences in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution [@Logan1981], a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field [@Voulgarakis2011].
+Provided that the correlation between pollutants show significant differences in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution [@Logan1981], a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field [@Voulgarakis2011]. $\text{CO}$ is also positively correlated with $\text{SO2}$ which is justified by the fact that they share a main source of production, i.e. coal extraction and combustion.
 
 Other studies report that, in the US, $\text{O}_3$ is on average positively correlated with $\text{NO}_2$, which is opposite to our empirical findings about Louisiana, where they are slightly negatively correlated. A possible explanation can be given by substitution effects: an increase of nitrogen dioxide levels can be associated to the use of more fossil fuels that produce $\text{NO}_2$ instead of others. This might be related to Louisiana's fixed effects, however further rasearches would be beyond the purpose of our study.
 
@@ -359,11 +359,15 @@ Explanations of these results, which confirm a stable change in the evolution pr
 
 A deeper anlysis on the factors explaining this shift can be found in [@feng2015drivers], in which they analyse the serie of $\text{CO2}$.
 
-\subsection{Model 2}
+\subsection{DLM - Univariate dynamic regression}
+
+\textcolor{red}{DLM for Univariate regression potrebbe essere un'idea. per esempio come rgressore si potrebbe usare la quantità di carbone estratto negli USA, la quantità di gas naturale usata nella produzione di corrente. se trovare i dati fosse difficile potremmo semplicemente modellare il trend}
 
 INSERT HERE EVERITHING ON MODEL 2 FOR CO
 
-\section{Multivariate problem}
+\section{DLM multivariate series}
+
+\textcolor{red}{le serie SO2 e CO mostrano entrambe un breakpoint alla week 400 e sono positivamente correlate. inoltre entrambi i pollutants dipendono dalla combustione del carbone che potremmo usare come regressore. in questo caso avremmo un multivariate DLM con m=2}
 
 INSERT HERE MULTIVARIATE TIME SERIES MODEL
 
