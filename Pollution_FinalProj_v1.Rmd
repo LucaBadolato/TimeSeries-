@@ -149,36 +149,36 @@ O3 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_O3_mean)) +
   theme_classic(base_size=9) +
   labs(y=expression(O[3]~(ppm)), x="Week") +
   scale_x_continuous(breaks=seq(0,900,100)) +
-  theme(axis.text=element_text(size=17),
-        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
 
 NO2 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_NO2_mean)) +
   geom_line(color="steelblue") +
   theme_classic(base_size=9) +
   labs(y=expression(NO[2]~(ppb)), x="Week") +
   scale_x_continuous(breaks=seq(0,900,100)) +
-  theme(axis.text=element_text(size=17),
-        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=19, family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
 
 CO <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_CO_mean)) +
   geom_line(color="steelblue") +
   theme_classic(base_size=9) +
   labs(y=expression(CO~(ppm)), x="Week") +
   scale_x_continuous(breaks=seq(0,900,100)) +
-  theme(axis.text=element_text(size=17),
-        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
 
 SO2 <- ggplot(louisiana_df, aes(x=n_weeks, y=weekly_SO2_mean)) +
   geom_line(color="steelblue") +
   theme_classic(base_size=9) +
   labs(y=expression(SO[2]~(ppb)), x="Week") +
   scale_x_continuous(breaks=seq(0,900,100)) +
-  theme(axis.text=element_text(size=17),
-        axis.title.x=element_text(size=19,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=19,family="Times", margin=margin(r=5)))
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
 
 ggarrange(O3, NO2, CO, SO2,
           ncol=2, nrow=2)
@@ -193,11 +193,26 @@ $\text{CO}$ is perhaps the pollutant more tightly linked with the economic and i
 As exploratory step, we decompose the time series in its structural component by using an additive model. Figure \ref{fig:decompose_CO}, that plots together the time series with such components, shows that, in fact, a seasonal factor seems to be present. Secondly, the series is characterized by a negative trend up to a clear breakponit in september 2007 (around week 400). The effect of this break seems to be twofold: firstly, the trend, that was negative in the pre-break period, disappears; secondly, the variance reduces markedly in the post-break period.
 These features suggest that the process may be described by a Homogeneous Hidden Markov Model with a trend component.  
 
-```{r fig.width=8, fig.height=5,out.width='60%', fig.cap="\\label{fig:decompose_CO}Additive decomposition into structural components"}
+```{r fig.width=18, fig.height=8, out.width='60%', fig.cap="\\label{fig:decompose_CO}Additive decomposition into structural components"}
 
-ts_CO<-ts(louisiana_df$weekly_CO_mean,start=c(2000,1,1),end = c(2016,4,27),frequency = 48)
+ts_CO<-ts(louisiana_df$weekly_CO_mean,start=c(2000,1,1),end = c(2016,4,27),frequency = 53)
 dec_CO<-decompose(ts_CO,type=c("additive"))
-plot(dec_CO)
+# plot(dec_CO,cex.main=2.5, cex.lab=1.6, cex.axis=2)
+
+# Convert dec_CO to data frame
+dat = cbind(n_dates, with(dec_CO, data.frame(Obs=x, Trend=trend, Seas=seasonal, Rand=random)))
+
+ggplot(gather(dat, component, value, -n_dates), aes(n_dates, value)) +
+  facet_grid(component ~ ., scales="free_y") +
+  geom_line(size=.2, alpha=.6) +
+  theme_bw() +
+  labs(y=expression(CO[2]~(ppm)), x="Year") +
+  ggtitle(expression(Decomposed~CO[2]~Time~Series)) +
+  theme(plot.title=element_text(size=25,family="Times",face="bold",hjust=0.5),
+        axis.text=element_text(size=21),
+        axis.title.x=element_text(size=23,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=23,family="Times", margin=margin(r=5)),
+        strip.text=element_text(size=21,family="Times",face="bold"))
 ```
 
 \subsection{HMM for modelling trend}
@@ -220,7 +235,7 @@ set.seed(2)
 HMM_CO <- depmixS4::depmix(y ~ 1 + louisiana_df$n_weeks, data=data.frame(y), nstates=nstates)
 ```
 
-```{r echo=FALSE, warning=FALSE, message=FALSE}
+```{r include=FALSE}
 # Estimation of the unknown parameters
 HMM_CO_fit <- depmixS4::fit(HMM_CO)
 ```
@@ -250,7 +265,7 @@ st.err_sd2hat <- paste0('(', round(MLE_st.err$se[12],3), ')')
 ```
 
 ```{r}
-# Build a summary table
+# Build a summary table for estimates
 MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2)),
                      mu=c(mu1hat, st.err_mu1hat, mu2hat, st.err_mu2hat),
                      beta=c(beta1hat, st.err_beta1hat,beta2hat,st.err_beta2hat),
@@ -265,6 +280,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
            general_title="Note:",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
+
 ```
 
 Table \ref{tab:HMM_MLE} reports, however, unexpected results. Indeed, the slope estimate in the first state, $\hat{\beta_1}_{MLE}$, is only slightly negative and very close to zero, whereas the estimate for the second state, $\hat{\beta_2}_{MLE}$ is null as we expected. Overall, the modell suggest that the trend in the two states is not different (i.e. it is equal to zero).
@@ -283,7 +299,7 @@ HMM_summary<-depmixS4::summary(HMM_CO_fit)
 ```
 
 
-```{r, fig.width=20, fig.height=6,  fig.cap="\\label{fig:HMM_results}State-dependent means and standard deviations"}
+```{r, fig.width=20, fig.height=6, out.width='90%', fig.cap="\\label{fig:HMM_results}State-dependent means and standard deviations"}
 
 # Chart with state-dependent mean and standard deviations
 HMM_main_CO <- data.frame(state=1:nstates,
@@ -295,7 +311,7 @@ df_to_plot_CO %<>%
   mutate(xtime=louisiana_df$n_weeks, yvalue=louisiana_df$weekly_CO_mean)
 
 HMM_main<- ggplot(df_to_plot_CO, aes(x=xtime, y=yvalue)) +
-                geom_line(size=.2,aplha=.3) +
+                geom_line(size=.1,aplha=.1) +
                 geom_point(aes(x=xtime, y=mu_CO), col="blue", size=.05) +
                 geom_ribbon(aes(ymin=mu_CO-2*sigma_CO, ymax=mu_CO+2*sigma_CO), alpha=.1) +
                 theme_classic(base_size=9) +
@@ -304,8 +320,9 @@ HMM_main<- ggplot(df_to_plot_CO, aes(x=xtime, y=yvalue)) +
                 scale_x_continuous(breaks=seq(0,900,100)) +
                 scale_y_continuous(breaks=seq(0,1.5,0.25)) +
                 theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
-                axis.title.x=element_text(family="Times", margin=margin(t=5)),
-                axis.title.y=element_text(family="Times", margin=margin(r=5)))
+                axis.text=element_text(size=19,face="bold"),
+                axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+                axis.title.y=element_text(size=21,family="Times",margin=margin(r=5)))
 
 # Chart with viterbi states and posterior probabilities
 HMM_additional_CO <- data.frame(time_index=louisiana_df$n_weeks,
@@ -317,7 +334,7 @@ my_breaks <- function(x) { if (max(x)>1) seq(0,2,1) else seq(0,1,1) }
 lab_names <- c('S1'="Posterior Prob.",'state'="Viterbi states")
 
 HMM_additional<-ggplot(HMM_additional_CO, aes(time_index, value)) +
-  geom_line(color="black") +
+  geom_line(color="black",size=.4) +
   facet_wrap(variable~., scales="free", ncol=1,
              strip.position="left",
              labeller = as_labeller(lab_names)) +
@@ -325,20 +342,22 @@ HMM_additional<-ggplot(HMM_additional_CO, aes(time_index, value)) +
   scale_y_continuous(breaks=my_breaks) +
   scale_x_continuous(breaks=seq(0,900,200))+
   theme_stata(base_size=9) +
-  theme(axis.text=element_text(size=9),
-        axis.title.x=element_text(size=10,family="Times", margin=margin(5,0,0,0)),
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(5,0,0,0)),
         axis.title.y=element_blank(),
-        strip.text.x=element_text(size=10,family="Times", face="bold",
-                                  margin=margin(10,0,0,0)),
+        strip.text=element_text(size=21,family="Times",face="bold"),
         strip.background=element_rect(colour="black", fill=NA),
         strip.placement="outside")
 # Option 1
 # ggarrange(HMM_main, HMM_additional, ncol=1, widths = c(6,0.3), heights = c(1,0.8))
 
 #option 2
-ggarrange(HMM_main, HMM_additional,widths = c(2,1))
+ggarrange(HMM_main, HMM_additional,widths = c(2,1.2))
 ```
 
+Explanations of these results, which confirm a stable change in the evolution process of CO in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in US electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Secondly, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Vienn agreement). 
+
+A deeper anlysis on the factors explaining this shift can be found in [@feng2015drivers], in which they analyse the serie of $\text{CO2}$.
 
 \subsection{Model 2}
 
