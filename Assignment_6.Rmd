@@ -81,16 +81,16 @@ where
 \item $\alpha$ is not significantly different from zero under the model. Hence, a $\hat{\alpha}$ significantly different from zero is regarded as \textit{pricing error} (or \textit{Jensen's $\alpha$}).
 \end{itemize}
 
-The dataset we use includes the monthly returns from January 1978 to December 1987 of four stocks (Mobil, IBM, Weyer, Citicorp) and the 30-days Treasury Bill as a proxy for the risk-free asset, and of the value-weighted average returs for all the stocks listed at the New York and American Stock Exchanges, representing the overall market returns.
+The dataset we use includes the monthly returns from January 1978 to December 1987 of four stocks (Mobil, IBM, Weyer, Citicorp), of the 30-days Treasury Bill, which are used as a proxy for the risk-free asset, and the value-weighted average returns for all the stocks listed at the New York and American Stock Exchanges, representing the overall market returns.
 
 ```{r, include=FALSE}
 capm = read.table("dati-ch3-CAPM.txt", header=TRUE)
 capm$time <- seq(as.Date("1978/1/1"), as.Date("1987/12/1"), "month")
 ```
 
-The time series of the stocks are plotted in Figure \ref{fig:stock_plots}.
+The time series of the returns are plotted in Figure \ref{fig:stock_plots}.
 
-```{r, fig.width=20, fig.height=6, out.width='100%', fig.cap="\\label{fig:stock_plots} Stock plots"}
+```{r, fig.width=20, fig.height=6, out.width='100%', fig.cap="\\label{fig:stock_plots} Stock returns"}
 # Plot
 G1 <- ggplot(capm, aes(x=time)) +
   geom_line(aes(y=MOBIL),color="black", size=0.4) +
@@ -170,8 +170,6 @@ gg_series
 
 \section{Exercise 1: IBM}
 
-In this exercise we will consider the IBM stock.
-
 ```{r, include=FALSE}
 # IBM and market excess returns
 y_1 = capm[, "IBM"] - capm[, "RKFREE"]
@@ -181,19 +179,24 @@ x = capm[, "MARKET"]- capm[, "RKFREE"]
 lmCAPM = lm(y_1 ~ x)
 ```
 
-The MLE estimates of $\alpha$ and $\beta$ in the simple CAPM are obtained estimating the linear regression of Equation \ref{eq:CAPM}. The OLS estimates of $\alpha$ and $\beta$ are respectively `r round(lmCAPM$coefficients[1], 5)` and `r round(lmCAPM$coefficients[2], 5)`.
+\subsection{1.1 Linear regression}
 
-Let us now write the CAPM as a DLM with static coefficients, that is:
+The MLE estimates of $\alpha$ and $\beta$ in the simple CAPM are obtained estimating the linear regression of Equation \ref{eq:CAPM}. The OLS estimates of $\alpha$ and $\beta$ are `r round(lmCAPM$coefficients[1], 5)` and `r round(lmCAPM$coefficients[2], 5)` respectively.
+
+\subsection{1.2 DLM with static coefficients}
+
+Let us now write the CAPM as a DLM with \textit{static} coefficients, that is:
 \begin{eqnarray*} 
 y_t &=& \alpha_t + \beta_t x_t + v_t , \quad v_t \overset{i.i.d.}\sim  N(0, V) \\
-\theta_t &=& G \theta_{t-1} + w_t , \qquad w_t \overset{i.i.d.}\sim N_2 (0, W)
+\theta_t &=& G \theta_{t-1} + w_t , \qquad w_t \overset{i.i.d.}\sim N(0, W)
 \end{eqnarray*}
 where
 \begin{eqnarray*}
 \theta_t=[\alpha_t, \beta_t]', \qquad  \theta_0 \sim N_2(m_0, C_0), \qquad \theta_0 \bot (v_t) \bot (w_t)
 \end{eqnarray*}
-In particular, we set $G=I_2$ and $W=diag(\sigma^2_{w_1}, \sigma^2_{w_2})$, that is $(\alpha_t)_{t \geq 0}$ and $(\beta_t)_{t \geq 0}$ are independent random walks. In addition, in order to have static regression coefficients, we set $\sigma^2_{w_1}=0$ and $\sigma^2_{w_2}=0$.
-We also assume that the variance is known and equal to $V = 0.00255$ and consider as initial expectation the vector $m_{0} = (0, 1.5)$, that is taking $E(\alpha)=0$ and $E(\beta)=1.5$.
+In particular, we set $G=I_2$ and $W=diag(\sigma^2_{w_1}, \sigma^2_{w_2})$, that is $(\alpha_t)_{t \geq 0}$ and $(\beta_t)_{t \geq 0}$ are independent random walks. In addition, in order to have static regression coefficients, we set $\sigma^2_{w_1}=0$ and $\sigma^2_{w_2}=0$, that is, we set $W=0$.
+
+We also assume that the variance is known and equal to $V = 0.00255$ and consider as initial expectation the vector $m_{0} = (0, 1.5)$, that is $E(\alpha)=0$ and $E(\beta)=1.5$.
 
 ```{r}
 ibmCAPM = dlmModReg(x, addInt=TRUE, dV=0.00255, dW=c(0,0), m0=c(0,1.5))
@@ -204,9 +207,11 @@ TT_ibm = length(y_1)
 CT_ibm = dlmSvd2var(outFilter_ibm$U.C[[TT_ibm+1]], outFilter_ibm$D.C[TT_ibm+1, ])
 ```
 
-Given this model specification, the Bayesian point estimates, with respect to quadratic loss, of $\alpha$ and $\beta$ are `r round(outFilter_ibm$m[length(y_1)+1, 1], 5)` and `r round(outFilter_ibm$m[length(y_1)+1, 2], 5)` respectively.
+Inference on $\alpha$ and $\beta$ is then solved through their posterior distribution given the data $y_{1:T}$, that is the smoothing or, equivalently, the filtering distribution at time $T$.
 
-Moreover, the filtering covariance matrix $C_{T}$ is presented in the following table:
+Given the model specification above, the Bayesian point estimates $m_{T}$, with respect to quadratic loss, of $\alpha$ and $\beta$ are `r round(outFilter_ibm$m[length(y_1)+1, 1], 5)` and `r round(outFilter_ibm$m[length(y_1)+1, 2], 5)` respectively.
+
+Moreover, the filtering covariance matrix $C_{T}$ is:
 \begin{center}
 \begin{tabular}{|c|c|c|}
   \hline
@@ -220,7 +225,7 @@ Moreover, the filtering covariance matrix $C_{T}$ is presented in the following 
 \end{center}
 \medskip
 
-Finally, the filtering distributions of $\alpha \mid y_{1:T}$ and $\beta \mid y_{1:T}$ are plotted in the Figure \ref{fig:post_est}.
+Using these results, we can plot the filtering distributions of $\alpha \mid y_{1:T}$ and $\beta \mid y_{1:T}$ (Figure \ref{fig:post_est}).
 
 ```{r, fig.height=5, fig.width=15, fig.cap= "\\label{fig:post_est}Posterior densities of model's parameters"}
 D1 <- ggplot()+
@@ -261,20 +266,19 @@ ggarrange(D1,D2)
 # plot(density2, type = "l", xlab = "beta",  ylab = "")
 
 ```
+\newpage
 
 We remark that even if the Bayesian estimates obtained using a DLM with static coefficients and the MLE obtained with a static linear regresion are very similar (almost identical), they are substantially different. Indeed, the DLM coefficient are random, and are obtained through Bayesian inference assigning  them a prior distribution. On the contrary, the estimates obtained with a static linear regression model are constants, and are obtained through OLS, that is minimizing the sum of squares of the difference between the observed dependent variable and those predicted by a linear function.    
 
-\newpage
-\section{Exercise 2: Citicorp}
 
-In this exercise we will consider the Citicorp stock.
+\section{Exercise 2: Citicorp}
 
 \subsection{2.1 Simple CAPM}
 
-First, we fit a simple CAPM for the Citicorp stock as we did for IBM in the first part of the assignment, namely we write the CAPM as a DLM with static coefficients.
+First, we fit a simple CAPM for the Citicorp stock as we did for IBM in the first part of the assignment, namely we write the CAPM as a DLM with \textit{static} coefficients:
 \begin{eqnarray*} 
 y_t &=& \alpha_t + \beta_t x_t + v_t , \quad v_t \overset{i.i.d.}\sim  N(0, V) \\
-\theta_t &=& G \theta_{t-1} + w_t , \qquad w_t \overset{i.i.d.}\sim N_2 (0, W)
+\theta_t &=& G \theta_{t-1} + w_t , \qquad w_t \overset{i.i.d.}\sim N(0, W)
 \end{eqnarray*}
 where
 \begin{eqnarray*}
@@ -300,9 +304,9 @@ TT_citi = length(y_2)
 CT_citi = dlmSvd2var(outFilter_citi$U.C[[TT_citi+1]], outFilter_citi$D.C[TT_citi+1, ])
 ```
 
-Given this model specification, the Bayesian point estimates, with respect to quadratic loss, of $\alpha$ and $\beta$ are `r round(outFilter_citi$m[length(y_1)+1, 1], 5)` and `r round(outFilter_citi$m[length(y_1)+1, 2], 5)` respectively.
+Given this model specification, the Bayesian point estimates $m_{T}$, with respect to quadratic loss, of $\alpha$ and $\beta$ are `r round(outFilter_citi$m[length(y_1)+1, 1], 5)` and `r round(outFilter_citi$m[length(y_1)+1, 2], 5)` respectively.
 
-Moreover, the filtering covariance matrix $C_{T}$ is presented in the following table:
+Moreover, the filtering covariance matrix $C_{T}$ is:
 \begin{center}
 \begin{tabular}{|c|c|c|}
   \hline
@@ -316,8 +320,7 @@ Moreover, the filtering covariance matrix $C_{T}$ is presented in the following 
 \end{center}
 \medskip
 
-Then, recalling that the posterior distribution of $\alpha \mid y_{1:T}$ is $N(m_T, C_T)$, we plot the filtering distributions of $\alpha \mid y_{1:T}$ and $\beta \mid y_{1:T}$ in figure \ref{fig:post_est2} (blue lines). Furthermore, we plotted also the prior distributions of the model's parameters (red lines). 
-
+Then, \textcolor{red}{recalling that the posterior distribution of $\alpha \mid y_{1:T}$ is $N(m_T, C_T)$}, we plot the filtering densities of $\alpha \mid y_{1:T}$ and $\beta \mid y_{1:T}$ in Figure \ref{fig:post_est2} (blue lines). Furthermore, we plotted also the prior distributions of the model's parameters (red lines). 
 
 ```{r, fig.height=5, fig.width=15, fig.cap= "\\label{fig:post_est2}Prior and posterior densities of model's parameters"}
 
@@ -547,6 +550,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
 ```
+\newpage
 
 The MLE and the variance of $\sigma^2_{w_1}$ are equal to zero ($\hat{\sigma}^2_{w_1}\approx 0$). This means that the $\alpha_t$ coefficient is constant and, in accordance with the theory we presented in the introduction, we expect it to not being significantly different from zero. On the contrary, thee $\beta_t$ coefficient is not constant over time: as said, this will allow us to measure the sensitivity of the asset excess returns to changes in the market. 
 
