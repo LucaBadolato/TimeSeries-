@@ -331,7 +331,7 @@ HMM_additional_CO <- data.frame(time_index=louisiana_df$n_months,
   gather("variable", "value", -time_index)
 
 my_breaks <- function(x) { if (max(x)>1) seq(0,2,1) else seq(0,1,1) }
-lab_names <- c('S1'="Posterior Prob.",'state'="Viterbi states")
+lab_names <- c('S1'="Posterior, S=1",'state'="Viterbi states")
 
 HMM_additional<-ggplot(HMM_additional_CO, aes(time_index, value)) +
   geom_line(color="black", size=0.7) +
