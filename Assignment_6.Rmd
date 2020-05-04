@@ -280,7 +280,7 @@ where
 \begin{eqnarray*}
 \theta_t=[\alpha_t, \beta_t]', \qquad  \theta_0 \sim N_2(m_0, C_0), \qquad \theta_0 \bot (v_t) \bot (w_t)
 \end{eqnarray*}
-and $G=I_2$ and $W=diag(0, 0)$. Furthermore, given the information we obtained in the previous exercise, we follow a proper Bayesian approach considering as initial expectation the vector $m_{0} = (0, 1.5)$, that is taking $E(\alpha)=0$ and $E(\beta)=0.45$, with variance matrix $C_0 = diag(0.0002, 0.005)$. Indeed, even if we are considering a different asset, we can think that we can borrow some information. Notice that we slightly increase the variances with respect with the posterior estimates obtained in the previous section to account for the uncertainty we have in this context.
+and $G=I_2$ and $W=diag(0, 0)$. Furthermore, given the information we obtained in the previous exercise, we follow a proper Bayesian approach considering as initial expectation the vector $m_{0} = (0, 0.45)$, that is taking $E(\alpha)=0$ and $E(\beta)=0.45$, with variance matrix $C_0 = diag(0.0002, 0.005)$. Indeed, even if we are considering a different asset, we can think that we can borrow some information. Notice that we slightly increase the variances with respect with the posterior estimates obtained in the previous section to account for the uncertainty we have in this context.
 
 ```{r, include=FALSE}
 # Returns
