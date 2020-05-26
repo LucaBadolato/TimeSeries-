@@ -102,6 +102,8 @@ louisiana_df <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/U
 
 We will be focusing on measures for \textbf{Louisiana}, recorded monthly from 01/01/2000 to 27/04/2016, for a total of `r length(louisiana_df$n_months)`  observations. The main advantage of studying the evolution of air pollution in the same country over the years is that this allows us to control for fixed effects and to better study the latent process of interest that relates the four pollution components. The first five observations of the dataset are reported in Table \ref{tab:louisiana_df}.
 
+\textcolor{red}{MEGLIO METTERE TABELLA CON I DATI E CORRELATION MATRIX IN APPENDICE}
+
 ```{r}
 # create a vector of sates
 n_dates<-seq(as.Date("2000/1/1"), as.Date("2016/6/1"), "month")
@@ -191,7 +193,9 @@ The time series, each with its specific features, do not in general look station
 $\text{CO}$ is perhaps the pollutant more tightly linked with the economic and industrial network of a country. Consequently, we select this as the series of main interest for our analysis, being the purpose of this work tracking the evolution of air pollution relative to an underlying economic process.
 
 As exploratory step, we decompose the time series in its structural component by using an additive model. Figure \ref{fig:decompose_CO}, that plots together the time series with such components, shows that, in fact, a seasonal factor seems to be present. Secondly, the series is characterized by a negative trend up to a clear breakponit in september 2007 (slightly before month 100). The effect of this break seems to be twofold: firstly, the trend, that was negative in the pre-break period, disappears; secondly, the variance reduces markedly in the post-break period.
-These features suggest that the process may be described by a Homogeneous Hidden Markov Model with a trend component.  
+These features suggest that the process may be described by a Homogeneous Hidden Markov Model with a trend component.
+
+\textcolor{red}{MEGLIO METTERE IL GRAFICO IN APPENDICE}
 
 ```{r fig.width=18, fig.height=8, out.width='60%', fig.cap="\\label{fig:decompose_CO}Additive decomposition into structural components"}
 
@@ -359,6 +363,24 @@ Explanations of these results, which confirm a stable change in the evolution pr
 
 A deeper anlysis on the factors explaining this shift can be found in [@feng2015drivers], in which they analyse the serie of $\text{CO2}$.
 
+\subsection{DLM - Linear growth model}
+
+```{r}
+# Guess of the prior mean and variance based on moments estimators
+m0_CO <- rep(mean(y),2)
+C0_CO <- diag(2)
+
+# Build DLM with polynomial specification
+buildMod <- function(param){dlmModPoly(order=2, dV=param[1], dW=param[2:3], m0=m0_CO, C0=C0_CO)}
+
+fit <- dlmMLE(y, rep(1,3), buildMod, hessian=TRUE)
+fit$convergence
+unlist(buildMod(fit$par)[c("V","W")])
+fit$hessian
+
+```
+
+
 \subsection{DLM - Univariate dynamic regression}
 
 \textcolor{red}{DLM for Univariate regression potrebbe essere un'idea. per esempio come rgressore si potrebbe usare la quantità di carbone estratto negli USA, la quantità di gas naturale usata nella produzione di corrente. se trovare i dati fosse difficile potremmo semplicemente modellare il trend}
@@ -367,13 +389,16 @@ INSERT HERE EVERITHING ON MODEL 2 FOR CO
 
 \section{DLM multivariate series}
 
-\textcolor{red}{le serie SO2 e CO mostrano entrambe un breakpoint alla Month 400 e sono positivamente correlate. inoltre entrambi i pollutants dipendono dalla combustione del carbone che potremmo usare come regressore. in questo caso avremmo un multivariate DLM con m=2}
+\textcolor{red}{le serie SO2 e CO mostrano entrambe un breakpoint alla Month 100 e sono positivamente correlate. inoltre entrambi i pollutants dipendono dalla combustione del carbone che potremmo usare come regressore. in questo caso avremmo un multivariate DLM con m=2}
 
 INSERT HERE MULTIVARIATE TIME SERIES MODEL
 
 \section{Conclusion}
 
 INSERT HERE CONCLUSIONS
+
+\newpage
+\section{Appendix}
 
 \newpage
 \section{References}
