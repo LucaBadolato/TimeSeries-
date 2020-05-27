@@ -47,6 +47,7 @@ header-includes:
 library(utf8)
 library(labeling)
 library(rmarkdown)
+library(readxl)
 library(httr)
 library(knitr)
 library(tseries)
@@ -63,6 +64,7 @@ library(kableExtra)
 library(ggpubr)
 library(reshape2)
 library(dlm)
+
 # Settings
 knitr::opts_chunk$set(message = FALSE, 
                       warning = FALSE,
@@ -97,10 +99,10 @@ The preliminary analysis that led us from the raw data (with frequency of 4-intr
 
 ```{r echo=FALSE}
 # Import the dataset
-louisiana_df <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_pollution/master//Louisiana_dataset_monthly.csv"), sep = ",", header=T)
+louisiana_df <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_pollution/master/Louisiana_pollution.csv"), sep = ";", header=T)
 ```
 
-We will be focusing on measures for \textbf{Louisiana}, recorded monthly from 01/01/2000 to 27/04/2016, for a total of `r length(louisiana_df$n_months)`  observations. The main advantage of studying the evolution of air pollution in the same country over the years is that this allows us to control for fixed effects and to better study the latent process of interest that relates the four pollution components.
+We will be focusing on measures for \textbf{Louisiana}, recorded monthly from January 2001 to June 2016, for a total of `r length(louisiana_df$n_months)` observations. The main advantage of studying the evolution of air pollution in the same country over the years is that this allows us to control for fixed effects and to better study the latent process of interest that relates the four pollution components.
 
 \bigskip
 
@@ -139,7 +141,7 @@ O3 <- ggplot(louisiana_df, aes(x=n_months, y=m_O3_mean)) +
   geom_line(color="steelblue", size=0.7) +
   theme_classic(base_size=9) +
   labs(y=expression(O[3]~(ppm)), x="Year") +
-  scale_x_continuous(breaks=seq(0,200,50),labels=format(seq(as.Date("2000/1/1"),as.Date("2016/6/1"), "4 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
   theme(axis.text=element_text(size=19),
         axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
@@ -148,7 +150,7 @@ NO2 <- ggplot(louisiana_df, aes(x=n_months, y=m_NO2_mean)) +
   geom_line(color="steelblue", size=0.7) +
   theme_classic(base_size=9) +
   labs(y=expression(NO[2]~(ppb)), x="Year") +
-  scale_x_continuous(breaks=seq(0,200,50),labels=format(seq(as.Date("2000/1/1"),as.Date("2016/6/1"), "4 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
   theme(axis.text=element_text(size=19),
         axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
@@ -157,7 +159,7 @@ CO <- ggplot(louisiana_df, aes(x=n_months, y=m_CO_mean)) +
   geom_line(color="steelblue", size=0.7) +
   theme_classic(base_size=9) +
   labs(y=expression(CO~(ppm)), x="Year") +
-  scale_x_continuous(breaks=seq(0,200,50),labels=format(seq(as.Date("2000/1/1"),as.Date("2016/6/1"), "4 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
   theme(axis.text=element_text(size=19),
         axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
@@ -166,7 +168,7 @@ SO2 <- ggplot(louisiana_df, aes(x=n_months, y=m_SO2_mean)) +
   geom_line(color="steelblue", size=0.7) +
   theme_classic(base_size=9) +
   labs(y=expression(SO[2]~(ppb)), x="Year") +
-  scale_x_continuous(breaks=seq(0,200,50),labels=format(seq(as.Date("2000/1/1"),as.Date("2016/6/1"), "4 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
   theme(axis.text=element_text(size=19),
         axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
@@ -204,25 +206,25 @@ where there are three state-dependent parameters, namely the level, $\mu_i$, the
 y <- as.numeric(louisiana_df$m_CO_mean)
 nstates <- 2
 set.seed(2)
-HMM_CO <- depmixS4::depmix(y ~ 1 + louisiana_df$n_months, data=data.frame(y), nstates=nstates)
+HMM <- depmixS4::depmix(y ~ 1 + louisiana_df$n_months, data=data.frame(y), nstates=nstates)
 ```
 
 ```{r include=FALSE}
 # Estimation of the unknown parameters
-HMM_CO_fit <- depmixS4::fit(HMM_CO)
+HMM_fit <- depmixS4::fit(HMM)
 ```
 
 ```{r}
 # MLE
-mu1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
-mu2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
-beta1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
-beta2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
-sd1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters$sd,3))
-sd2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters$sd,3))
+mu1hat <- paste0(round(HMM_fit@response[[1]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
+mu2hat <- paste0(round(HMM_fit@response[[2]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
+beta1hat <- paste0(round(HMM_fit@response[[1]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
+beta2hat <- paste0(round(HMM_fit@response[[2]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
+sd1hat <- paste0(round(HMM_fit@response[[1]][[1]]@parameters$sd,3))
+sd2hat <- paste0(round(HMM_fit@response[[2]][[1]]@parameters$sd,3))
 
 # se(MLE)
-MLE_st.err=depmixS4::standardError(HMM_CO_fit)
+MLE_st.err=depmixS4::standardError(HMM_fit)
 st.err_mu1hat <- paste0('(', round(MLE_st.err$se[7],3), ')')
 st.err_mu2hat <- paste0('(', round(MLE_st.err$se[10],3), ')')
 st.err_beta1hat <- paste0('(', round(MLE_st.err$se[8],3), ')')
@@ -255,58 +257,59 @@ The change point, instead, significantly affects both the level and the variance
 ```{r}
 # Decoding
 # Get the estimated state for each timestep 
-estStates_CO <- posterior(HMM_CO_fit)
+estStates <- posterior(HMM_fit)
 ```
 
 The series with HMM estimated state-dependent means and state-dependent standard deviations are shown in Figure \ref{fig:HMM_results} (left panel) along with the Viterbi states obtained through \textit{global decoding} and with the posterior probabilities (right panel).
 
 ```{r, include=FALSE}
-HMM_summary<-depmixS4::summary(HMM_CO_fit)
+HMM_summary <- depmixS4::summary(HMM_fit)
 ```
 
 ```{r, fig.width=20, fig.height=6, out.width='90%', fig.cap="\\label{fig:HMM_results}State-dependent means and standard deviations"}
 
 # Chart with state-dependent mean and standard deviations
 HMM_main_CO <- data.frame(state=1:nstates,
-                      mu_CO=HMM_summary[,1],
-                      sigma_CO=HMM_summary[,3])
-df_to_plot_CO <- estStates_CO %>%
+                      mu=HMM_summary[,1],
+                      sigma=HMM_summary[,3])
+df_to_plot <- estStates %>%
   left_join(HMM_main_CO)
-df_to_plot_CO %<>%
+df_to_plot %<>%
   mutate(xtime=louisiana_df$n_months, yvalue=louisiana_df$m_CO_mean)
 
-HMM_main<- ggplot(df_to_plot_CO, aes(x=xtime, y=yvalue)) +
+HMM_main <- ggplot(df_to_plot, aes(x=xtime, y=yvalue)) +
                 geom_line(size=0.7) +
-                geom_point(aes(x=xtime, y=mu_CO), col="blue", size=.8) +
-                geom_ribbon(aes(ymin=mu_CO-2*sigma_CO, ymax=mu_CO+2*sigma_CO), alpha=.1) +
+                geom_point(aes(x=xtime, y=mu), col="blue", size=.8) +
+                geom_ribbon(aes(ymin=mu-2*sigma, ymax=mu+2*sigma), alpha=.1) +
                 theme_classic(base_size=9) +
                 theme(plot.title=element_text(hjust=0.5)) +
-                labs(y=expression(CO~(ppm)), x="Months") +
-                scale_x_continuous(breaks=seq(0,200,50),labels=format(seq(as.Date("2000/1/1"),as.Date("2016/6/1"), "4 years"), "%Y")) +
+                labs(y=expression(CO~(ppm)), x="Year") +
+                scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
                 scale_y_continuous(breaks=seq(0,1.5,0.25)) +
-                theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+                theme(plot.title=element_text(size=10, face="bold",
+                                              margin=margin(0,0,10,0)),
                 axis.text=element_text(size=19,face="bold"),
-                axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-                axis.title.y=element_text(size=21,family="Times",margin=margin(r=5)))
+                axis.title.x=element_text(family="Times", margin=margin(t=5)),
+                axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
 
 # Chart with Viterbi states and posterior probabilities
 HMM_additional_CO <- data.frame(time_index=louisiana_df$n_months,
-                           state=estStates_CO[1],
-                           S1=estStates_CO[2]) %>% 
+                           state=estStates[1],
+                           S1=estStates[2]) %>% 
   gather("variable", "value", -time_index)
 
 my_breaks <- function(x) { if (max(x)>1) seq(0,2,1) else seq(0,1,1) }
 lab_names <- c('S1'="Posterior, S=1",'state'="Viterbi states")
 
-HMM_additional<-ggplot(HMM_additional_CO, aes(time_index, value)) +
+HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
   geom_line(color="black", size=0.7) +
   facet_wrap(variable~., scales="free", ncol=1,
              strip.position="left",
              labeller = as_labeller(lab_names)) +
-  labs(x="Month") +
+  labs(x="Year") +
   scale_y_continuous(breaks=my_breaks) +
-  scale_x_continuous(breaks=seq(0,200,50), labels=format(seq(as.Date("2000/1/1"),as.Date("2016/4/27"), "4 years"), "%Y"))+
-  theme_stata(base_size=9) +
+  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  theme_classic(base_size=9) +
   theme(axis.text=element_text(size=19),
         axis.title.x=element_text(size=21,family="Times", margin=margin(5,0,0,0)),
         axis.title.y=element_blank(),
@@ -328,106 +331,101 @@ A deeper anlysis on the factors explaining this shift can be found in [@feng2015
 \subsection{Linear growth model}
 
 ```{r echo=FALSE}
-## Model 1
 # Build DLM with polynomial specification
-build_lin_growth <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=exp(param[2:3]),m0=c(y[1],0))}
+build_LG <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=exp(param[2:3]),m0=c(y[1],0))}
 
 # Estimate MLE of parameters
-fit_CO_lin_growth <- dlmMLE(y, rep(1,3), build_lin_growth, hessian=TRUE)
-unlist(build_lin_growth(fit_CO_lin_growth$par)[c("V","W")])            # Convergence achieved
+fit_LG <- dlmMLE(y, rep(1,3), build_LG, hessian=TRUE)
+unlist(build_LG(fit_LG$par)[c("V","W")]) # convergence achieved
 
 # Calculate standard errors of the MLE using delta method
-estVarLog <- solve(fit_CO_lin_growth$hessian)
-estVar <- diag(exp(fit_CO_lin_growth$par)) %*% estVarLog %*% + diag(exp(fit_CO_lin_growth$par))
-lin_growth_st.err <- sqrt(diag(estVar))
+estVarLog_LG <- solve(fit_LG$hessian)
+estVar_LG <- diag(exp(fit_LG$par)) %*% estVarLog_LG %*% + diag(exp(fit_LG$par))
+SE_LG <- sqrt(diag(estVar_LG))
 ```
-
 
 ```{r echo=FALSE}
 ## Model 2
 # Alternative (1): assume constant nominal speed in the dynamics
-  buildMod_2 <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=c(exp(param[2]), 0),m0=c(y[1],0))}
-  fit_2 <- dlmMLE(y, rep(1,2), buildMod_2, hessian=TRUE)            # Convergence achieved
-  unlist(buildMod_2(fit_2$par)[c("V","W")])
-  # Calculate standard errors of the MLE using delta method
-  estVarLog <- solve(fit_2$hessian)
-  estVar <- diag(exp(fit_2$par)) %*% estVarLog %*% + diag(exp(fit_2$par))
-  Mod2_st.err <- sqrt(diag(estVar))
+buildMod_2 <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=c(exp(param[2]), 0),m0=c(y[1],0))}
+fit_2 <- dlmMLE(y, rep(1,2), buildMod_2, hessian=TRUE) # convergence achieved
+unlist(buildMod_2(fit_2$par)[c("V","W")])
+# Calculate standard errors of the MLE using delta method
+estVarLog <- solve(fit_2$hessian)
+estVar <- diag(exp(fit_2$par)) %*% estVarLog %*% + diag(exp(fit_2$par))
+Mod2_st.err <- sqrt(diag(estVar))
 ```
-
 
 ```{r echo=FALSE}
 ## Model 3
 # Alternative (2): integrated random walk model
-  buildMod_3 <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=c(0, exp(param[2])),m0=c(y[1],0))}
-
-  fit_3 <- dlmMLE(y, rep(1,2), buildMod_2, hessian=TRUE)            # Convergence achieved
-  unlist(buildMod_3(fit_2$par)[c("V","W")])
-  # Calculate standard errors of the MLE using delta method
-  estVarLog <- solve(fit_3$hessian)
-  estVar <- diag(exp(fit_3$par)) %*% estVarLog %*% + diag(exp(fit_3$par))
-  Mod3_st.err <- sqrt(diag(estVar))
+buildMod_3 <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=c(0,exp(param[2])), m0=c(y[1],0))}
+fit_3 <- dlmMLE(y, parm=rep(1,2), buildMod_2, hessian=TRUE) # convergence achieved
+unlist(buildMod_3(fit_2$par)[c("V","W")])
+# Calculate standard errors of the MLE using delta method
+estVarLog <- solve(fit_3$hessian)
+estVar <- diag(exp(fit_3$par)) %*% estVarLog %*% + diag(exp(fit_3$par))
+Mod3_st.err <- sqrt(diag(estVar))
 ```
 
 ```{r}
-lin_growth <- build_lin_growth(fit_CO_lin_growth$par)
+# Put MLE in the model
+LG <- build_LG(fit_LG$par)
 # Kalman filter
-lin_growth_Filt <- dlmFilter(y, lin_growth)
+LG_Filt <- dlmFilter(y, LG)
 # Remove the first item (m_0) in the vector of filtered states
-filt_est=dropFirst(lin_growth_Filt$m)
+filt_est = dropFirst(LG_Filt$m)
 # Compute the vector of state variances and standard deviations
-list_c <- dlmSvd2var(lin_growth_Filt$U.C, lin_growth_Filt$D.C)
+list_c <- dlmSvd2var(LG_Filt$U.C, LG_Filt$D.C)
 vol_C <- sqrt(unlist(list_c))
 # One step ahead forecast
-y_filt <- lin_growth_Filt$f
+y_filt <- LG_Filt$f
 ```
 
-textcolor{red}{NON SONO RIUSCITO A USARE LE STESSE DEGLI ALTRI GRAFICI DATE NELL' ASSE X. QUALCUNO RIESCE A DARCI UN'OCCHIATA??? BISOGNA ANCHE CAMBIARE IN NOME DELL'ASSE y}
 ```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
 
-n_dates <- seq(as.Date("2000/01/01"), as.Date("2016/6/1"), "month")
+n_dates <- seq(as.Date("2001/1/1"), as.Date("2016/6/1"), "month")
 
 # Df
-df_lin_growth_filt <-data.frame(n_dates, y, y_filt)
+df_LG_filt <- data.frame(n_dates, y, y_filt)
 
 # Plot
 colors <- c("Observed data" = "black", "Filtering estimates" = "red")
-ggplot(df_lin_growth_filt, aes(x=n_dates)) +
+ggplot(df_LG_filt, aes(x=n_dates)) +
   geom_line(aes(y=y, color="Observed data"), size=0.4) +
   geom_line(aes(y=y_filt, color = "Filtering estimates"), size=0.4) +
-  geom_vline(xintercept = as.Date("2008/01/01"), color= "black", size=0.3) +
+  geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
-  labs(x="Year", y="State level", color = "") +
-  scale_y_continuous(breaks=seq(0,1.5,0.25))+
+  labs(x="Year", y=expression(CO~(ppm)), color = "") +
+  scale_y_continuous(breaks=seq(0,1.5,0.25)) +
+  scale_x_date(date_breaks="2 years", limits=as.Date(c('2001/01/01','2016/06/01')),
+               labels=date_format("%Y")) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))+
-        scale_color_manual(values = colors)+
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+        scale_color_manual(values = colors) +
         theme(legend.justification = c("left", "top"),
               legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
-textcolor{red}{NEL CASO NON CI FOSSE ABBASTANZA SPAZIO POTREMMO TOGLIERE IL PLOT DEI RESIDUALS CHE DEI 3 MI SEMBRA IL MENO INFORMATIVO}
-
 ```{r, fig.width=20, fig.height=12, fig.cap="\\label{fig:diagnostic} (a) Standardized one-step-ahead forecast errors; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors"}
 
 # Model checking
+res_LG <- residuals(LG_Filt, sd=FALSE)
+res_LG = data.frame(res_LG, n_dates)
+colnames(res_LG) = c("res", "time")
 
-lin_growth_res <- residuals(lin_growth_Filt, sd=FALSE)
-lin_growth_res = data.frame(lin_growth_res, n_dates)
-colnames(lin_growth_res) = c("res", "time")
-
-a <- ggplot(lin_growth_res, aes(x=time)) +
+a <- ggplot(res_LG, aes(x=time)) +
   geom_line(aes(y=res), size=0.4) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Residuals") +
-  scale_x_date(date_breaks="4 years", limits=as.Date(c('2000/01/01','2017/01/01')),
+  scale_x_date(date_breaks="2 years", limits=as.Date(c('2001/01/01','2017/06/01')),
                labels=date_format("%Y")) +
   scale_y_continuous(breaks=seq(-4.5,4.5,1), limits = c(-3,4.5)) +
   theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
+        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
 
 ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE, horizontal = TRUE,...)
 {
@@ -520,9 +518,9 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
   cowplot::plot_grid(plot.acf)
 }
 
-b <- ggplot.corr(data=lin_growth_res$res, lag.max=24, ci=0.95, large.sample.size=FALSE, horizontal=TRUE)
+b <- ggplot.corr(data=res_LG$res, lag.max=24, ci=0.95, large.sample.size=FALSE, horizontal=TRUE)
 
-c <- ggplot(lin_growth_res, aes(sample=res)) +
+c <- ggplot(res_LG, aes(sample=res)) +
   stat_qq(col="blue") +
   stat_qq_line(col="red", lty=2, size=1) +
   scale_y_continuous(breaks=seq(-3, 3,1), limits=c(-3,3)) +
@@ -541,45 +539,57 @@ res_series
 
 ```{r, include=F}
 # Measures of forecasting accuracy
-lin_growth_MSE <- round(mean((lin_growth_Filt$f-y)^2),3) # mean square error (MSE)
-lin_growth_MAE <- round(mean(abs(lin_growth_Filt$f-y)),3) # mean abs. error (MAE)
-lin_growth_MAPE <- round(mean(abs(lin_growth_Filt$f-y)/y),3) # mean abs. percentage error (MAPE)
+MSE_LG <- round(mean((LG_Filt$f-y)^2),3) # mean square error (MSE)
+MAE_LG <- round(mean(abs(LG_Filt$f-y)),3) # mean abs. error (MAE)
+MAPE_LG <- round(mean(abs(LG_Filt$f-y)/y),3) # mean abs. percentage error (MAPE)
 ```
 
 \subsection{Dynamic linear regression}
 
-We take as explanatory variable $x_t$ the U.S. coal consumption.
+We take as explanatory variable $x_t$ Louisiana's coal consumption for electricity generation (in particular, for the totality of the electric power industry).
 
 \textcolor{red}{DLM for Univariate regression potrebbe essere un'idea. per esempio come rgressore si potrebbe usare la quantità di carbone estratto negli USA, la quantità di gas naturale usata nella produzione di corrente. se trovare i dati fosse difficile potremmo semplicemente modellare il trend}
 
 ```{r}
-# Import explanatory variable
-x <- read.csv()
-
-# Guess of the prior mean and variance based on moments estimators
-m0_CO <- rep(mean(y),2)
-C0_CO <- diag(2)
+# Import dataset
+coal_cons <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_pollution/master/Louisiana_coal_consumption.csv"), sep=";", header=T, stringsAsFactors=F)
+x <- as.numeric(coal_cons$tot_electric_power_industry)
 
 # Build dynamic linear regression model
-CO_dyn_reg <- function(param){dlmModReg(x, dV=param[1], dW=param[2:3], m0=m0_CO, C0=C0_CO)}
+build_DR <- function(param){dlmModReg(x, addInt=TRUE, dV=param[1], dW=param[2:3], m0=c(y[1],0))}
 
 # Estimate MLE of parameters
-fit_CO_dyn_reg <- dlmMLE(y, rep(1,3), CO_dyn_reg, lower=c(0.0000001, 0, 0), hessian=TRUE)
-fit_CO_dyn_reg$convergence # 0 indicates successful convergence
-unlist(CO_dyn_reg(fit_CO_dyn_reg$par)[c("V","W")])
-fit_CO_dyn_reg$hessian
+fit_DR <- dlmMLE(y, parm=rep(1,3), build_DR, hessian=TRUE)
+unlist(build_DR(fit_DR$par)[c("V","W")])
+
+# Calculate standard errors of the MLE using delta method
+estVarLog_DR <- solve(fit_DR$hessian)
+estVar_DR <- diag(exp(fit_DR$par)) %*% estVarLog_DR %*% + diag(exp(fit_DR$par))
+SE_DR <- sqrt(diag(estVar_DR))
+```
+
+```{r}
+# Put MLE in the model
+DR <- build_DR(fit_DR$par)
+# Kalman filter
+DR_Filt <- dlmFilter(y, DR)
+# Remove the first item (m_0) in the vector of filtered states
+filt_est = dropFirst(DR_Filt$m)
+# Compute the vector of state variances and standard deviations
+list_c <- dlmSvd2var(DR_Filt$U.C, DR_Filt$D.C)
+vol_C <- sqrt(unlist(list_c))
+# One step ahead forecast
+y_filt_DR <- DR_Filt$f
 ```
 
 ```{r, fig.width=20, fig.height=12, fig.cap="\\label{fig:diagnostic} (a) Standardized one-step-ahead forecast errors; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors"}
 
 # Model checking
-CO_dyn_reg_Filt <- dlmFilter(y, CO_dyn_reg)
+res_DR <- residuals(DR_Filt, sd=FALSE)
+res_DR = data.frame(res_DR, n_dates)
+colnames(res_DR) = c("res", "time")
 
-CO_dyn_reg_res <- residuals(CO_dyn_reg_Filt, sd=FALSE)
-CO_dyn_reg_res = data.frame(CO_dyn_reg_res, n_dates)
-colnames(CO_lin_growth_res) = c("res", "time")
-
-a <- ggplot(CO_dyn_reg_res, aes(x=time)) +
+a <- ggplot(res_DR, aes(x=time)) +
   geom_line(aes(y=res), size=0.4) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
@@ -682,9 +692,9 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
   cowplot::plot_grid(plot.acf)
 }
 
-b <- ggplot.corr(data=CO_dyn_reg_res$res, lag.max=24, ci=0.95, large.sample.size=FALSE, horizontal=TRUE)
+b <- ggplot.corr(data=res_DR$res, lag.max=24, ci=0.95, large.sample.size=FALSE, horizontal=TRUE)
 
-c <- ggplot(CO_dyn_reg_res, aes(sample=res)) +
+c <- ggplot(res_DR, aes(sample=res)) +
   stat_qq(col="blue") +
   stat_qq_line(col="red", lty=2, size=1) +
   scale_y_continuous(breaks=seq(-3, 3,1), limits=c(-3,3)) +
@@ -703,9 +713,9 @@ res_series
 
 ```{r, include=F}
 # Measures of forecasting accuracy
-CO_dyn_reg_MSE <- round(mean((CO_dyn_reg_Filt$f-y)^2),3) # mean square error (MSE)
-CO_dyn_reg_MAE <- round(mean(abs(CO_dyn_reg_Filt$f-y)),3) # mean abs. error (MAE)
-CO_dyn_reg_MAPE <- round(mean(abs(CO_dyn_reg_Filt$f-y)/y),3) # mean abs. percentage error (MAPE)
+MSE_DR <- round(mean((DR_Filt$f-y)^2),3) # mean square error (MSE)
+MAE_DR <- round(mean(abs(DR_Filt$f-y)),3) # mean abs. error (MAE)
+MAPE_DR <- round(mean(abs(DR_Filt$f-y)/y),3) # mean abs. percentage error (MAPE)
 ```
 
 \section{Part 2. Multivariate analysis}
@@ -731,21 +741,21 @@ CO_dyn_reg_MAPE <- round(mean(abs(CO_dyn_reg_Filt$f-y)/y),3) # mean abs. percent
 tabf <- matrix(nrow=3, ncol=5)
 rownames(tabf) <- c('MSE','MAE','MAPE')
 colnames(tabf) <- c('HMM', 'Linear growth model', 'Dynamic regression', 'SUR', 'SUTSE')
-tabf[1,1] <- CO_HMM_MSE
-tabf[2,1] <- CO_HMM_MAE
-tabf[3,1] <- CO_HMM_MAPE
-tabf[1,2] <- CO_lin_growth_MSE 
-tabf[2,2] <- CO_lin_growth_MAE
-tabf[3,2] <- CO_lin_growth_MAPE
-tabf[1,3] <- CO_dyn_reg_MSE 
-tabf[2,3] <- CO_dyn_reg_MAE
-tabf[3,3] <- CO_dyn_reg_MAPE
-tabf[1,4] <- CO_SUR_MSE 
-tabf[2,4] <- CO_SUR_MAE
-tabf[3,4] <- CO_SUR_MAPE
-tabf[1,5] <- CO_SUTSE_MSE 
-tabf[2,5] <- CO_SUTSE_MAE
-tabf[3,5] <- CO_SUTSE_MAPE
+tabf[1,1] <- MSE_HMM
+tabf[2,1] <- MAE_HMM
+tabf[3,1] <- MAPE_HMM
+tabf[1,2] <- MSE_LG
+tabf[2,2] <- MAE_LG
+tabf[3,2] <- MAPE_LG
+tabf[1,3] <- MSE_DR
+tabf[2,3] <- MAE_DR
+tabf[3,3] <- MAPE_DR
+tabf[1,4] <- MSE_SUR
+tabf[2,4] <- MAE_SUR
+tabf[3,4] <- MAPE_SUR
+tabf[1,5] <- MSE_SUTSE
+tabf[2,5] <- MAE_SUTSE
+tabf[3,5] <- MAPE_SUTSE
 kable(tabf, caption="Model checking")
 ```
 
