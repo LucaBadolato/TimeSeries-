@@ -38,7 +38,7 @@ header-includes:
   \DeclareMathOperator*{\E}{\mathbb{E}}
   \DeclareMathOperator*{\Ec}{\mathbb{E}_t}
   \setlength\parindent{0pt}
-  
+  \newcommand{\indep}{\perp \!\!\! \perp}
 ---
 
 ```{r, include=FALSE}
@@ -327,6 +327,13 @@ A deeper anlysis on the factors explaining this shift can be found in [@feng2015
 
 \subsection{Linear growth model}
 
+The second univariate model that we consider to examine $\text{CO}$ is a linear growth model \footnote{Even if aware of the results obtained in the previous section, we decided to specify a dlm model considering both a level and a trend, thus using the same first guess as explained in the introduction. This allows a proper comparison of the results and it works also as a double check of the trend absence.}, defined as usual as following: 
+\begin{eqnarray*} 
+& Y_t = \begin{bmatrix}1 & 0 \end{bmatrix} \theta_t + v_t \quad            & v_t \overset{i.i.d.}\sim N(0, \sigma_{V}^{2}) \\
+& \theta_t = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}\theta_{t-1} + w_t \quad   & w_t \overset{i.i.d.}\sim N_{2}(0, W = \begin{bmatrix}\sigma_{w_{1}}^{2} & 0 \\ 0 &  \sigma_{w_{1}}^{2} \end{bmatrix} )
+\end{eqnarray*}
+where $\theta_t = \begin{pmatrix} \mu_{t} \\ \beta_{t} \end{pmatrix}$, $\theta_{0} \sim N_{2}(m_{0} = \begin{pmatrix} \hat{\mu_{0}} \\ \hat{\beta_{0}} \end{pmatrix}, C_{0})$ and $\theta_{0} \indep (v_{t}) \indep (w_{t})$. 
+
 ```{r echo=FALSE}
 ## Model 1
 # Build DLM with polynomial specification
@@ -407,7 +414,7 @@ ggplot(df_lin_growth_filt, aes(x=n_dates)) +
               legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
-textcolor{red}{NEL CASO NON CI FOSSE ABBASTANZA SPAZIO POTREMMO TOGLIERE IL PLOT DEI RESIDUALS CHE DEI 3 MI SEMBRA IL MENO INFORMATIVO}
+textcolor{red}{NEL CASO NON CI FOSSE ABBASTANZA SPAZIO POTREMMO TOGLIERE IL PLOT DEI RESIDUALS CHE DEI 3 MI SEMBRA IL MENO INFORMATIVO. (LUCA: in realta il primo grafico del linear che hai plottato è molto interessante perchè si vede chiaramente che la varianza degli errori non è time invariant ma ha un bel change dal 2008. possiamo dirlo e provare a fare le prossime specificazioni con la varianza che cambia dal 2008, probabilmente questo change è catturato meglio dagli errori dell'HMM e qui si può commentare la differenza tra i due. domani provo a capire come specificare un dlm con time variant variance qui su R.")}
 
 ```{r, fig.width=20, fig.height=12, fig.cap="\\label{fig:diagnostic} (a) Standardized one-step-ahead forecast errors; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors"}
 
