@@ -364,35 +364,47 @@ A deeper anlysis on the factors explaining this shift can be found in [@feng2015
 
 \subsection{Linear growth model}
 
-```{r}
+```{r echo=FALSE}
 # Guess of the prior mean and variance based on moments estimators
 m0_CO <- rep(mean(y),2)
 C0_CO <- diag(2)
 
 # Build DLM with polynomial specification
-CO_lin_growth <- function(param){dlmModPoly(order=2, dV=param[1], dW=param[2:3])}
+build_lin_growth <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=exp(param[2:3]))}
 
 # Estimate MLE of parameters
-fit_CO_lin_growth <- dlmMLE(y, rep(1,3), CO_lin_growth, lower=c(0.0000001, 0, 0), hessian=TRUE)
-fit_CO_lin_growth$convergence # 0 indicates successful convergence: we don't have convergence!!!
-unlist(CO_lin_growth(fit_CO_lin_growth$par)[c("V","W")])
-fit_CO_lin_growth$hessian
+fit_CO_lin_growth <- dlmMLE(y, rep(1,3), build_lin_growth, hessian=TRUE)
+fit_CO_lin_growth$convergence                   # 0 indicates successful convergence
+
+unlist(build_lin_growth(fit_CO_lin_growth$par)[c("V","W")])
+CO_lin_growth <- build_lin_growth(fit_CO_lin_growth$par)
+
+# Calculate standard errors of the MLE using delta method
+estVarLog <- solve(fit_CO_lin_growth$hessian)
+estVar <- diag(exp(fit_CO_lin_growth$par)) %*% estVarLog %*% + diag(exp(fit_CO_lin_growth$par))
+lin_growth_st.err <- sqrt(diag(estVar))
 
 # Alternative (1): assume constant nominal speed in the dynamics
-  buildMod_2 <- function(param){dlmModPoly(order=2, dV=param[1], dW=c(param[2], 0))}
+  buildMod_2 <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=c(exp(param[2]), 0))}
 
-  fit_2 <- dlmMLE(y, rep(1,3), buildMod_2, lower=c(0.0000001, 0, 0), hessian=TRUE)
-  fit_2$convergence # 0 indicates successful convergence: we don't have convergence!!!
+  fit_2 <- dlmMLE(y, rep(1,2), buildMod_2, hessian=TRUE)
+  fit_2$convergence                           # 0 indicates successful convergence
   unlist(buildMod_2(fit_2$par)[c("V","W")])
-  fit_2$hessian
+  # Calculate standard errors of the MLE using delta method
+  estVarLog <- solve(fit_2$hessian)
+  estVar <- diag(exp(fit_2$par)) %*% estVarLog %*% + diag(exp(fit_2$par))
+  Mod2_st.err <- sqrt(diag(estVar))
 
 # Alternative (2): integrated random walk model
-  buildMod_3 <- function(param){dlmModPoly(order=2, dV=param[1], dW=c(0, param[2]))}
+  buildMod_3 <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=c(0, exp(param[2])))}
 
-  fit_3 <- dlmMLE(y, rep(1,3), buildMod_2, lower=c(0.0000001, 0, 0), hessian=TRUE)
-  fit_3$convergence # 0 indicates successful convergence: we don't have convergence!!!
+  fit_3 <- dlmMLE(y, rep(1,2), buildMod_2, hessian=TRUE)
+  fit_3$convergence                             # 0 indicates successful convergence
   unlist(buildMod_3(fit_2$par)[c("V","W")])
-  fit_3$hessian
+  # Calculate standard errors of the MLE using delta method
+  estVarLog <- solve(fit_3$hessian)
+  estVar <- diag(exp(fit_3$par)) %*% estVarLog %*% + diag(exp(fit_3$par))
+  Mod3_st.err <- sqrt(diag(estVar))
 ```
 
 ```{r, fig.width=20, fig.height=12, fig.cap="\\label{fig:diagnostic} (a) Standardized one-step-ahead forecast errors; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors"}
