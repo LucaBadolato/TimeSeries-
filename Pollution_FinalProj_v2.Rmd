@@ -738,26 +738,31 @@ MAPE_DR <- round(mean(abs(DR_Filt$f-y)/y),3) # mean abs. percentage error (MAPE)
 \textcolor{red}{Le serie SO2 e CO mostrano entrambe un breakpoint al month 100 e sono positivamente correlate. Inoltre entrambi i pollutants dipendono dalla combustione del carbone che potremmo usare come regressore. In questo caso avremmo un multivariate DLM con m=2}
 
 ```{r}
+
+y_m <- data.frame(y,louisiana_df$m_SO2_mean)
+y_m<-rename(y_m,c("CO"="y","SO2"="louisiana_df.m_SO2_mean"))
+y_m<-data.matrix(y_m)
+
 # Build SUR model
 buildSUR <- function(param){
   Bmod=dlmModReg(x, addInt=TRUE)
   Bmod$FF=matrix(c(1,1), nrow=1, ncol=2) %x% diag(2)
-  Bmod$JFF=matrix(c(0,0,0,0,1,0,0,2), nrow=2, ncol=4)
+  Bmod$JFF=matrix(c(0,1), nrow=1, ncol=2) %x% diag(2)
   Bmod$GG=diag(4)
-  Bmod$V=diag(c(param[1], param[2]))
-  Wa=matrix(c(param[3],param[4],param[5],param[6]),2,2)
-  Wb=matrix(c(param[7], param[8], param[9], param[10]),2,2)
+  Bmod$V=diag(c(exp(param[1]), exp(param[2])))
+  Wa=matrix(c(exp(param[3]),param[4],exp(param[5]),param[6]),2,2)
+  Wb=matrix(c(exp(param[7]), param[8], exp(param[9]), param[10]),2,2)
   W=bdiag(Wa, Wb) 
   Bmod$W=W  
   
-  Bmod$m0=rep(0, 2*2)
-  Bmod$C0=diag(1e7, nr = 2*2)
+  Bmod$m0=rep(1,2*2)
+  Bmod$C0=diag(2*2)
   return(Bmod)
 }
 
 # Estimate MLE of parameters
-fit_SUR <- dlmMLE(Ym, parm=rep(1,6), buildSUR, hessian=TRUE)
-unlist(build_SUR(fit_SUR$par)[c("V","W")])
+fit_SUR <- dlmMLE(y_m, parm=rep(1,10), buildSUR, hessian=TRUE)
+unlist(buildSUR(fit_SUR$par)[c("V","W")])
 
 # Calculate standard errors of the MLE using delta method
 estVarLog_SUR <- solve(fit_SUR$hessian)
@@ -765,10 +770,10 @@ estVar_SUR <- diag(exp(fit_SUR$par)) %*% estVarLog_SUR %*% + diag(exp(fit_SUR$pa
 SE_DR <- sqrt(diag(estVar_SUR))
 
 # Put MLE in the model
-SUR <- build_SUR(fit_SUR$par)
+SUR <- buildSUR(fit_SUR$par)
 
 # Kalman filter
-SUR_Filt <- dlmFilter(Ym, SUR)
+SUR_Filt <- dlmFilter(y_m, SUR)
 ```
 
 ```{r, include=F}
