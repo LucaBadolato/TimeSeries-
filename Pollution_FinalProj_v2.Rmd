@@ -328,6 +328,151 @@ Explanations of these results, which confirm a stable change in the evolution pr
 
 A deeper anlysis on the factors explaining this shift can be found in [@feng2015drivers], in which they analyse the series of $\text{CO}_2$.
 
+MODEL CHECKING FOR HMM: DECIDERE L'ORIDINE. LASCIARLO QUI O PRESENTARE ENTRAMBI I MODEL CHECK PER HMM A LGM INSIEME PER CONFRONTARLI MEGLIO? 
+```{r, include=FALSE}
+#MODEL CHECKING:
+#Calculation of fitted values
+louisiana_df$state = estStates[1]
+louisiana_df$mu = NA
+louisiana_df$mu[louisiana_df$state == 1] = as.numeric(mu1hat) 
+louisiana_df$mu[louisiana_df$state == 2] = as.numeric(mu2hat) 
+louisiana_df$beta = NA
+louisiana_df$beta[louisiana_df$state == 1] = as.numeric(beta1hat) 
+louisiana_df$beta[louisiana_df$state == 2] = as.numeric(beta2hat)
+
+louisiana_df$fitted = louisiana_df$mu + louisiana_df$beta*louisiana_df$n_months 
+
+#Calculation of residuals
+louisiana_df$residuals = y - louisiana_df$fitted 
+```
+
+```{r, fig.width=20, fig.height=12, fig.cap="\\label{fig:diagnostic} (a) Standardized one-step-ahead forecast errors; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors"}
+
+# Model checking
+res_HMM = data.frame(louisiana_df$residuals,louisiana_df$n_months)
+colnames(res_HMM) = c("res", "time")
+
+a <- ggplot(res_HMM, aes(x=time)) +
+  geom_line(aes(y=res), size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Residuals") +
+  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  scale_y_continuous(breaks=seq(-4.5,4.5,1), limits = c(-3,4.5)) +
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
+
+ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE, horizontal = TRUE,...)
+{
+  require(ggplot2)
+  require(dplyr)
+  require(cowplot)
+  
+  if(horizontal == TRUE) {numofrow <- 1} else {numofrow <- 2}
+  
+  list.acf <- acf(data, lag.max = lag.max, type = "correlation", plot = FALSE)
+  N <- as.numeric(list.acf$n.used)
+  df1 <- data.frame(lag = list.acf$lag, acf = list.acf$acf)
+  df1$lag.acf <- dplyr::lag(df1$acf, default = 0)
+  df1$lag.acf[2] <- 0
+  df1$lag.acf.cumsum <- cumsum((df1$lag.acf)^2)
+  df1$acfstd <- sqrt(1/N * (1 + 2 * df1$lag.acf.cumsum))
+  df1$acfstd[1] <- 0
+  df1 <- select(df1, lag, acf, acfstd)
+  
+  list.pacf <- acf(data, lag.max = lag.max, type = "partial", plot = FALSE)
+  df2 <- data.frame(lag = list.pacf$lag,pacf = list.pacf$acf)
+  df2$pacfstd <- sqrt(1/N)
+  
+  if(large.sample.size == TRUE)
+  {
+    plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
+      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
+      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
+      geom_col(fill = "#4373B6", width = 0.7) +
+      theme_classic(base_size=9.5) +
+      scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
+      scale_y_continuous(name = element_blank(), 
+                         limits = c(min(df1$acf,df2$pacf),1)) +
+      theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
+        panel.grid.minor = element_line(size=0.5))
+    
+    plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
+      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
+      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
+      theme_classic(base_size=9.5)+
+      geom_col(fill = "#4373B6", width = 0.7) +
+      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm = TRUE),6)) +
+      scale_y_continuous(name = element_blank(),
+                         limits = c(min(df1$acf,df2$pacf),1)) +
+      ggtitle("PACF") +
+      theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
+        panel.grid.minor = element_line(size=0.5))
+  }
+  else
+  {
+    plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
+      geom_col(fill = "#4373B6", width = 0.7) +
+      geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
+                 colour = "sandybrown",
+                 linetype = "dashed") + 
+      geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
+                 colour = "sandybrown",
+                 linetype = "dashed") + 
+      theme_classic(base_size=9.5)+
+      scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
+      scale_y_continuous(name = element_blank(), 
+                         limits = c(min(df1$acf,df2$pacf),1)) +
+       theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
+        panel.grid.minor = element_line(size=0.5))
+    
+    plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
+      geom_col(fill = "#4373B6", width = 0.7) +
+      geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
+                 colour = "sandybrown",
+                 linetype = "dashed") + 
+      geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
+                 colour = "sandybrown",
+                 linetype = "dashed") + 
+      theme_classic(base_size=9.5)+
+      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm=TRUE),6)) +
+      scale_y_continuous(name = element_blank(),
+                         limits = c(min(df1$acf,df2$pacf),1)) +
+      ggtitle("PACF") +
+       theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
+        panel.grid.minor=element_line(size=0.5))
+  }
+  cowplot::plot_grid(plot.acf)
+}
+
+b <- ggplot.corr(data=res_HMM$res, lag.max=24, ci=0.95, large.sample.size=FALSE, horizontal=TRUE)
+
+c <- ggplot(res_HMM, aes(sample=res)) +
+  stat_qq(col="blue") +
+  stat_qq_line(col="red", lty=2, size=1) +
+  scale_y_continuous(breaks=seq(-3, 3,1), limits=c(-3,3)) +
+  scale_x_continuous(breaks=seq(-3, 3,1), limits=c(-3,3)) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor=element_line(size=0.5)) +
+  labs(x="Theoretical", y="Observed") +
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
+
+res_series <- plot_grid(a, ggarrange(b, c, ncol = 2, labels = c("(b)", "(c)")),
+                        nrow = 2, labels = "(a)")
+res_series
+```
+
 \subsection{Linear growth model}
 
 The second univariate model that we consider to examine $\text{CO}$ is a linear growth model \footnote{Even if aware of the results obtained in the previous section, we decided to specify a dlm model considering both a level and a trend, thus using the same first guess as explained in the introduction. This allows a proper comparison of the results and it works also as a double check of the trend absence.}, defined as usual as following: 
@@ -420,27 +565,25 @@ vol_C <- sqrt(unlist(list_c))
 y_filt <- LG_Filt$f
 ```
 
-\textcolor{red}{DATE SU ASSE X DIVERSE DA GRAFICO PRECEDENTE}
+\textcolor{red}{DATE OK. COMMENTO:SIGNAL-TO-NOISE RATIO MOLTO BASSO, AS A CONSEQUENCE...}
 
 ```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
 
-n_dates <- seq(as.Date("2001/1/1"), as.Date("2016/6/1"), "month")
-
 # Df
-df_LG_filt <- data.frame(n_dates, y, y_filt)
+df_LG_filt <- data.frame(louisiana_df$n_months, y, y_filt)
+colnames(df_LG_filt ) = c("n_months", "y", "y_filt")
 
 # Plot
 colors <- c("Observed data" = "black", "Filtering estimates" = "red")
-ggplot(df_LG_filt, aes(x=n_dates)) +
+ggplot(df_LG_filt, aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data"), size=0.4) +
   geom_line(aes(y=y_filt, color = "Filtering estimates"), size=0.4) +
-  geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
+  #geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
   scale_y_continuous(breaks=seq(0,1.5,0.25)) +
-  scale_x_date(date_breaks="2 years", limits=as.Date(c('2001/01/01','2016/06/01')),
-               labels=date_format("%Y")) +
+  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5))) +
         scale_color_manual(values = colors) +
@@ -454,7 +597,7 @@ textcolor{red}{NEL CASO NON CI FOSSE ABBASTANZA SPAZIO POTREMMO TOGLIERE IL PLOT
 
 # Model checking
 res_LG <- residuals(LG_Filt, sd=FALSE)
-res_LG = data.frame(res_LG, n_dates)
+res_LG = data.frame(res_LG,louisiana_df$n_months)
 colnames(res_LG) = c("res", "time")
 
 a <- ggplot(res_LG, aes(x=time)) +
@@ -462,8 +605,7 @@ a <- ggplot(res_LG, aes(x=time)) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Residuals") +
-  scale_x_date(date_breaks="2 years", limits=as.Date(c('2001/01/01','2017/06/01')),
-               labels=date_format("%Y")) +
+   scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
   scale_y_continuous(breaks=seq(-4.5,4.5,1), limits = c(-3,4.5)) +
   theme(axis.text=element_text(size=19),
         axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
