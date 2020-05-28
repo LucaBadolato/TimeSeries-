@@ -342,7 +342,7 @@ where $\theta_t = \begin{pmatrix} \mu_{t} \\ \beta_{t} \end{pmatrix}$, $\theta_{
 build_LG <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=exp(param[2:3]),m0=c(y[1],0))}
 
 # Estimate MLE of parameters
-fit_LG <- dlmMLE(y, rep(1,3), build_LG, hessian=TRUE)
+fit_LG <- dlmMLE(y, rep(0.5,3), build_LG, hessian=TRUE)
 unlist(build_LG(fit_LG$par)[c("V","W")]) # convergence achieved
 
 # Calculate standard errors of the MLE using delta method
