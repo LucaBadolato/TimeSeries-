@@ -343,7 +343,7 @@ build_LG <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=exp(param[2
 
 # Estimate MLE of parameters
 fit_LG <- dlmMLE(y, rep(0.5,3), build_LG, hessian=TRUE)
-unlist(build_LG(fit_LG$par)[c("V","W")]) # convergence achieved
+#unlist(build_LG(fit_LG$par)[c("V","W")]) # convergence achieved
 
 # Calculate standard errors of the MLE using delta method
 estVarLog_LG <- solve(fit_LG$hessian)
@@ -351,12 +351,43 @@ estVar_LG <- diag(exp(fit_LG$par)) %*% estVarLog_LG %*% + diag(exp(fit_LG$par))
 SE_LG <- sqrt(diag(estVar_LG))
 ```
 
+In Table \ref{tab:MLE} are presented the MLEs of the unknown coefficients and the associated standard errors.
+
+```{r}
+# MLE
+MLE_sigmaV  <- paste0(round(exp(fit_LG$par[1]),5))
+MLE_sigmaW1 <- paste0(round(exp(fit_LG$par[2]),9))
+MLE_sigmaW2 <- paste0(round(exp(fit_LG$par[3]),9))
+
+# se(MLE)
+se_sigmaV  <- paste0('(', round(SE_LG[1],5), ')')
+se_sigmaW1 <- paste0('(', round(SE_LG[2],9), ')')
+se_sigmaW2 <- paste0('(', round(SE_LG[3],9), ')')
+
+# Summary table
+MLEsum <- data.frame(sigmaV=c(MLE_sigmaV, se_sigmaV),
+                     sigmaW1=c(MLE_sigmaW1, se_sigmaW1),
+                     sigmaW2=c(MLE_sigmaW2, se_sigmaW2))
+knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+             col.names = c("$\\hat{\\sigma}^2_{v}$",
+                           "$\\hat{\\sigma}^2_{w_1}$",
+                           "$\\hat{\\sigma}^2_{w_2}$"),
+             escape=F, caption="Maximum Likelihood estimates of the unknown
+             parameters\\label{tab:MLE}") %>%
+  column_spec(1:3, width="5em") %>%
+  collapse_rows(columns=1, latex_hline="none") %>%
+  footnote(general="Standard errors in parentheses",
+           general_title="Note:",
+           footnote_as_chunk=T, escape=F) %>%
+  kable_styling(latex_options="hold_position")
+```
+
 ```{r echo=FALSE}
 ## Model 2
 # Alternative (1): assume constant nominal speed in the dynamics
 buildMod_2 <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=c(exp(param[2]), 0),m0=c(y[1],0))}
 fit_2 <- dlmMLE(y, rep(1,2), buildMod_2, hessian=TRUE) # convergence achieved
-unlist(buildMod_2(fit_2$par)[c("V","W")])
+#unlist(buildMod_2(fit_2$par)[c("V","W")])
 # Calculate standard errors of the MLE using delta method
 estVarLog <- solve(fit_2$hessian)
 estVar <- diag(exp(fit_2$par)) %*% estVarLog %*% + diag(exp(fit_2$par))
@@ -368,7 +399,7 @@ Mod2_st.err <- sqrt(diag(estVar))
 # Alternative (2): integrated random walk model
 buildMod_3 <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=c(0,exp(param[2])), m0=c(y[1],0))}
 fit_3 <- dlmMLE(y, parm=rep(1,2), buildMod_2, hessian=TRUE) # convergence achieved
-unlist(buildMod_3(fit_2$par)[c("V","W")])
+#unlist(buildMod_3(fit_2$par)[c("V","W")])
 # Calculate standard errors of the MLE using delta method
 estVarLog <- solve(fit_3$hessian)
 estVar <- diag(exp(fit_3$par)) %*% estVarLog %*% + diag(exp(fit_3$par))
@@ -767,7 +798,7 @@ unlist(buildSUR(fit_SUR$par)[c("V","W")])
 # Calculate standard errors of the MLE using delta method
 estVarLog_SUR <- solve(fit_SUR$hessian)
 estVar_SUR <- diag(exp(fit_SUR$par)) %*% estVarLog_SUR %*% + diag(exp(fit_SUR$par))
-SE_DR <- sqrt(diag(estVar_SUR))
+#SE_DR <- sqrt(diag(estVar_SUR))
 
 # Put MLE in the model
 SUR <- buildSUR(fit_SUR$par)
