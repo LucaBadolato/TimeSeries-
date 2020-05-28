@@ -734,6 +734,8 @@ We take as explanatory variable $x_t$ Louisiana's coal consumption for electrici
 
 \textcolor{red}{DLM for Univariate regression potrebbe essere un'idea. per esempio come rgressore si potrebbe usare la quantità di carbone estratto negli USA, la quantità di gas naturale usata nella produzione di corrente. se trovare i dati fosse difficile potremmo semplicemente modellare il trend}
 
+textcolor{red}{IL MODEL CHECKING LO LASCEREI SOLO PER HMM E DLM, DIREI SOLTANTO "WE HAVE CHECKED THE RESIDUALS AND THEY..."}
+
 ```{r}
 # Import dataset
 coal_cons <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_pollution/master/Louisiana_coal_consumption.csv"), sep=";", header=T, stringsAsFactors=F)
@@ -909,6 +911,7 @@ MAPE_DR <- round(mean(abs(DR_Filt$f-y)/y),3) # mean abs. percentage error (MAPE)
 \subsection{Seemingly unrelated regression (SUR)}
 
 \textcolor{red}{Le serie SO2 e CO mostrano entrambe un breakpoint al month 100 e sono positivamente correlate. Inoltre entrambi i pollutants dipendono dalla combustione del carbone che potremmo usare come regressore. In questo caso avremmo un multivariate DLM con m=2}
+
 
 ```{r}
 
