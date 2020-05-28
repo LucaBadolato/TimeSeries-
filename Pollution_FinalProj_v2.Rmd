@@ -575,18 +575,20 @@ unlist(build_DR(fit_DR$par)[c("V","W")])
 estVarLog_DR <- solve(fit_DR$hessian)
 estVar_DR <- diag(exp(fit_DR$par)) %*% estVarLog_DR %*% + diag(exp(fit_DR$par))
 SE_DR <- sqrt(diag(estVar_DR))
-```
 
-```{r}
 # Put MLE in the model
 DR <- build_DR(fit_DR$par)
+
 # Kalman filter
 DR_Filt <- dlmFilter(y, DR)
+
 # Remove the first item (m_0) in the vector of filtered states
 filt_est = dropFirst(DR_Filt$m)
+
 # Compute the vector of state variances and standard deviations
 list_c <- dlmSvd2var(DR_Filt$U.C, DR_Filt$D.C)
 vol_C <- sqrt(unlist(list_c))
+
 # One step ahead forecast
 y_filt_DR <- DR_Filt$f
 ```
@@ -734,7 +736,44 @@ MAPE_DR <- round(mean(abs(DR_Filt$f-y)/y),3) # mean abs. percentage error (MAPE)
 \textcolor{red}{Le serie SO2 e CO mostrano entrambe un breakpoint al month 100 e sono positivamente correlate. Inoltre entrambi i pollutants dipendono dalla combustione del carbone che potremmo usare come regressore. In questo caso avremmo un multivariate DLM con m=2}
 
 ```{r}
+# Build SUR model
+buildSUR <- function(param){
+  Bmod=dlmModReg(Xm, addInt=TRUE)
+  Bmod$FF=matrix(c(1,1), nrow=1, ncol=2) %x% diag(2)
+  Bmod$JFF=matrix(c(0,0,0,0,1,0,0,2), nrow=2, ncol=4)
+  Bmod$GG=diag(4)
+  Bmod$V=bdiag(exp(x[1]), exp(x[2]))
+  
+  Wb=matrix(c(exp(x[3]), 0, 0, exp(x[4])), nrow=2, ncol=2)
+  W=bdiag(0, 0, Wb) # bdiag(exp(x[6]), exp(x[7]), Wb)
+  Bmod$W=W  
+  
+  Bmod$m0=rep(0, 2*2)
+  Bmod$C0=diag(1e7, nr = 2*2)
+  return(Bmod)
+}
 
+# Estimate MLE of parameters
+fit_SUR <- dlmMLE(Ym, parm=rep(1,6), build_SUR, hessian=TRUE)
+unlist(build_SUR(fit_SUR$par)[c("V","W")])
+
+# Calculate standard errors of the MLE using delta method
+estVarLog_SUR <- solve(fit_SUR$hessian)
+estVar_SUR <- diag(exp(fit_SUR$par)) %*% estVarLog_SUR %*% + diag(exp(fit_SUR$par))
+SE_DR <- sqrt(diag(estVar_SUR))
+
+# Put MLE in the model
+SUR <- build_SUR(fit_SUR$par)
+
+# Kalman filter
+SUR_Filt <- dlmFilter(Ym, SUR)
+```
+
+```{r, include=F}
+# Measures of forecasting accuracy
+MSE_SUR <- round(mean((SUR_Filt$f-y)^2),3) # mean square error (MSE)
+MAE_SUR <- round(mean(abs(SUR_Filt$f-y)),3) # mean abs. error (MAE)
+MAPE_SUR <- round(mean(abs(SUR_Filt$f-y)/y),3) # mean abs. percentage error (MAPE)
 ```
 
 \subsection{Seemingly unrelated time series equations (SUTSE)}
