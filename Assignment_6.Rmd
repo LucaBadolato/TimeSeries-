@@ -320,7 +320,7 @@ Moreover, the filtering covariance matrix $C_{T}$ is:
 \end{center}
 \medskip
 
-Then, \textcolor{red}{recalling that the posterior distribution of $\alpha \mid y_{1:T}$ is $N(m_T, C_T)$}, we plot the filtering densities of $\alpha \mid y_{1:T}$ and $\beta \mid y_{1:T}$ in Figure \ref{fig:post_est2} (blue lines). Furthermore, we plotted also the prior distributions of the model's parameters (red lines). 
+Then, recalling that the posterior distribution of $\alpha \mid y_{1:T}$ is $N(m_T, C_T)$, we plot the filtering densities of $\alpha \mid y_{1:T}$ and $\beta \mid y_{1:T}$ in Figure \ref{fig:post_est2} (blue lines). Furthermore, we plotted also the prior distributions of the model's parameters (red lines). 
 
 ```{r, fig.height=5, fig.width=15, fig.cap= "\\label{fig:post_est2}Prior and posterior densities of model's parameters"}
 
