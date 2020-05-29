@@ -185,9 +185,9 @@ $\text{CO}$ is perhaps the pollutant more tightly linked with the economic and i
 As an exploratory step, we decompose the time series in its structural components using an additive model. Firstly, we confirm the presence of seasonality. Secondly, the series is characterized by a negative trend up to a clear breakpoint between 2007 and 2008 (around month 85). The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
 These features suggest that the process may be described by a Homogeneous Hidden Markov Model with a trend component.
 
-\section{Part 1. Homogeneous HMM}
+\section{Section 1. Homogeneous HMM}
 
-After estimating a homohgeneous HMM with two states specified as:
+After estimating a homogeneous HMM with two states specified as:
 \begin{align*}
 \begin{cases}
   Y_{t}=\mu_{1} + \beta_{1}t + \varepsilon_{t}, &
@@ -198,107 +198,14 @@ After estimating a homohgeneous HMM with two states specified as:
 \end{align*}
 where there are three state-dependent parameters, namely the level, $\mu_i$, the slope, $\beta_i$, and the variance, $\sigma_i$, for $i=1,2$. If our guess was correct, we would expect $\mu_1 > \mu_2$, $\beta_1<0$, $\beta_2=0$ and $\sigma_1^2>\sigma_2^2$ .
 
-```{r, echo=F, include=F}
-# Model specification with 2 states
-y <- as.numeric(louisiana_df$m_CO_mean)
-nstates <- 2
-set.seed(2)
-HMM_CO <- depmixS4::depmix(y ~ 1 + louisiana_df$n_months, data=data.frame(y), nstates=nstates)
-# Estimation of the unknown parameters
-HMM_CO_fit <- depmixS4::fit(HMM_CO)
-# MLE
-mu1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
-mu2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
-beta1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
-beta2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
-sd1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters$sd,3))
-sd2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters$sd,3))
-
-# se(MLE)
-MLE_st.err=depmixS4::standardError(HMM_CO_fit)
-st.err_mu1hat <- paste0('(', round(MLE_st.err$se[7],3), ')')
-st.err_mu2hat <- paste0('(', round(MLE_st.err$se[10],3), ')')
-st.err_beta1hat <- paste0('(', round(MLE_st.err$se[8],3), ')')
-st.err_beta2hat <- paste0('(', round(MLE_st.err$se[11],3), ')')
-st.err_sd1hat <- paste0('(', round(MLE_st.err$se[9],3), ')')
-st.err_sd2hat <- paste0('(', round(MLE_st.err$se[12],3), ')')
-# Build a summary table for estimates
-MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2)),
-                     mu=c(mu1hat, st.err_mu1hat, mu2hat, st.err_mu2hat),
-                     beta=c(beta1hat, st.err_beta1hat,beta2hat,st.err_beta2hat),
-                     sd=c(sd1hat, st.err_sd1hat, sd2hat, st.err_sd2hat))
-knitr::kable(MLEsum, "latex", booktabs=T, align="c",
-             col.names = c("State", "$\\hat{\\mu}_{MLE}$","$\\hat{\\beta}_{MLE}$","$\\hat{\\sigma}_{MLE}$"),
-             escape=F, caption="Maximum Likelihood estimates of the state-dependent
-             parameters \\label{tab:HMM_MLE}") %>%
-  column_spec(1:4, width="5em") %>%
-  collapse_rows(columns=1, latex_hline="none") %>%
-  footnote(general="Standard errors in parentheses",
-           general_title="Note:",
-           footnote_as_chunk=T, escape=F) %>%
-  kable_styling(latex_options="hold_position")
-# Decoding
-# Get the estimated state for each timestep 
-estStates_CO <- posterior(HMM_CO_fit)
-
-HMM_summary<-depmixS4::summary(HMM_CO_fit)
-
-
-# Chart with state-dependent mean and standard deviations
-HMM_main_CO <- data.frame(state=1:nstates,
-                      mu_CO=HMM_summary[,1],
-                      sigma_CO=HMM_summary[,3])
-df_to_plot_CO <- estStates_CO %>%
-  left_join(HMM_main_CO)
-df_to_plot_CO %<>%
-  mutate(xtime=louisiana_df$n_months, yvalue=louisiana_df$m_CO_mean)
-
-HMM_main<- ggplot(df_to_plot_CO, aes(x=xtime, y=yvalue)) +
-                geom_line(size=0.7) +
-                geom_point(aes(x=xtime, y=mu_CO), col="blue", size=.8) +
-                geom_ribbon(aes(ymin=mu_CO-2*sigma_CO, ymax=mu_CO+2*sigma_CO), alpha=.1) +
-                theme_classic(base_size=9) +
-                theme(plot.title=element_text(hjust=0.5)) +
-                labs(y=expression(CO~(ppm)), x="Months") +
-                scale_x_continuous(breaks=seq(0,200,50),labels=format(seq(as.Date("2000/1/1"),as.Date("2016/6/1"), "4 years"), "%Y")) +
-                scale_y_continuous(breaks=seq(0,1.5,0.25)) +
-                theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
-                axis.text=element_text(size=19,face="bold"),
-                axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-                axis.title.y=element_text(size=21,family="Times",margin=margin(r=5)))
-
-# Chart with Viterbi states and posterior probabilities
-HMM_additional_CO <- data.frame(time_index=louisiana_df$n_months,
-                           state=estStates_CO[1],
-                           S1=estStates_CO[2]) %>% 
-  gather("variable", "value", -time_index)
-
-my_breaks <- function(x) { if (max(x)>1) seq(0,2,1) else seq(0,1,1) }
-lab_names <- c('S1'="Posterior, S=1",'state'="Viterbi states")
-
-HMM_additional<-ggplot(HMM_additional_CO, aes(time_index, value)) +
-  geom_line(color="black", size=0.7) +
-  facet_wrap(variable~., scales="free", ncol=1,
-             strip.position="left",
-             labeller = as_labeller(lab_names)) +
-  labs(x="Month") +
-  scale_y_continuous(breaks=my_breaks) +
-  scale_x_continuous(breaks=seq(0,200,50), labels=format(seq(as.Date("2000/1/1"),as.Date("2016/4/27"), "4 years"), "%Y"))+
-  theme_stata(base_size=9) +
-  theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(5,0,0,0)),
-        axis.title.y=element_blank(),
-        strip.text=element_text(size=21,family="Times",face="bold"),
-        strip.background=element_rect(colour="black", fill=NA),
-        strip.placement="outside")
-
-ggarrange(HMM_main, HMM_additional, widths = c(2,1))
+```{r, include=F}
+source("HMM_2states.R")
 ```
 
-We noticed that two states are not sufficient to capture the actual behavior of the process (results are not reported for sake of brevity). Indeed, a better fit can be obtained using a model with three states that capture periods with negative trend and high volatility, periods with no trend and low volatility and periods with no trend and high volatility. The model is specified similarly as above with an additional equation fo $S=3$ and ideally $\mu_1 > \mu_2 > \mu_3$, $\beta_1<0$, $\beta_2=\beta_3=0$ and $\sigma_2^2<\sigma_3^2<\sigma_1^2$ .
+We noticed that two states are not sufficient to capture the actual behavior of the process (results are not reported for sake of brevity). Indeed, a better fit can be obtained using a model with three states that capture periods with negative trend and high volatility, periods with no trend and low volatility and periods with no trend and high volatility. The model is specified similarly as above with an additional equation for $S=3$ and ideally $\mu_1 > \mu_2 > \mu_3$, $\beta_1<0$, $\beta_2=\beta_3=0$ and $\sigma_2^2<\sigma_3^2<\sigma_1^2$.
 
 ```{r echo=F, include=F}
-# Model specification
+# Model specification with 3 states
 y <- as.numeric(louisiana_df$m_CO_mean)
 nstates <- 3
 set.seed(2)
@@ -331,9 +238,7 @@ SE_beta3hat <- paste0('(', round(MLE_SE$se[20],3), ')')
 SE_sd1hat <- paste0('(', round(MLE_SE$se[15],3), ')')
 SE_sd2hat <- paste0('(', round(MLE_SE$se[18],3), ')')
 SE_sd3hat <- paste0('(', round(MLE_SE$se[21],3), ')')
-```
 
-```{r}
 # Build a summary table for estimates
 MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2), rep("S=3",2)),
                      mu=c(mu1hat, SE_mu1hat, mu2hat, SE_mu2hat,mu3hat, SE_mu3hat),
@@ -354,17 +259,15 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
   kable_styling(latex_options="hold_position")
 ```
 
-Table \ref{tab:HMM_MLE} confirms our guess. Indeed, the slope estimate in the first state, $\hat{\beta_1}_{MLE}$, is negative and significant, whereas in the other states it is null. Notice that, although apparently low, this coefficient implies a relatively high percentage change after comparing it with our data, which, roughly speaking, range in $(0,1)$. In fact, relating this estimate with a sample mean of $0.39$, we obtain an estimated monthly decline around $-0.015$ corresponding to around $18.3\%$ on an annual basis. Moreover, the model is able to capture shifts in the intecept as well as those in the variance as described before.
-
-```{r}
-# Decoding
-# Get the estimated state for each timestep 
-estStates <- posterior(HMM_fit)
-```
+Table \ref{tab:HMM_MLE} confirms our guess. Indeed, the slope estimate in the first state, $\hat{\beta_1}_{MLE}$, is negative and significant, whereas in the other states is null. Notice that, although apparently low, this coefficient implies a relatively high percentage change after comparing it with our data, which, roughly speaking, range in $(0,1)$. In fact, relating this estimate with a sample mean of $0.39$, we obtain an estimated monthly decline around $-0.015$ corresponding to around $18.3\%$ on an annual basis. Moreover, the model is able to capture shifts in the intecept as well as those in the variance as described before.
 
 The series with HMM estimated state-dependent means and state-dependent standard deviations are shown in Figure \ref{fig:HMM_results} (left panel) along with the Viterbi states obtained through \textit{global decoding} and with the posterior probabilities (right panel).
 
 ```{r, include=F}
+# Decoding
+# Get the estimated state for each timestep 
+estStates <- posterior(HMM_fit)
+
 HMM_summary <- depmixS4::summary(HMM_fit)
 ```
 
@@ -430,14 +333,15 @@ HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
 ggarrange(HMM_main, HMM_additional, widths=c(4,2))
 ```
 
-Explanations of these results, which confirm a stable change in the evolution process of CO in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in US electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Vienn agreement). 
+Explanations of these results, which confirm a stable change in the evolution process of $\text{CO}$ in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in US electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Wien agreement). 
 
-A deeper anlysis on the factors explaining this shift can be found in @Feng2015, in which they analyse the series of $\text{CO}_2$.
+A deeper analysis on the factors explaining this shift can be found in @Feng2015, in which they analyse the series of $\text{CO}_2$.
 
-MODEL CHECKING FOR HMM: DECIDERE L'ORIDINE. LASCIARLO QUI O PRESENTARE ENTRAMBI I MODEL CHECK PER HMM A LGM INSIEME PER CONFRONTARLI MEGLIO? 
-```{r, include=FALSE}
-#MODEL CHECKING:
-#Calculation of fitted values
+\textcolor{red}{MODEL CHECKING FOR HMM: DECIDERE L'ORIDINE. LASCIARLO QUI O PRESENTARE ENTRAMBI I MODEL CHECK PER HMM A LGM INSIEME PER CONFRONTARLI MEGLIO?}
+```{r, include=F}
+# Model checking
+
+# Calculation of fitted values
 louisiana_df$state = estStates[1]
 louisiana_df$mu = NA
 louisiana_df$mu[louisiana_df$state == 1] = as.numeric(mu1hat) 
@@ -456,9 +360,9 @@ louisiana_df$residuals = y - louisiana_df$fitted
 source("HMM_model_checking.R")
 ```
 
-\section{Part 1. Univariate DLM}
+\section{Section 2. Univariate DLM}
 
-\subsection{Linear growth model}
+\subsection{2.1. Linear growth model}
 
 The second univariate model that we consider to examine $\text{CO}$ is a linear growth model \footnote{Even if aware of the results obtained in the previous section, we decided to specify a dlm model considering both a level and a trend, thus using the same first guess as explained in the introduction. This allows a proper comparison of the results and it works also as a double check of the presence of trend.}, defined as usual as following: 
 \begin{eqnarray*} 
@@ -469,7 +373,7 @@ The second univariate model that we consider to examine $\text{CO}$ is a linear 
 \end{eqnarray*}
 where $\theta_t = \begin{pmatrix} \mu_{t} \\ \beta_{t} \end{pmatrix}$, $\theta_{0} \sim N_{2}(m_{0} = \begin{pmatrix} \hat{\mu_{0}} \\ \hat{\beta_{0}} \end{pmatrix}, C_{0})$ and $\theta_{0} \indep (v_{t}) \indep (w_{t})$. 
 
-```{r echo=FALSE}
+```{r echo=F}
 # Build DLM with polynomial specification
 build_LG <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=exp(param[2:3]),m0=c(y[1],0))}
 
@@ -546,7 +450,7 @@ S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 \textcolor{red}{DATE OK. COMMENTO:SIGNAL-TO-NOISE RATIO MOLTO BASSO, AS A CONSEQUENCE...}
 
 ```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
-# Df
+# Build df
 df_LG_filt <- data.frame(louisiana_df$n_months, y, y_filt)
 colnames(df_LG_filt ) = c("n_months", "y", "y_filt")
 
@@ -609,19 +513,15 @@ ggplot(df_LG_filt_seas, aes(x=n_months)) +
               legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
-\textcolor{red}{NEL CASO NON CI FOSSE ABBASTANZA SPAZIO POTREMMO TOGLIERE IL PLOT DEI RESIDUALS CHE DEI 3 MI SEMBRA IL MENO INFORMATIVO. (LUCA: in realta il primo grafico del linear che hai plottato è molto interessante perchè si vede chiaramente che la varianza degli errori non è time invariant ma ha un bel change dal 2008. possiamo dirlo e provare a fare le prossime specificazioni con la varianza che cambia dal 2008, probabilmente questo change è catturato meglio dagli errori dell'HMM e qui si può commentare la differenza tra i due. domani provo a capire come specificare un dlm con time variant variance qui su R.")}
+\textcolor{red}{NEL CASO NON CI FOSSE ABBASTANZA SPAZIO POTREMMO TOGLIERE IL PLOT DEI RESIDUALS CHE DEI 3 MI SEMBRA IL MENO INFORMATIVO (LUCA: in realta il primo grafico del linear che hai plottato è molto interessante perchè si vede chiaramente che la varianza degli errori non è time invariant ma ha un bel change dal 2008. possiamo dirlo e provare a fare le prossime specificazioni con la varianza che cambia dal 2008, probabilmente questo change è catturato meglio dagli errori dell'HMM e qui si può commentare la differenza tra i due. domani provo a capire come specificare un dlm con time variant variance qui su R.)}
 
 ```{r}
 source("LG_model_checking.R")
 ```
 
-\subsection{Dynamic linear regression}
+\subsection{2.2. Dynamic linear regression}
 
 We take as explanatory variable $x_t$ Louisiana's coal consumption for electricity generation (in particular, for the totality of the electric power industry).
-
-\textcolor{red}{DLM for Univariate regression potrebbe essere un'idea. per esempio come rgressore si potrebbe usare la quantità di carbone estratto negli USA, la quantità di gas naturale usata nella produzione di corrente. se trovare i dati fosse difficile potremmo semplicemente modellare il trend}
-
-\textcolor{red}{IL MODEL CHECKING LO LASCEREI SOLO PER HMM E DLM, DIREI SOLTANTO "WE HAVE CHECKED THE RESIDUALS AND THEY..."}
 
 ```{r}
 # Import dataset
@@ -658,13 +558,15 @@ vol_C <- sqrt(unlist(list_c))
 y_filt_DR <- DR_Filt$f
 ```
 
+\textcolor{red}{IL MODEL CHECKING LO LASCEREI SOLO PER HMM E LG, DIREI SOLTANTO "WE HAVE CHECKED THE RESIDUALS AND THEY..."}
+
 ```{r}
 source("DR_model_checking.R")
 ```
 
-\section{Part 2. Multivariate DLM}
+\section{Section 3. Multivariate DLM}
 
-\subsection{Seemingly unrelated regression (SUR)}
+\subsection{3.1. Seemingly unrelated regression (SUR)}
 
 As a last step, we build a multivariate dynamic regression model. In addition to the $\text{CO}$ series, we consider now also the $\text{SO}_2$ monthly data. Assuming that the intercepts and the slopes are correlated across the two pollutants, we can define a \textit{seemingly unrelated regression model} (SUR) as follows:
 \begin{align*}
