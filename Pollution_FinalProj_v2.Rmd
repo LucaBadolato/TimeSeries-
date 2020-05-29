@@ -273,7 +273,7 @@ The series with HMM estimated state-dependent means and state-dependent standard
 ```{r, include=F}
 # Decoding
 # Get the estimated state for each timestep 
-estStates <- posterior(HMM_fit)
+estStates_HMM <- posterior(HMM_fit)
 
 HMM_summary <- depmixS4::summary(HMM_fit)
 ```
@@ -285,7 +285,7 @@ HMM_main_CO <- data.frame(state=1:nstates,
                       mu=HMM_summary[,1],
                       beta=HMM_summary[,2],
                       sigma=HMM_summary[,3])
-df_to_plot <- estStates %>%
+df_to_plot <- estStates_HMM %>%
   left_join(HMM_main_CO)
 df_to_plot %<>%
   mutate(xtime=louisiana_df$n_months, yvalue=louisiana_df$m_CO_mean)
@@ -297,7 +297,8 @@ HMM_main <- ggplot(df_to_plot, aes(x=xtime, y=yvalue)) +
   theme_bw() +
   theme(plot.title=element_text(hjust=0.5)) +
   labs(y=expression(CO~(ppm)), x="Year") +
-  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"),"2 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(0,200,25),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"),"2 years"), "%Y")) +
   scale_y_continuous(breaks=seq(0,1.5,0.25)) +
    theme(plot.margin=unit(c(0.5,1,0.5,0.5), "cm"),
          plot.title=element_text(size=10, margin=margin(0,0,10,0)),
@@ -308,8 +309,9 @@ HMM_main <- ggplot(df_to_plot, aes(x=xtime, y=yvalue)) +
 
 # Chart with Viterbi states and posterior probabilities
 HMM_additional_CO <- data.frame(time_index=louisiana_df$n_months,
-                           state=estStates[1],
-                           S1=estStates[2], S2=estStates[3]) %>% 
+                           state=estStates_HMM[1],
+                           S1=estStates_HMM[2],
+                           S2=estStates_HMM[3]) %>% 
   gather("variable", "value", -time_index)
 
 my_breaks <- function(x) { if (max(x)<4) seq(0,3,1) else seq(0,1,1) }
@@ -322,7 +324,8 @@ HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
              labeller = as_labeller(lab_names)) +
   labs(x="Year") +
   scale_y_continuous(breaks=my_breaks) +
-  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(0,200,25),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
   theme_bw() +
   theme(panel.spacing=unit(1.5, "lines"),
         axis.text.x=element_text(size=20, family="Times", margin=margin(t=8)),
@@ -345,23 +348,6 @@ Explanations of these results, which confirm a stable change in the evolution pr
 A deeper analysis on the factors explaining this shift can be found in @Feng2015, in which they analyse the series of $\text{CO}_2$.
 
 \textcolor{red}{MODEL CHECKING FOR HMM: DECIDERE L'ORIDINE. LASCIARLO QUI O PRESENTARE ENTRAMBI I MODEL CHECK PER HMM A LGM INSIEME PER CONFRONTARLI MEGLIO?}
-```{r, include=F}
-# Model checking
-
-# Calculation of fitted values
-louisiana_df$state = estStates[1]
-louisiana_df$mu = NA
-louisiana_df$mu[louisiana_df$state == 1] = as.numeric(mu1hat) 
-louisiana_df$mu[louisiana_df$state == 2] = as.numeric(mu2hat) 
-louisiana_df$beta = NA
-louisiana_df$beta[louisiana_df$state == 1] = as.numeric(beta1hat) 
-louisiana_df$beta[louisiana_df$state == 2] = as.numeric(beta2hat)
-
-louisiana_df$fitted = louisiana_df$mu + louisiana_df$beta*louisiana_df$n_months 
-
-#Calculation of residuals
-louisiana_df$residuals = y - louisiana_df$fitted 
-```
 
 ```{r}
 source("HMM_model_checking.R")
@@ -540,12 +526,12 @@ x <- as.numeric(coal_cons$tot_electric_power_industry)
 build_DR <- function(param){dlmModReg(x, addInt=TRUE, dV=exp(param[1]), dW=exp(param[2:3]), m0=c(y[1],0), C0=diag(rep(var(x[1:85])),2))}
 
 # Estimate MLE of parameters
-fit_DR <- dlmMLE(y, parm=rep(1,3), build_DR, method = "BFGS", hessian=TRUE)  # Convergence achieved
+fit_DR <- dlmMLE(y, parm=rep(1,3), build_DR, method="BFGS", hessian=TRUE)  # convergence achieved
 unlist(build_DR(fit_DR$par)[c("V","W")])
 
 # Calculate standard errors based on numeriacally evaluated hessian matrix
-estVarLog <- solve(fit_DR$hessian)
-estVar_DR <- diag(exp(fit_DR$par)) %*% estVarLog %*% + diag(exp(fit_DR$par))
+estVarLog_DR <- solve(fit_DR$hessian)
+estVar_DR <- diag(exp(fit_DR$par)) %*% estVarLog_DR %*% + diag(exp(fit_DR$par))
 SE_DR <- sqrt(diag(estVar_DR))
 
 # Put MLE in the model
@@ -583,18 +569,19 @@ As a last step, we build a multivariate dynamic regression model. In addition to
 \end{align*}
 with
 \begin{equation*}
-\underset{2 \times 1}{Y_t} = \begin{bmatrix} Y_{CO,t} \\ Y_{SO_2,t} \end{bmatrix}, \quad
-\underset{4 \times 1}{\theta_t} = \begin{bmatrix} \\ \alpha_{CO,t} \\ \alpha_{SO_2,t}, \\ \beta_{CO,t} \\ \beta_{SO_2,t} \end{bmatrix}, \quad
-\underset{1 \times 2}{F_t} = \begin{bmatrix} 1 & x_t \end{bmatrix}, \quad
-\underset{2 \times 2}{G} = I_2 \quad \text{ and } \quad
-\underset{4 \times 4}{W} = blockdiag(W_{\alpha}, W_{\beta}).
+  \underset{2 \times 1}{Y_t} = \begin{bmatrix} Y_{CO,t} \\ Y_{SO_2,t} \end{bmatrix}, \quad
+  \underset{4 \times 1}{\theta_t} = \begin{bmatrix} \\ \alpha_{CO,t} \\ \alpha_{SO_2,t}, \\ \beta_{CO,t} \\
+  \beta_{SO_2,t} \end{bmatrix}, \quad
+  \underset{1 \times 2}{F_t} = \begin{bmatrix} 1 & x_t \end{bmatrix}, \quad
+  \underset{2 \times 2}{G} = I_2 \quad \text{ and } \quad
+  \underset{4 \times 4}{W} = blockdiag(W_{\alpha}, W_{\beta}).
 \end{equation*}
 Note that, since both pollutants are by-products of incomplete fuel combustion, we consider $x_{i,t}=x_t$, that is we take the same explanatory variable for the two series.
 
 ```{r}
 # Build df
 y_m <- data.frame(louisiana_df$m_CO_mean, louisiana_df$m_SO2_mean)
-y_m<-rename(y_m, c("CO"="louisiana_df.m_CO_mean","SO2"="louisiana_df.m_SO2_mean"))
+y_m<-rename(y_m, c("CO"="louisiana_df.m_CO_mean", "SO2"="louisiana_df.m_SO2_mean"))
 y_m<-data.matrix(y_m)
 
 # Build SUR model
@@ -638,10 +625,12 @@ Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. We now 
 \end{align*}
 with
 \begin{equation*}
-\underset{2 \times 1}{Y_t} = \begin{bmatrix} Y_{CO,t} \\ Y_{SO_2,t} \end{bmatrix}, \quad
-\underset{4 \times 1}{\theta_t} = \begin{bmatrix} \\ \mu_{CO,t} \\ \mu_{SO_2,t}, \\ \beta_{CO,t} \\ \beta_{SO_2,t} \end{bmatrix}, \quad
-\underset{1 \times 2}{F} = \begin{bmatrix} 1 & 0 \end{bmatrix}, \quad
-\underset{2 \times 2}{G} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} \quad \text{ and } \quad \underset{4 \times 4}{W} = blockdiag(W_{\mu}, W_{\beta}).
+  \underset{2 \times 1}{Y_t} = \begin{bmatrix} Y_{CO,t} \\ Y_{SO_2,t} \end{bmatrix}, \quad
+  \underset{4 \times 1}{\theta_t} = \begin{bmatrix} \\ \mu_{CO,t} \\ \mu_{SO_2,t}, \\ \beta_{CO,t} \\
+  \beta_{SO_2,t} \end{bmatrix}, \quad
+  \underset{1 \times 2}{F} = \begin{bmatrix} 1 & 0 \end{bmatrix}, \quad
+  \underset{2 \times 2}{G} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} \quad \text{ and } \quad \underset{4
+  \times 4}{W} = blockdiag(W_{\mu}, W_{\beta}).
 \end{equation*}
 
 \textcolor{red}{IL CODICE SEGUENTE E' DA AGGIUSTARE!!! PER ORA SOLO COPIA-INCOLLA DA SUR}

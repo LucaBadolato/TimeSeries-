@@ -1,10 +1,28 @@
+# HMM: Model checking
+
+# Calculation of fitted values
+louisiana_df$state = estStates_HMM[1]
+louisiana_df$mu = NA
+louisiana_df$mu[louisiana_df$state == 1] = as.numeric(mu1hat) 
+louisiana_df$mu[louisiana_df$state == 2] = as.numeric(mu2hat)
+louisiana_df$mu[louisiana_df$state == 3] = as.numeric(mu3hat)
+louisiana_df$beta = NA
+louisiana_df$beta[louisiana_df$state == 1] = as.numeric(beta1hat) 
+louisiana_df$beta[louisiana_df$state == 2] = as.numeric(beta2hat)
+louisiana_df$beta[louisiana_df$state == 3] = as.numeric(beta3hat)
+
+louisiana_df$fitted = louisiana_df$mu + louisiana_df$beta*louisiana_df$n_months 
+
+#Calculation of residuals
+louisiana_df$residuals = y - louisiana_df$fitted
+
+################################################################
+
 knitr::opts_chunk$set(fig.width=20, fig.height=12,
                       fig.cap="\\label{fig:diagnostic}
                       (a) Standardized one-step-ahead forecast errors;
                       (b) ACF of one-step-ahead forecast errors;
                       (c) Normal probability plot of standardized one-step-ahead forecast errors")
-
-# HMM: Model checking
 
 res_HMM = data.frame(louisiana_df$residuals,louisiana_df$n_months)
 colnames(res_HMM) = c("res", "time")

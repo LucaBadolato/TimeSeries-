@@ -18,7 +18,7 @@ sd1hat <- paste0(round(HMM_2_fit@response[[1]][[1]]@parameters$sd,3))
 sd2hat <- paste0(round(HMM_2_fit@response[[2]][[1]]@parameters$sd,3))
 
 # se(MLE)
-MLE_st.err=depmixS4::standardError(HMM_CO_fit)
+MLE_SE = depmixS4::standardError(HMM_2_fit)
 SE_mu1hat <- paste0('(', round(MLE_SE$se[7],3), ')')
 SE_mu2hat <- paste0('(', round(MLE_SE$se[10],3), ')')
 SE_beta1hat <- paste0('(', round(MLE_SE$se[8],3), ')')
@@ -103,4 +103,4 @@ HMM_additional_2 <- ggplot(HMM_additional_CO_2, aes(time_index, value)) +
         strip.background=element_rect(colour="black", fill=NA),
         strip.placement="outside")
 
-ggarrange(HMM_main, HMM_additional, widths = c(4,2))
+ggarrange(HMM_main_2, HMM_additional_2, widths = c(4,2))
