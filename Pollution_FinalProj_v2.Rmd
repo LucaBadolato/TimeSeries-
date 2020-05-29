@@ -438,7 +438,7 @@ S_to_N[1] <- exp(fit_LG$par[2]) * exp(-fit_LG$par[1])
 S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 ```
 
-\textcolor{red}{DATE OK. COMMENTO:SIGNAL-TO-NOISE RATIO MOLTO BASSO, AS A CONSEQUENCE...}
+\textcolor{red}{ COMMENTO:SIGNAL-TO-NOISE RATIO MOLTO BASSO, AS A CONSEQUENCE...}
 
 
 ```{r}
@@ -456,20 +456,32 @@ source("LG_model_checking.R")
 
 \subsection{2.2. Dynamic linear regression}
 
-We take as explanatory variable $x_t$ Louisiana's coal consumption for electricity generation (in particular, for the totality of the electric power industry).
+We take as explanatory variable $x_t$ Louisiana's coal consumption for electricity generation (in particular, for the totality of the electric power industry). The model we consider is the following:
+\begin{eqnarray*} 
+y_t &=& \alpha_t + \beta_t x_t + v_t , \quad v_t \overset{i.i.d.}\sim  N(0, \sigma_{V}^{2})\\
+\theta_t &=& G \theta_{t-1} + w_t , \qquad w_t \overset{i.i.d.}\sim N(0, W)
+\end{eqnarray*}
+where
+\begin{eqnarray*}
+\theta_t=[\alpha_t, \beta_t]', \qquad  \theta_0 \sim N_2(m_0, C_0), \qquad \theta_0 \indep (v_t) \indep (w_t)
+\end{eqnarray*}
+and $G=I_2$ and $W=diag(\sigma_{W_{1}}^{2}, \sigma_{W_{2}}^{2})$ i.e the two time variyng coefficients $\alpha_t$ and $\beta_t$ are modeled as independent random walks. 
 
 ```{r}
 # Import dataset
 coal_cons <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_pollution/master/Louisiana_coal_consumption.csv"), sep=";", header=T, stringsAsFactors=F)
-x <- as.numeric(coal_cons$tot_electric_power_industry)
+x <- as.numeric(coal_cons$combined_heat.power_industrial_power)
 
 # Build dynamic linear regression model
 # note: initialize the algorithm using the initial level of y and the sample variance before the break
-build_DR <- function(param){dlmModReg(x, addInt=TRUE, dV=exp(param[1]), dW=exp(param[2:3]), m0=c(y[1],0), C0=diag(rep(var(x[1:85])),2))}
+build_DR <- function(param){dlmModReg(x, dV=exp(param[1]), dW=exp(param[2:3]), m0=c(y[1],0))}
 
 # Estimate MLE of parameters
-fit_DR <- dlmMLE(y, parm=rep(1,3), build_DR, method="BFGS", hessian=TRUE)  # convergence achieved
-unlist(build_DR(fit_DR$par)[c("V","W")])
+fit_DR <- dlmMLE(y, c(0.5, 0.5, 0.5), build_DR, hessian=TRUE) 
+#fit_DR$convergence
+parameters = unlist(build_DR(fit_DR$par)[c("V","W")])
+
+#fit_DR$hessian 
 
 # Calculate standard errors based on numeriacally evaluated hessian matrix
 estVarLog_DR <- solve(fit_DR$hessian)
@@ -492,6 +504,79 @@ vol_C <- sqrt(unlist(list_c))
 # One step ahead forecast
 y_filt_DR <- DR_Filt$f
 ```
+
+In Table \ref{tab:MLE} are presented the MLEs of the unknown coefficients and the associated standard errors.
+
+```{r}
+# MLE
+MLE_sigmaV  <- paste0(round(parameters[1],5))
+MLE_sigmaW1 <- paste0(round(parameters[2],5))
+MLE_sigmaW2 <- paste0(round(parameters[5],9))
+
+# se(MLE)
+se_sigmaV  <- paste0('(', round(SE_DR[1],5), ')')
+se_sigmaW1 <- paste0('(', round(SE_DR[2],5), ')')
+se_sigmaW2 <- paste0('(', round(SE_DR[3],9), ')')
+
+# Summary table
+MLEsum <- data.frame(sigmaV=c(MLE_sigmaV, se_sigmaV),
+                     sigmaW1=c(MLE_sigmaW1, se_sigmaW1),
+                     sigmaW2=c(MLE_sigmaW2, se_sigmaW2))
+knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+             col.names = c("$\\hat{\\sigma}^2_{v}$",
+                           "$\\hat{\\sigma}^2_{w_1}$",
+                           "$\\hat{\\sigma}^2_{w_2}$"),
+             escape=F, caption="Maximum Likelihood estimates of the unknown
+             parameters\\label{tab:MLE}") %>%
+  column_spec(1:3, width="5em") %>%
+  collapse_rows(columns=1, latex_hline="none") %>%
+  footnote(general="Standard errors in parentheses",
+           general_title="Note:",
+           footnote_as_chunk=T, escape=F) %>%
+  kable_styling(latex_options="hold_position")
+```
+
+Let's now compute the smoothing estimates of $\theta_t=(\alpha_t, \beta_t)'$, for $t=0, \ldots, T$. The smoothing estimates of $\beta_t$ are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:smooth_est}.
+
+```{r, fig.width=7, fig.height=3, fig.cap="\\label{fig:smooth_est} Smoothing estimates of beta with credible intervals"}
+
+# Smoothing estimates
+
+cO_Smooth = dlmSmooth(y, DR)
+smooth_state_est <- dropFirst(cO_Smooth$s[,2])
+
+# Smoothing variances
+smooth_var <- dlmSvd2var(cO_Smooth$U.S, cO_Smooth$D.S)
+smooth_sd <- (unlist(smooth_var))^.5
+beta_sd <- vector(mode = "numeric", length = length(smooth_var))
+for (i in 1:length(smooth_var)){
+  beta_sd[i] <- smooth_sd[i*4]
+}
+smooth_sd_est <- dropFirst(beta_sd)
+
+# C.I. upper and lower bounds
+upper_smooth <- smooth_state_est + 1.64*smooth_sd_est # upper bound of 90% C.I.
+lower_smooth <- smooth_state_est - 1.64*smooth_sd_est # lower bound of 90% C.I.
+
+# Create df
+df_co_ci <- data.frame(louisiana_df$n_months, smooth_state_est, upper_smooth, lower_smooth)
+colnames(df_co_ci) = c("n_months", "smooth_state_est", "upper_smooth","lower_smooth")
+# Plot the smoothing estimates with their credible intervals
+ggplot(df_co_ci, aes(x=n_months)) +
+  geom_line(aes(y=smooth_state_est), size=0.5) +
+  geom_line(aes(y=upper_smooth), color = "red", linetype = "dashed", size=0.2) +
+  geom_line(aes(y=lower_smooth), color = "red", linetype = "dashed", size=0.2) +
+  geom_ribbon(aes(ymin=lower_smooth, ymax=upper_smooth), alpha=.1, fill="red") +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Beta", color = "black") +
+  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  scale_y_continuous() +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+```
+
+
 
 
 
