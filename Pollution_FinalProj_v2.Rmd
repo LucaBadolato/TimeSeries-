@@ -480,7 +480,7 @@ res_series
 
 \subsection{Linear growth model}
 
-The second univariate model that we consider to examine $\text{CO}$ is a linear growth model \footnote{Even if aware of the results obtained in the previous section, we decided to specify a dlm model considering both a level and a trend, thus using the same first guess as explained in the introduction. This allows a proper comparison of the results and it works also as a double check of the trend absence.}, defined as usual as following: 
+The second univariate model that we consider to examine $\text{CO}$ is a linear growth model \footnote{Even if aware of the results obtained in the previous section, we decided to specify a dlm model considering both a level and a trend, thus using the same first guess as explained in the introduction. This allows a proper comparison of the results and it works also as a double check of the presence of trend.}, defined as usual as following: 
 \begin{eqnarray*} 
   & Y_t = \begin{bmatrix}1 & 0 \end{bmatrix} \theta_t + v_t \quad & v_t \overset{iid}\sim
   \mathcal{N}(0, \sigma_{V}^{2}) \\
@@ -558,6 +558,11 @@ estVar <- diag(exp(fit_3$par)) %*% estVarLog %*% + diag(exp(fit_3$par))
 Mod3_st.err <- sqrt(diag(estVar))
 ```
 
+```{r echo=FALSE}
+# Monthly seasonality based on MLE for the observation equation error in Linear growth model
+Season <- dlmModSeas(frequency = 12, dV=exp(fit_LG$par[1]))
+```
+
 ```{r}
 # Put MLE in the model
 LG <- build_LG(fit_LG$par)
@@ -570,6 +575,10 @@ list_c <- dlmSvd2var(LG_Filt$U.C, LG_Filt$D.C)
 vol_C <- sqrt(unlist(list_c))
 # One step ahead forecast
 y_filt <- LG_Filt$f
+# Signal-to-noise ratio
+S_to_N <- matrix(NA,2,1)
+S_to_N[1] <- exp(fit_LG$par[2]) * exp(-fit_LG$par[1])
+S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 ```
 
 \textcolor{red}{DATE OK. COMMENTO:SIGNAL-TO-NOISE RATIO MOLTO BASSO, AS A CONSEQUENCE...}
@@ -583,6 +592,44 @@ colnames(df_LG_filt ) = c("n_months", "y", "y_filt")
 # Plot
 colors <- c("Observed data" = "black", "Filtering estimates" = "red")
 ggplot(df_LG_filt, aes(x=n_months)) +
+  geom_line(aes(y=y, color="Observed data"), size=0.4) +
+  geom_line(aes(y=y_filt, color = "Filtering estimates"), size=0.4) +
+  #geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y=expression(CO~(ppm)), color = "") +
+  scale_y_continuous(breaks=seq(0,1.5,0.25)) +
+  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+        scale_color_manual(values = colors) +
+        theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+```
+
+```{r}
+# Structural DLM with LG model and seasonality
+LG_seas <- LG + Season
+# Kalman filter
+LG_seas_Filt <- dlmFilter(y, LG)
+# Remove the first item (m_0) in the vector of filtered states
+filt_est_seas = dropFirst(LG_Filt$m)
+# Compute the vector of state variances and standard deviations
+# list_c <- dlmSvd2var(LG_Filt$U.C, LG_Filt$D.C)
+# vol_C <- sqrt(unlist(list_c))
+# One step ahead forecast
+y_filt_seas <- LG_seas_Filt$f
+```
+
+```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
+
+# Df
+df_LG_filt_seas <- data.frame(louisiana_df$n_months, y, y_filt_seas)
+colnames(df_LG_filt_seas ) = c("n_months", "y", "y_filt")
+
+# Plot
+colors <- c("Observed data" = "black", "Filtering estimates" = "red")
+ggplot(df_LG_filt_seas, aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data"), size=0.4) +
   geom_line(aes(y=y_filt, color = "Filtering estimates"), size=0.4) +
   #geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
@@ -750,14 +797,15 @@ x <- as.numeric(coal_cons$tot_electric_power_industry)
 
 # Build dynamic linear regression model
 # initialize the algorithm using the initial level of y and the sample variance before the break
-build_DR <- function(param){dlmModReg(x, addInt=TRUE, dV=param[1], dW=param[2:3], m0=c(y[1],0), C0=diag(rep(var(x[1:85])),2))}
+build_DR <- function(param){dlmModReg(x, addInt=TRUE, dV=exp(param[1]), dW=exp(param[2:3]), m0=c(y[1],0), C0=diag(rep(var(x[1:85])),2))}
 
 # Estimate MLE of parameters
-fit_DR <- dlmMLE(y, parm=rep(1,3), build_DR, lower=c(0.000001, 0, 0),hessian=TRUE)  # Convergence achieved
+fit_DR <- dlmMLE(y, parm=rep(1,3), build_DR, method = "BFGS", hessian=TRUE)  # Convergence achieved
 unlist(build_DR(fit_DR$par)[c("V","W")])
 
 # Calculate standard errors based on numeriacally evaluated hessian matrix
-estVar_DR <- solve(fit_DR$hessian)
+estVarLog <- solve(fit_DR$hessian)
+estVar_DR <- diag(exp(fit_DR$par)) %*% estVarLog %*% + diag(exp(fit_DR$par))
 SE_DR <- sqrt(diag(estVar_DR))
 
 # Put MLE in the model
@@ -781,7 +829,7 @@ y_filt_DR <- DR_Filt$f
 
 # Model checking
 res_DR <- residuals(DR_Filt, sd=FALSE)
-res_DR = data.frame(res_DR, n_dates)
+res_DR = data.frame(res_DR, louisiana_df$n_months)
 colnames(res_DR) = c("res", "time")
 
 a <- ggplot(res_DR, aes(x=time)) +
@@ -789,12 +837,11 @@ a <- ggplot(res_DR, aes(x=time)) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Residuals") +
-  scale_x_date(date_breaks="4 years", limits=as.Date(c('2000/01/01','2017/01/01')),
-               labels=date_format("%Y")) +
+   scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
   scale_y_continuous(breaks=seq(-4.5,4.5,1), limits = c(-3,4.5)) +
   theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
+        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
 
 ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE, horizontal = TRUE,...)
 {
@@ -905,6 +952,7 @@ res_series <- plot_grid(a, ggarrange(b, c, ncol = 2, labels = c("(b)", "(c)")),
                         nrow = 2, labels = "(a)")
 res_series
 ```
+
 
 ```{r, include=F}
 # Measures of forecasting accuracy
