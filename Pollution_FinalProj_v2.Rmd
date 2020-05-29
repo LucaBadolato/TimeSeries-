@@ -501,7 +501,7 @@ df_filt <- data.frame(louisiana_df$n_months, y, y_filt, struct_fit, y_filt_DR)
 colnames(df_filt) = c("n_months", "y", "y_filt","struct_fit", "y_filt_DR")
 
 # Plot
-colors <- c("Observed data" = "black", "Linear Growth" = "orange", "Basic structural model"="blue", "Dynamic regression"="red")
+colors <- c("Observed data" = "black", "Linear Growth" = "springgreen4", "Basic structural model"="blue", "Dynamic regression"="red")
 ggplot(df_filt, aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data"), size=0.4) +
   geom_line(aes(y=y_filt, color = "Linear Growth"), size=0.4) +
