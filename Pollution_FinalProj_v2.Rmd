@@ -28,7 +28,6 @@ header-includes:
   \usepackage{listings}
   \usepackage{physics}
   \usepackage{float}
-  
   \floatplacement{figure}{H}
   \usepackage{color} %red, green, blue, yellow, cyan, magenta, black, white
   \definecolor{mygreen}{RGB}{28,172,0} % color values Red, Green, Blue
@@ -41,7 +40,7 @@ header-includes:
   \newcommand{\indep}{\perp \!\!\! \perp}
 ---
 
-```{r, include=FALSE}
+```{r, include=F}
 
 # Load useful packages
 library(utf8)
@@ -97,7 +96,7 @@ Hence, the four variables of interest are interconnected and are the building bl
 
 The preliminary analysis that led us from the raw data (with frequency of 4-intra-day observations) to the current dataset is made available in the GitHub repository at https://github.com/SimoneArrigoni/US_pollution. We relied on a moving average algorithm of order $120$ to smooth the data, assuming months of 30 days and a year of 360 days, with a minor approximation relative to the original data structure based on a actual 365 day-counts.
 
-```{r echo=FALSE}
+```{r echo=F}
 # Import the dataset
 louisiana_df <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_pollution/master/Louisiana_pollution.csv"), sep = ";", header=T)
 ```
@@ -197,10 +196,9 @@ After estimating a homohgeneous HMM with two states specified as:
   \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{2}^2) \qquad \text{if} \; S_{t}=2 \\
 \end{cases}
 \end{align*}
-
 where there are three state-dependent parameters, namely the level, $\mu_i$, the slope, $\beta_i$, and the variance, $\sigma_i$, for $i=1,2$. If our guess was correct, we would expect $\mu_1 > \mu_2$, $\beta_1<0$, $\beta_2=0$ and $\sigma_1^2>\sigma_2^2$ .
 
-```{r, echo=FALSE, include=FALSE}
+```{r, echo=F, include=F}
 # Model specification with 2 states
 y <- as.numeric(louisiana_df$m_CO_mean)
 nstates <- 2
@@ -297,12 +295,9 @@ HMM_additional<-ggplot(HMM_additional_CO, aes(time_index, value)) +
 ggarrange(HMM_main, HMM_additional, widths = c(2,1))
 ```
 
-
 We noticed that two states are not sufficient to capture the actual behavior of the process (results are not reported for sake of brevity). Indeed, a better fit can be obtained using a model with three states that capture periods with negative trend and high volatility, periods with no trend and low volatility and periods with no trend and high volatility. The model is specified similarly as above with an additional equation fo $S=3$ and ideally $\mu_1 > \mu_2 > \mu_3$, $\beta_1<0$, $\beta_2=\beta_3=0$ and $\sigma_2^2<\sigma_3^2<\sigma_1^2$ .
 
-
-
-```{r echo=FALSE, include = FALSE}
+```{r echo=F, include=F}
 # Model specification
 y <- as.numeric(louisiana_df$m_CO_mean)
 nstates <- 3
@@ -361,7 +356,6 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
 
 Table \ref{tab:HMM_MLE} confirms our guess. Indeed, the slope estimate in the first state, $\hat{\beta_1}_{MLE}$, is negative and significant, whereas in the other states it is null. Notice that, although apparently low, this coefficient implies a relatively high percentage change after comparing it with our data, which, roughly speaking, range in $(0,1)$. In fact, relating this estimate with a sample mean of $0.39$, we obtain an estimated monthly decline around $-0.015$ corresponding to around $18.3\%$ on an annual basis. Moreover, the model is able to capture shifts in the intecept as well as those in the variance as described before.
 
-
 ```{r}
 # Decoding
 # Get the estimated state for each timestep 
@@ -370,7 +364,7 @@ estStates <- posterior(HMM_fit)
 
 The series with HMM estimated state-dependent means and state-dependent standard deviations are shown in Figure \ref{fig:HMM_results} (left panel) along with the Viterbi states obtained through \textit{global decoding} and with the posterior probabilities (right panel).
 
-```{r, include=FALSE}
+```{r, include=F}
 HMM_summary <- depmixS4::summary(HMM_fit)
 ```
 
@@ -458,131 +452,8 @@ louisiana_df$fitted = louisiana_df$mu + louisiana_df$beta*louisiana_df$n_months
 louisiana_df$residuals = y - louisiana_df$fitted 
 ```
 
-```{r, fig.width=20, fig.height=12, fig.cap="\\label{fig:diagnostic} (a) Standardized one-step-ahead forecast errors; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors"}
-
-# Model checking
-res_HMM = data.frame(louisiana_df$residuals,louisiana_df$n_months)
-colnames(res_HMM) = c("res", "time")
-
-a <- ggplot(res_HMM, aes(x=time)) +
-  geom_line(aes(y=res), size=0.4) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor = element_line(size=0.5)) +
-  labs(x="Year", y="Residuals") +
-  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  scale_y_continuous(breaks=seq(-4.5,4.5,1), limits = c(-3,4.5)) +
-  theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
-
-ggplot.corr <- function(data, lag.max=24, ci=0.95, large.sample.size=TRUE, horizontal=TRUE,...)
-{
-  require(ggplot2)
-  require(dplyr)
-  require(cowplot)
-  
-  if(horizontal == TRUE) {numofrow <- 1} else {numofrow <- 2}
-  
-  list.acf <- acf(data, lag.max = lag.max, type = "correlation", plot = FALSE)
-  N <- as.numeric(list.acf$n.used)
-  df1 <- data.frame(lag = list.acf$lag, acf = list.acf$acf)
-  df1$lag.acf <- dplyr::lag(df1$acf, default = 0)
-  df1$lag.acf[2] <- 0
-  df1$lag.acf.cumsum <- cumsum((df1$lag.acf)^2)
-  df1$acfstd <- sqrt(1/N * (1 + 2 * df1$lag.acf.cumsum))
-  df1$acfstd[1] <- 0
-  df1 <- select(df1, lag, acf, acfstd)
-  
-  list.pacf <- acf(data, lag.max = lag.max, type = "partial", plot = FALSE)
-  df2 <- data.frame(lag = list.pacf$lag,pacf = list.pacf$acf)
-  df2$pacfstd <- sqrt(1/N)
-  
-  if(large.sample.size == TRUE)
-  {
-    plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
-      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
-      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
-      geom_col(fill = "#4373B6", width = 0.7) +
-      theme_classic(base_size=9.5) +
-      scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
-      scale_y_continuous(name = element_blank(), 
-                         limits = c(min(df1$acf,df2$pacf),1)) +
-      theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
-        panel.grid.minor = element_line(size=0.5))
-    
-    plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
-      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
-      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
-      theme_classic(base_size=9.5)+
-      geom_col(fill = "#4373B6", width = 0.7) +
-      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm = TRUE),6)) +
-      scale_y_continuous(name = element_blank(),
-                         limits = c(min(df1$acf,df2$pacf),1)) +
-      ggtitle("PACF") +
-      theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
-        panel.grid.minor = element_line(size=0.5))
-  }
-  else
-  {
-    plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
-      geom_col(fill = "#4373B6", width = 0.7) +
-      geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
-                 linetype = "dashed") + 
-      geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
-                 linetype = "dashed") + 
-      theme_classic(base_size=9.5)+
-      scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
-      scale_y_continuous(name = element_blank(), 
-                         limits = c(min(df1$acf,df2$pacf),1)) +
-       theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
-        panel.grid.minor = element_line(size=0.5))
-    
-    plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
-      geom_col(fill = "#4373B6", width = 0.7) +
-      geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
-                 linetype = "dashed") + 
-      geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
-                 linetype = "dashed") + 
-      theme_classic(base_size=9.5)+
-      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm=TRUE),6)) +
-      scale_y_continuous(name = element_blank(),
-                         limits = c(min(df1$acf,df2$pacf),1)) +
-      ggtitle("PACF") +
-       theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
-        panel.grid.minor=element_line(size=0.5))
-  }
-  cowplot::plot_grid(plot.acf)
-}
-
-b <- ggplot.corr(data=res_HMM$res, lag.max=24, ci=0.95, large.sample.size=FALSE, horizontal=TRUE)
-
-c <- ggplot(res_HMM, aes(sample=res)) +
-  stat_qq(col="blue") +
-  stat_qq_line(col="red", lty=2, size=1) +
-  scale_y_continuous(breaks=seq(-3, 3,1), limits=c(-3,3)) +
-  scale_x_continuous(breaks=seq(-3, 3,1), limits=c(-3,3)) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor=element_line(size=0.5)) +
-  labs(x="Theoretical", y="Observed") +
-  theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
-
-res_series <- plot_grid(a, ggarrange(b, c, ncol = 2, labels = c("(b)", "(c)")),
-                        nrow = 2, labels = "(a)")
-res_series
+```{r}
+source("HMM_model_checking.R")
 ```
 
 \section{Part 1. Univariate DLM}
@@ -610,6 +481,12 @@ fit_LG <- dlmMLE(y, rep(0.5,3), build_LG, hessian=TRUE)
 estVarLog_LG <- solve(fit_LG$hessian)
 estVar_LG <- diag(exp(fit_LG$par)) %*% estVarLog_LG %*% + diag(exp(fit_LG$par))
 SE_LG <- sqrt(diag(estVar_LG))
+
+# Alternative models
+source("LG_alternative_models.R")
+
+# Monthly seasonality based on MLE for the observation equation error in Linear growth model
+Season <- dlmModSeas(frequency = 12, dV=exp(fit_LG$par[1]))
 ```
 
 In Table \ref{tab:MLE} are presented the MLEs of the unknown coefficients and the associated standard errors.
@@ -643,47 +520,23 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
   kable_styling(latex_options="hold_position")
 ```
 
-```{r echo=FALSE}
-## Model 2
-# Alternative (1): assume constant nominal speed in the dynamics
-buildMod_2 <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=c(exp(param[2]), 0),m0=c(y[1],0))}
-fit_2 <- dlmMLE(y, rep(1,2), buildMod_2, hessian=TRUE) # convergence achieved
-#unlist(buildMod_2(fit_2$par)[c("V","W")])
-# Calculate standard errors of the MLE using delta method
-estVarLog <- solve(fit_2$hessian)
-estVar <- diag(exp(fit_2$par)) %*% estVarLog %*% + diag(exp(fit_2$par))
-Mod2_st.err <- sqrt(diag(estVar))
-```
-
-```{r echo=FALSE}
-## Model 3
-# Alternative (2): integrated random walk model
-buildMod_3 <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=c(0,exp(param[2])), m0=c(y[1],0))}
-fit_3 <- dlmMLE(y, parm=rep(1,2), buildMod_2, hessian=TRUE) # convergence achieved
-#unlist(buildMod_3(fit_2$par)[c("V","W")])
-# Calculate standard errors of the MLE using delta method
-estVarLog <- solve(fit_3$hessian)
-estVar <- diag(exp(fit_3$par)) %*% estVarLog %*% + diag(exp(fit_3$par))
-Mod3_st.err <- sqrt(diag(estVar))
-```
-
-```{r echo=FALSE}
-# Monthly seasonality based on MLE for the observation equation error in Linear growth model
-Season <- dlmModSeas(frequency = 12, dV=exp(fit_LG$par[1]))
-```
-
 ```{r}
 # Put MLE in the model
 LG <- build_LG(fit_LG$par)
+
 # Kalman filter
 LG_Filt <- dlmFilter(y, LG)
+
 # Remove the first item (m_0) in the vector of filtered states
 filt_est = dropFirst(LG_Filt$m)
+
 # Compute the vector of state variances and standard deviations
 list_c <- dlmSvd2var(LG_Filt$U.C, LG_Filt$D.C)
 vol_C <- sqrt(unlist(list_c))
+
 # One step ahead forecast
 y_filt <- LG_Filt$f
+
 # Signal-to-noise ratio
 S_to_N <- matrix(NA,2,1)
 S_to_N[1] <- exp(fit_LG$par[2]) * exp(-fit_LG$par[1])
@@ -693,7 +546,6 @@ S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 \textcolor{red}{DATE OK. COMMENTO:SIGNAL-TO-NOISE RATIO MOLTO BASSO, AS A CONSEQUENCE...}
 
 ```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
-
 # Df
 df_LG_filt <- data.frame(louisiana_df$n_months, y, y_filt)
 colnames(df_LG_filt ) = c("n_months", "y", "y_filt")
@@ -719,20 +571,23 @@ ggplot(df_LG_filt, aes(x=n_months)) +
 ```{r}
 # Structural DLM with LG model and seasonality
 LG_seas <- LG + Season
+
 # Kalman filter
 LG_seas_Filt <- dlmFilter(y, LG)
+
 # Remove the first item (m_0) in the vector of filtered states
 filt_est_seas = dropFirst(LG_Filt$m)
+
 # Compute the vector of state variances and standard deviations
-# list_c <- dlmSvd2var(LG_Filt$U.C, LG_Filt$D.C)
-# vol_C <- sqrt(unlist(list_c))
+#list_c <- dlmSvd2var(LG_Filt$U.C, LG_Filt$D.C)
+#vol_C <- sqrt(unlist(list_c))
+
 # One step ahead forecast
 y_filt_seas <- LG_seas_Filt$f
 ```
 
 ```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
-
-# Df
+# Build df
 df_LG_filt_seas <- data.frame(louisiana_df$n_months, y, y_filt_seas)
 colnames(df_LG_filt_seas ) = c("n_months", "y", "y_filt")
 
@@ -756,139 +611,8 @@ ggplot(df_LG_filt_seas, aes(x=n_months)) +
 
 \textcolor{red}{NEL CASO NON CI FOSSE ABBASTANZA SPAZIO POTREMMO TOGLIERE IL PLOT DEI RESIDUALS CHE DEI 3 MI SEMBRA IL MENO INFORMATIVO. (LUCA: in realta il primo grafico del linear che hai plottato è molto interessante perchè si vede chiaramente che la varianza degli errori non è time invariant ma ha un bel change dal 2008. possiamo dirlo e provare a fare le prossime specificazioni con la varianza che cambia dal 2008, probabilmente questo change è catturato meglio dagli errori dell'HMM e qui si può commentare la differenza tra i due. domani provo a capire come specificare un dlm con time variant variance qui su R.")}
 
-```{r, fig.width=20, fig.height=12, fig.cap="\\label{fig:diagnostic} (a) Standardized one-step-ahead forecast errors; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors"}
-
-# Model checking
-res_LG <- residuals(LG_Filt, sd=FALSE)
-res_LG = data.frame(res_LG,louisiana_df$n_months)
-colnames(res_LG) = c("res", "time")
-
-a <- ggplot(res_LG, aes(x=time)) +
-  geom_line(aes(y=res), size=0.4) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor = element_line(size=0.5)) +
-  labs(x="Year", y="Residuals") +
-   scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  scale_y_continuous(breaks=seq(-4.5,4.5,1), limits = c(-3,4.5)) +
-  theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
-
-ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE, horizontal = TRUE,...)
-{
-  require(ggplot2)
-  require(dplyr)
-  require(cowplot)
-  
-  if(horizontal == TRUE) {numofrow <- 1} else {numofrow <- 2}
-  
-  list.acf <- acf(data, lag.max = lag.max, type = "correlation", plot = FALSE)
-  N <- as.numeric(list.acf$n.used)
-  df1 <- data.frame(lag = list.acf$lag, acf = list.acf$acf)
-  df1$lag.acf <- dplyr::lag(df1$acf, default = 0)
-  df1$lag.acf[2] <- 0
-  df1$lag.acf.cumsum <- cumsum((df1$lag.acf)^2)
-  df1$acfstd <- sqrt(1/N * (1 + 2 * df1$lag.acf.cumsum))
-  df1$acfstd[1] <- 0
-  df1 <- select(df1, lag, acf, acfstd)
-  
-  list.pacf <- acf(data, lag.max = lag.max, type = "partial", plot = FALSE)
-  df2 <- data.frame(lag = list.pacf$lag,pacf = list.pacf$acf)
-  df2$pacfstd <- sqrt(1/N)
-  
-  if(large.sample.size == TRUE)
-  {
-    plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
-      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
-      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
-      geom_col(fill = "#4373B6", width = 0.7) +
-      theme_classic(base_size=9.5) +
-      scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
-      scale_y_continuous(name = element_blank(), 
-                         limits = c(min(df1$acf,df2$pacf),1)) +
-      theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
-        panel.grid.minor = element_line(size=0.5))
-    
-    plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
-      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
-      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
-      theme_classic(base_size=9.5)+
-      geom_col(fill = "#4373B6", width = 0.7) +
-      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm = TRUE),6)) +
-      scale_y_continuous(name = element_blank(),
-                         limits = c(min(df1$acf,df2$pacf),1)) +
-      ggtitle("PACF") +
-      theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
-        panel.grid.minor = element_line(size=0.5))
-  }
-  else
-  {
-    plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
-      geom_col(fill = "#4373B6", width = 0.7) +
-      geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
-                 linetype = "dashed") + 
-      geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
-                 linetype = "dashed") + 
-      theme_classic(base_size=9.5)+
-      scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
-      scale_y_continuous(name = element_blank(), 
-                         limits = c(min(df1$acf,df2$pacf),1)) +
-       theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
-        panel.grid.minor = element_line(size=0.5))
-    
-    plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
-      geom_col(fill = "#4373B6", width = 0.7) +
-      geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
-                 linetype = "dashed") + 
-      geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
-                 linetype = "dashed") + 
-      theme_classic(base_size=9.5)+
-      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm=TRUE),6)) +
-      scale_y_continuous(name = element_blank(),
-                         limits = c(min(df1$acf,df2$pacf),1)) +
-      ggtitle("PACF") +
-       theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
-        panel.grid.minor=element_line(size=0.5))
-  }
-  cowplot::plot_grid(plot.acf)
-}
-
-b <- ggplot.corr(data=res_LG$res, lag.max=24, ci=0.95, large.sample.size=FALSE, horizontal=TRUE)
-
-c <- ggplot(res_LG, aes(sample=res)) +
-  stat_qq(col="blue") +
-  stat_qq_line(col="red", lty=2, size=1) +
-  scale_y_continuous(breaks=seq(-3, 3,1), limits=c(-3,3)) +
-  scale_x_continuous(breaks=seq(-3, 3,1), limits=c(-3,3)) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor=element_line(size=0.5)) +
-  labs(x="Theoretical", y="Observed") +
-  theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
-
-res_series <- plot_grid(a, ggarrange(b, c, ncol = 2, labels = c("(b)", "(c)")),
-                        nrow = 2, labels = "(a)")
-res_series
-```
-
-```{r, include=F}
-# Measures of forecasting accuracy
-MSE_LG <- round(mean((LG_Filt$f-y)^2),3) # mean square error (MSE)
-MAE_LG <- round(mean(abs(LG_Filt$f-y)),3) # mean abs. error (MAE)
-MAPE_LG <- round(mean(abs(LG_Filt$f-y)/y),3) # mean abs. percentage error (MAPE)
+```{r}
+source("LG_model_checking.R")
 ```
 
 \subsection{Dynamic linear regression}
@@ -905,7 +629,7 @@ coal_cons <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_p
 x <- as.numeric(coal_cons$tot_electric_power_industry)
 
 # Build dynamic linear regression model
-# initialize the algorithm using the initial level of y and the sample variance before the break
+# note: initialize the algorithm using the initial level of y and the sample variance before the break
 build_DR <- function(param){dlmModReg(x, addInt=TRUE, dV=exp(param[1]), dW=exp(param[2:3]), m0=c(y[1],0), C0=diag(rep(var(x[1:85])),2))}
 
 # Estimate MLE of parameters
@@ -934,140 +658,8 @@ vol_C <- sqrt(unlist(list_c))
 y_filt_DR <- DR_Filt$f
 ```
 
-```{r, fig.width=20, fig.height=12, fig.cap="\\label{fig:diagnostic} (a) Standardized one-step-ahead forecast errors; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors"}
-
-# Model checking
-res_DR <- residuals(DR_Filt, sd=FALSE)
-res_DR = data.frame(res_DR, louisiana_df$n_months)
-colnames(res_DR) = c("res", "time")
-
-a <- ggplot(res_DR, aes(x=time)) +
-  geom_line(aes(y=res), size=0.4) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor = element_line(size=0.5)) +
-  labs(x="Year", y="Residuals") +
-   scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  scale_y_continuous(breaks=seq(-4.5,4.5,1), limits = c(-3,4.5)) +
-  theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
-
-ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE, horizontal = TRUE,...)
-{
-  require(ggplot2)
-  require(dplyr)
-  require(cowplot)
-  
-  if(horizontal == TRUE) {numofrow <- 1} else {numofrow <- 2}
-  
-  list.acf <- acf(data, lag.max = lag.max, type = "correlation", plot = FALSE)
-  N <- as.numeric(list.acf$n.used)
-  df1 <- data.frame(lag = list.acf$lag, acf = list.acf$acf)
-  df1$lag.acf <- dplyr::lag(df1$acf, default = 0)
-  df1$lag.acf[2] <- 0
-  df1$lag.acf.cumsum <- cumsum((df1$lag.acf)^2)
-  df1$acfstd <- sqrt(1/N * (1 + 2 * df1$lag.acf.cumsum))
-  df1$acfstd[1] <- 0
-  df1 <- select(df1, lag, acf, acfstd)
-  
-  list.pacf <- acf(data, lag.max = lag.max, type = "partial", plot = FALSE)
-  df2 <- data.frame(lag = list.pacf$lag,pacf = list.pacf$acf)
-  df2$pacfstd <- sqrt(1/N)
-  
-  if(large.sample.size == TRUE)
-  {
-    plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
-      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
-      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
-      geom_col(fill = "#4373B6", width = 0.7) +
-      theme_classic(base_size=9.5) +
-      scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
-      scale_y_continuous(name = element_blank(), 
-                         limits = c(min(df1$acf,df2$pacf),1)) +
-      theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
-        panel.grid.minor = element_line(size=0.5))
-    
-    plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
-      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
-      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
-      theme_classic(base_size=9.5)+
-      geom_col(fill = "#4373B6", width = 0.7) +
-      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm = TRUE),6)) +
-      scale_y_continuous(name = element_blank(),
-                         limits = c(min(df1$acf,df2$pacf),1)) +
-      ggtitle("PACF") +
-      theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
-        panel.grid.minor = element_line(size=0.5))
-  }
-  else
-  {
-    plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
-      geom_col(fill = "#4373B6", width = 0.7) +
-      geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
-                 linetype = "dashed") + 
-      geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
-                 linetype = "dashed") + 
-      theme_classic(base_size=9.5)+
-      scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
-      scale_y_continuous(name = element_blank(), 
-                         limits = c(min(df1$acf,df2$pacf),1)) +
-       theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
-        panel.grid.minor = element_line(size=0.5))
-    
-    plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
-      geom_col(fill = "#4373B6", width = 0.7) +
-      geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
-                 linetype = "dashed") + 
-      geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
-                 linetype = "dashed") + 
-      theme_classic(base_size=9.5)+
-      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm=TRUE),6)) +
-      scale_y_continuous(name = element_blank(),
-                         limits = c(min(df1$acf,df2$pacf),1)) +
-      ggtitle("PACF") +
-       theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)),
-        panel.grid.minor=element_line(size=0.5))
-  }
-  cowplot::plot_grid(plot.acf)
-}
-
-b <- ggplot.corr(data=res_DR$res, lag.max=24, ci=0.95, large.sample.size=FALSE, horizontal=TRUE)
-
-c <- ggplot(res_DR, aes(sample=res)) +
-  stat_qq(col="blue") +
-  stat_qq_line(col="red", lty=2, size=1) +
-  scale_y_continuous(breaks=seq(-3, 3,1), limits=c(-3,3)) +
-  scale_x_continuous(breaks=seq(-3, 3,1), limits=c(-3,3)) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor=element_line(size=0.5)) +
-  labs(x="Theoretical", y="Observed") +
-  theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21,family="Times", margin=margin(r=5)))
-
-res_series <- plot_grid(a, ggarrange(b, c, ncol = 2, labels = c("(b)", "(c)")),
-                        nrow = 2, labels = "(a)")
-res_series
-```
-
-
-```{r, include=F}
-# Measures of forecasting accuracy
-MSE_DR <- round(mean((DR_Filt$f-y)^2),3) # mean square error (MSE)
-MAE_DR <- round(mean(abs(DR_Filt$f-y)),3) # mean abs. error (MAE)
-MAPE_DR <- round(mean(abs(DR_Filt$f-y)/y),3) # mean abs. percentage error (MAPE)
+```{r}
+source("DR_model_checking.R")
 ```
 
 \section{Part 2. Multivariate DLM}
@@ -1128,13 +720,6 @@ SUR <- buildSUR(fit_SUR$par)
 SUR_Filt <- dlmFilter(y_m, SUR)
 ```
 
-```{r, include=F}
-# Measures of forecasting accuracy
-MSE_SUR <- round(mean((SUR_Filt$f-y)^2),3) # mean square error (MSE)
-MAE_SUR <- round(mean(abs(SUR_Filt$f-y)),3) # mean abs. error (MAE)
-MAPE_SUR <- round(mean(abs(SUR_Filt$f-y)/y),3) # mean abs. percentage error (MAPE)
-```
-
 \subsection{(ADDITIONAL) Seemingly unrelated time series equations (SUTSE)}
 
 Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. We now model each time series using a linear growth model. We assume that growth $\beta_{i,t}$ is correlated among pollutants. In order to achieve "borrowing of strength", we put together the two individual DLM using a \textit{Seemingly unrelated time series equations model} (SUTSE):
@@ -1185,35 +770,29 @@ SUTSE <- buildSUTSE(fit_SUTSE$par)
 SUTSE_Filt <- dlmFilter(y_m, SUTSE)
 ```
 
-```{r, include=F}
-# Measures of forecasting accuracy
-MSE_SUTSE <- round(mean((SUTSE_Filt$f-y)^2),3) # mean square error (MSE)
-MAE_SUTSE <- round(mean(abs(SUTSE_Filt$f-y)),3) # mean abs. error (MAE)
-MAPE_SUTSE <- round(mean(abs(SUTSE_Filt$f-y)/y),3) # mean abs. percentage error (MAPE)
-```
-
 \section{Conclusion}
+
+```{r, include=F}
+source("forecasting_accuracy.R")
+```
 
 ```{r, include=T}
 # Forecasting accuracy: Summary table
-tabf <- matrix(nrow=3, ncol=5)
+tabf <- matrix(nrow=3, ncol=4)
 rownames(tabf) <- c('MSE','MAE','MAPE')
 colnames(tabf) <- c('HMM', 'Linear growth model', 'Dynamic regression', 'SUR', 'SUTSE')
-tabf[1,1] <- MSE_HMM
-tabf[2,1] <- MAE_HMM
-tabf[3,1] <- MAPE_HMM
-tabf[1,2] <- MSE_LG
-tabf[2,2] <- MAE_LG
-tabf[3,2] <- MAPE_LG
-tabf[1,3] <- MSE_DR
-tabf[2,3] <- MAE_DR
-tabf[3,3] <- MAPE_DR
-tabf[1,4] <- MSE_SUR
-tabf[2,4] <- MAE_SUR
-tabf[3,4] <- MAPE_SUR
-tabf[1,5] <- MSE_SUTSE
-tabf[2,5] <- MAE_SUTSE
-tabf[3,5] <- MAPE_SUTSE
+tabf[1,1] <- MSE_LG
+tabf[2,1] <- MAE_LG
+tabf[3,1] <- MAPE_LG
+tabf[1,2] <- MSE_DR
+tabf[2,2] <- MAE_DR
+tabf[3,2] <- MAPE_DR
+tabf[1,3] <- MSE_SUR
+tabf[2,3] <- MAE_SUR
+tabf[3,3] <- MAPE_SUR
+tabf[1,4] <- MSE_SUTSE
+tabf[2,4] <- MAE_SUTSE
+tabf[3,4] <- MAPE_SUTSE
 kable(tabf, caption="Model checking")
 ```
 
