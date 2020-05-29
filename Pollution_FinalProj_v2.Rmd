@@ -186,9 +186,9 @@ $\text{CO}$ is perhaps the pollutant more tightly linked with the economic and i
 As an exploratory step, we decompose the time series in its structural components using an additive model. Firstly, we confirm the presence of seasonality. Secondly, the series is characterized by a negative trend up to a clear breakpoint between 2007 and 2008 (around month 85). The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
 These features suggest that the process may be described by a Homogeneous Hidden Markov Model with a trend component.
 
-\section{Part 1. HMM}
+\section{Part 1. Homogeneous HMM}
 
-As outlined in the previous section, given the features of the $\text{CO}$ series, a suitable HMM with two states may be specified as follows:
+After estimating a homohgeneous HMM with two states specified as:
 \begin{align*}
 \begin{cases}
   Y_{t}=\mu_{1} + \beta_{1}t + \varepsilon_{t}, &
@@ -197,12 +197,115 @@ As outlined in the previous section, given the features of the $\text{CO}$ serie
   \varepsilon_{t}\overset{i.i.d.}{\sim}N(0,\sigma_{2}^2) \qquad \text{if} \; S_{t}=2 \\
 \end{cases}
 \end{align*}
+
 where there are three state-dependent parameters, namely the level, $\mu_i$, the slope, $\beta_i$, and the variance, $\sigma_i$, for $i=1,2$. If our guess was correct, we would expect $\mu_1 > \mu_2$, $\beta_1<0$, $\beta_2=0$ and $\sigma_1^2>\sigma_2^2$ .
 
-```{r echo=FALSE}
-# Model specification
+```{r, echo=FALSE, include=FALSE}
+# Model specification with 2 states
 y <- as.numeric(louisiana_df$m_CO_mean)
 nstates <- 2
+set.seed(2)
+HMM_CO <- depmixS4::depmix(y ~ 1 + louisiana_df$n_months, data=data.frame(y), nstates=nstates)
+# Estimation of the unknown parameters
+HMM_CO_fit <- depmixS4::fit(HMM_CO)
+# MLE
+mu1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
+mu2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
+beta1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
+beta2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
+sd1hat <- paste0(round(HMM_CO_fit@response[[1]][[1]]@parameters$sd,3))
+sd2hat <- paste0(round(HMM_CO_fit@response[[2]][[1]]@parameters$sd,3))
+
+# se(MLE)
+MLE_st.err=depmixS4::standardError(HMM_CO_fit)
+st.err_mu1hat <- paste0('(', round(MLE_st.err$se[7],3), ')')
+st.err_mu2hat <- paste0('(', round(MLE_st.err$se[10],3), ')')
+st.err_beta1hat <- paste0('(', round(MLE_st.err$se[8],3), ')')
+st.err_beta2hat <- paste0('(', round(MLE_st.err$se[11],3), ')')
+st.err_sd1hat <- paste0('(', round(MLE_st.err$se[9],3), ')')
+st.err_sd2hat <- paste0('(', round(MLE_st.err$se[12],3), ')')
+# Build a summary table for estimates
+MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2)),
+                     mu=c(mu1hat, st.err_mu1hat, mu2hat, st.err_mu2hat),
+                     beta=c(beta1hat, st.err_beta1hat,beta2hat,st.err_beta2hat),
+                     sd=c(sd1hat, st.err_sd1hat, sd2hat, st.err_sd2hat))
+knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+             col.names = c("State", "$\\hat{\\mu}_{MLE}$","$\\hat{\\beta}_{MLE}$","$\\hat{\\sigma}_{MLE}$"),
+             escape=F, caption="Maximum Likelihood estimates of the state-dependent
+             parameters \\label{tab:HMM_MLE}") %>%
+  column_spec(1:4, width="5em") %>%
+  collapse_rows(columns=1, latex_hline="none") %>%
+  footnote(general="Standard errors in parentheses",
+           general_title="Note:",
+           footnote_as_chunk=T, escape=F) %>%
+  kable_styling(latex_options="hold_position")
+# Decoding
+# Get the estimated state for each timestep 
+estStates_CO <- posterior(HMM_CO_fit)
+
+HMM_summary<-depmixS4::summary(HMM_CO_fit)
+
+
+# Chart with state-dependent mean and standard deviations
+HMM_main_CO <- data.frame(state=1:nstates,
+                      mu_CO=HMM_summary[,1],
+                      sigma_CO=HMM_summary[,3])
+df_to_plot_CO <- estStates_CO %>%
+  left_join(HMM_main_CO)
+df_to_plot_CO %<>%
+  mutate(xtime=louisiana_df$n_months, yvalue=louisiana_df$m_CO_mean)
+
+HMM_main<- ggplot(df_to_plot_CO, aes(x=xtime, y=yvalue)) +
+                geom_line(size=0.7) +
+                geom_point(aes(x=xtime, y=mu_CO), col="blue", size=.8) +
+                geom_ribbon(aes(ymin=mu_CO-2*sigma_CO, ymax=mu_CO+2*sigma_CO), alpha=.1) +
+                theme_classic(base_size=9) +
+                theme(plot.title=element_text(hjust=0.5)) +
+                labs(y=expression(CO~(ppm)), x="Months") +
+                scale_x_continuous(breaks=seq(0,200,50),labels=format(seq(as.Date("2000/1/1"),as.Date("2016/6/1"), "4 years"), "%Y")) +
+                scale_y_continuous(breaks=seq(0,1.5,0.25)) +
+                theme(plot.title=element_text(size=10, face="bold", margin=margin(0,0,10,0)),
+                axis.text=element_text(size=19,face="bold"),
+                axis.title.x=element_text(size=21,family="Times", margin=margin(t=5)),
+                axis.title.y=element_text(size=21,family="Times",margin=margin(r=5)))
+
+# Chart with Viterbi states and posterior probabilities
+HMM_additional_CO <- data.frame(time_index=louisiana_df$n_months,
+                           state=estStates_CO[1],
+                           S1=estStates_CO[2]) %>% 
+  gather("variable", "value", -time_index)
+
+my_breaks <- function(x) { if (max(x)>1) seq(0,2,1) else seq(0,1,1) }
+lab_names <- c('S1'="Posterior, S=1",'state'="Viterbi states")
+
+HMM_additional<-ggplot(HMM_additional_CO, aes(time_index, value)) +
+  geom_line(color="black", size=0.7) +
+  facet_wrap(variable~., scales="free", ncol=1,
+             strip.position="left",
+             labeller = as_labeller(lab_names)) +
+  labs(x="Month") +
+  scale_y_continuous(breaks=my_breaks) +
+  scale_x_continuous(breaks=seq(0,200,50), labels=format(seq(as.Date("2000/1/1"),as.Date("2016/4/27"), "4 years"), "%Y"))+
+  theme_stata(base_size=9) +
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21,family="Times", margin=margin(5,0,0,0)),
+        axis.title.y=element_blank(),
+        strip.text=element_text(size=21,family="Times",face="bold"),
+        strip.background=element_rect(colour="black", fill=NA),
+        strip.placement="outside")
+
+ggarrange(HMM_main, HMM_additional, widths = c(2,1))
+```
+
+
+We noticed that two states are not sufficient to capture the actual behavior of the process (results are not reported for sake of brevity). Indeed, a better fit can be obtained using a model with three states that capture periods with negative trend and high volatility, periods with no trend and low volatility and periods with no trend and high volatility. The model is specified similarly as above with an additional equation fo $S=3$ and ideally $\mu_1 > \mu_2 > \mu_3$, $\beta_1<0$, $\beta_2=\beta_3=0$ and $\sigma_2^2<\sigma_3^2<\sigma_1^2$ .
+
+
+
+```{r echo=FALSE, include = FALSE}
+# Model specification
+y <- as.numeric(louisiana_df$m_CO_mean)
+nstates <- 3
 set.seed(2)
 HMM <- depmixS4::depmix(y ~ 1 + louisiana_df$n_months, data=data.frame(y), nstates=nstates)
 
@@ -214,27 +317,33 @@ HMM_fit <- depmixS4::fit(HMM)
 # MLE
 mu1hat <- paste0(round(HMM_fit@response[[1]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
 mu2hat <- paste0(round(HMM_fit@response[[2]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
+mu3hat <- paste0(round(HMM_fit@response[[3]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
 beta1hat <- paste0(round(HMM_fit@response[[1]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
 beta2hat <- paste0(round(HMM_fit@response[[2]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
+beta3hat <- paste0(round(HMM_fit@response[[3]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
 sd1hat <- paste0(round(HMM_fit@response[[1]][[1]]@parameters$sd,3))
 sd2hat <- paste0(round(HMM_fit@response[[2]][[1]]@parameters$sd,3))
+sd3hat <- paste0(round(HMM_fit@response[[3]][[1]]@parameters$sd,3))
 
 # se(MLE)
 MLE_SE=depmixS4::standardError(HMM_fit)
-SE_mu1hat <- paste0('(', round(MLE_SE$se[7],3), ')')
-SE_mu2hat <- paste0('(', round(MLE_SE$se[10],3), ')')
-SE_beta1hat <- paste0('(', round(MLE_SE$se[8],3), ')')
-SE_beta2hat <- paste0('(', round(MLE_SE$se[11],3), ')')
-SE_sd1hat <- paste0('(', round(MLE_SE$se[9],3), ')')
-SE_sd2hat <- paste0('(', round(MLE_SE$se[12],3), ')')
+SE_mu1hat <- paste0('(', round(MLE_SE$se[13],3), ')')
+SE_mu2hat <- paste0('(', round(MLE_SE$se[16],3), ')')
+SE_mu3hat <- paste0('(', round(MLE_SE$se[19],3), ')')
+SE_beta1hat <- paste0('(', round(MLE_SE$se[14],3), ')')
+SE_beta2hat <- paste0('(', round(MLE_SE$se[17],3), ')')
+SE_beta3hat <- paste0('(', round(MLE_SE$se[20],3), ')')
+SE_sd1hat <- paste0('(', round(MLE_SE$se[15],3), ')')
+SE_sd2hat <- paste0('(', round(MLE_SE$se[18],3), ')')
+SE_sd3hat <- paste0('(', round(MLE_SE$se[21],3), ')')
 ```
 
 ```{r}
 # Build a summary table for estimates
-MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2)),
-                     mu=c(mu1hat, SE_mu1hat, mu2hat, SE_mu2hat),
-                     beta=c(beta1hat, SE_beta1hat, beta2hat, SE_beta2hat),
-                     sd=c(sd1hat, SE_sd1hat, sd2hat, SE_sd2hat))
+MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2), rep("S=3",2)),
+                     mu=c(mu1hat, SE_mu1hat, mu2hat, SE_mu2hat,mu3hat, SE_mu3hat),
+                     beta=c(beta1hat, SE_beta1hat, beta2hat, SE_beta2hat, beta3hat, SE_beta3hat),
+                     sd=c(sd1hat, SE_sd1hat, sd2hat, SE_sd2hat, sd3hat, SE_sd3hat))
 knitr::kable(MLEsum, "latex", booktabs=T, align="c",
              col.names=c("State",
                          "$\\hat{\\mu}_{MLE}$",
@@ -250,8 +359,8 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
   kable_styling(latex_options="hold_position")
 ```
 
-\textcolor{red}{Table \ref{tab:HMM_MLE} reports, however, unexpected results. Indeed, the slope estimate in the first state, $\hat{\beta_1}_{MLE}$, is only slightly negative and very close to zero, whereas the estimate for the second state, $\hat{\beta_2}_{MLE}$ is null as we expected. Overall, the model suggestS that the trend in the two states is not different (i.e. it is equal to zero). --> LA STIMA DEL COEFFICIENTE E' TUTT'ALTRO CHE INSIGNIFICATIVA! OLTRE AD ESSERE STATISTICAMENTE SIGNIFICATIVA, E' MOLTO RILEVANTE SE (1) RAPPORTI QUEL VALORE AI VALORI DELLA Y (-0.004/0.5=-0.008, OVVERO -0.8% AL MESE: TANTISSIMO!) E (2) CONSIDERI CHE QUELLA DIMINUZIONE AVVIENE -COME DETTO- A LIVELLO MENSILE.}
-The change point, instead, significantly affects both the level and the variance. In fact, what seemed to be a change in the trend is, instead, a drop in the level, i.e. $\hat{\mu_1}_{MLE}>\hat{\mu_2}_{MLE}$, followed by a sharp decline in variance, i.e. $\hat{\sigma_1}_{MLE}>\hat{\sigma_2}_{MLE}$.
+Table \ref{tab:HMM_MLE} confirms our guess. Indeed, the slope estimate in the first state, $\hat{\beta_1}_{MLE}$, is negative and significant, whereas in the other states it is null. Notice that, although apparently low, this coefficient implies a relatively high percentage change after comparing it with our data, which, roughly speaking, range in $(0,1)$. In fact, relating this estimate with a sample mean of $0.39$, we obtain an estimated monthly decline around $-0.015$ corresponding to around $18.3\%$ on an annual basis. Moreover, the model is able to capture shifts in the intecept as well as those in the variance as described before.
+
 
 ```{r}
 # Decoding
@@ -265,7 +374,7 @@ The series with HMM estimated state-dependent means and state-dependent standard
 HMM_summary <- depmixS4::summary(HMM_fit)
 ```
 
-```{r, fig.width=20, fig.height=6, out.width='90%', fig.cap="\\label{fig:HMM_results}State-dependent means and standard deviations"}
+```{r, fig.width=20, fig.height=6, out.width='100%', fig.cap="\\label{fig:HMM_results}State-dependent means and standard deviations"}
 
 # Chart with state-dependent mean and standard deviations
 HMM_main_CO <- data.frame(state=1:nstates,
@@ -288,19 +397,19 @@ HMM_main <- ggplot(df_to_plot, aes(x=xtime, y=yvalue)) +
   scale_y_continuous(breaks=seq(0,1.5,0.25)) +
    theme(plot.margin=unit(c(0.5,1,0.5,0.5), "cm"),
          plot.title=element_text(size=10, margin=margin(0,0,10,0)),
-         axis.text.x=element_text(size=25, family="Times", margin=margin(t=8)),
-         axis.text.y=element_text(size=25, family="Times", margin=margin(r=8)),
-         axis.title.x=element_text(size=30, family="Times", margin=margin(t=8)),
-         axis.title.y=element_text(size=30, family="Times", margin=margin(r=8)))
+         axis.text.x=element_text(size=20, family="Times", margin=margin(t=8)),
+         axis.text.y=element_text(size=20, family="Times", margin=margin(r=8)),
+         axis.title.x=element_text(size=25, family="Times", margin=margin(t=8)),
+         axis.title.y=element_text(size=25, family="Times", margin=margin(r=8)))
 
 # Chart with Viterbi states and posterior probabilities
 HMM_additional_CO <- data.frame(time_index=louisiana_df$n_months,
                            state=estStates[1],
-                           S1=estStates[2]) %>% 
+                           S1=estStates[2], S2=estStates[3]) %>% 
   gather("variable", "value", -time_index)
 
-my_breaks <- function(x) { if (max(x)>1) seq(0,2,1) else seq(0,1,1) }
-lab_names <- c('S1'="Posterior, S=1",'state'="Viterbi states")
+my_breaks <- function(x) { if (max(x)<4) seq(0,3,1) else seq(0,1,1) }
+lab_names <- c('S1'="Post. S=1",'S2'="Post. S=2",'state'="Vit. states")
 
 HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
   geom_line(color="black", size=0.7) +
@@ -312,11 +421,11 @@ HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
   scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
   theme_bw() +
   theme(panel.spacing=unit(1.5, "lines"),
-        axis.text.x=element_text(size=25, family="Times", margin=margin(t=8)),
-        axis.text.y=element_text(size=25, family="Times", margin=margin(r=8, l=8)),
-        axis.title.x=element_text(size=30, family="Times", margin=margin(t=8)),
+        axis.text.x=element_text(size=20, family="Times", margin=margin(t=8)),
+        axis.text.y=element_text(size=20, family="Times", margin=margin(r=8, l=8)),
+        axis.title.x=element_text(size=25, family="Times", margin=margin(t=8)),
         axis.title.y=element_blank(),
-        strip.text=element_text(size=30, family="Times",face="bold"),
+        strip.text=element_text(size=17, family="Times",face="bold"),
         strip.background=element_rect(colour="black", fill=NA),
         strip.placement="outside")
 
@@ -324,7 +433,7 @@ HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
 ## ggarrange(HMM_main, HMM_additional, ncol=1, widths = c(6,0.3), heights = c(1,0.8))
 
 # Option 2
-ggarrange(HMM_main, HMM_additional, widths=c(3,2))
+ggarrange(HMM_main, HMM_additional, widths=c(4,2))
 ```
 
 Explanations of these results, which confirm a stable change in the evolution process of CO in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in US electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Vienn agreement). 
