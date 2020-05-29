@@ -382,8 +382,6 @@ SE_LG <- sqrt(diag(estVar_LG))
 # Alternative models
 source("LG_alternative_models.R")
 
-# Monthly seasonality based on MLE for the observation equation error in Linear growth model
-Season <- dlmModSeas(frequency = 12, dV=exp(fit_LG$par[1]))
 ```
 
 In Table \ref{tab:MLE} are presented the MLEs of the unknown coefficients and the associated standard errors.
@@ -442,68 +440,12 @@ S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 
 \textcolor{red}{DATE OK. COMMENTO:SIGNAL-TO-NOISE RATIO MOLTO BASSO, AS A CONSEQUENCE...}
 
-```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
-# Build df
-df_LG_filt <- data.frame(louisiana_df$n_months, y, y_filt)
-colnames(df_LG_filt ) = c("n_months", "y", "y_filt")
-
-# Plot
-colors <- c("Observed data" = "black", "Filtering estimates" = "red")
-ggplot(df_LG_filt, aes(x=n_months)) +
-  geom_line(aes(y=y, color="Observed data"), size=0.4) +
-  geom_line(aes(y=y_filt, color = "Filtering estimates"), size=0.4) +
-  #geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor = element_line(size=0.5)) +
-  labs(x="Year", y=expression(CO~(ppm)), color = "") +
-  scale_y_continuous(breaks=seq(0,1.5,0.25)) +
-  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
-        scale_color_manual(values = colors) +
-        theme(legend.justification = c("left", "top"),
-              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
-```
 
 ```{r}
 # Structural DLM with LG model and seasonality
-LG_seas <- LG + Season
-
-# Kalman filter
-LG_seas_Filt <- dlmFilter(y, LG)
-
-# Remove the first item (m_0) in the vector of filtered states
-filt_est_seas = dropFirst(LG_Filt$m)
-
-# Compute the vector of state variances and standard deviations
-#list_c <- dlmSvd2var(LG_Filt$U.C, LG_Filt$D.C)
-#vol_C <- sqrt(unlist(list_c))
-
-# One step ahead forecast
-y_filt_seas <- LG_seas_Filt$f
-```
-
-```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
-# Build df
-df_LG_filt_seas <- data.frame(louisiana_df$n_months, y, y_filt_seas)
-colnames(df_LG_filt_seas ) = c("n_months", "y", "y_filt")
-
-# Plot
-colors <- c("Observed data" = "black", "Filtering estimates" = "red")
-ggplot(df_LG_filt_seas, aes(x=n_months)) +
-  geom_line(aes(y=y, color="Observed data"), size=0.4) +
-  geom_line(aes(y=y_filt, color = "Filtering estimates"), size=0.4) +
-  #geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor = element_line(size=0.5)) +
-  labs(x="Year", y=expression(CO~(ppm)), color = "") +
-  scale_y_continuous(breaks=seq(0,1.5,0.25)) +
-  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
-        scale_color_manual(values = colors) +
-        theme(legend.justification = c("left", "top"),
-              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+y_ts<-ts(y,frequency = 12)
+BSM <- StructTS(y_ts,type = "BSM")
+struct_fit <- BSM$fitted[,1]+BSM$fitted[,3]
 ```
 
 \textcolor{red}{NEL CASO NON CI FOSSE ABBASTANZA SPAZIO POTREMMO TOGLIERE IL PLOT DEI RESIDUALS CHE DEI 3 MI SEMBRA IL MENO INFORMATIVO (LUCA: in realta il primo grafico del linear che hai plottato è molto interessante perchè si vede chiaramente che la varianza degli errori non è time invariant ma ha un bel change dal 2008. possiamo dirlo e provare a fare le prossime specificazioni con la varianza che cambia dal 2008, probabilmente questo change è catturato meglio dagli errori dell'HMM e qui si può commentare la differenza tra i due. domani provo a capire come specificare un dlm con time variant variance qui su R.)}
@@ -549,6 +491,33 @@ vol_C <- sqrt(unlist(list_c))
 
 # One step ahead forecast
 y_filt_DR <- DR_Filt$f
+```
+
+
+
+```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
+# Build df
+df_filt <- data.frame(louisiana_df$n_months, y, y_filt, struct_fit, y_filt_DR)
+colnames(df_filt) = c("n_months", "y", "y_filt","struct_fit", "y_filt_DR")
+
+# Plot
+colors <- c("Observed data" = "black", "Linear Growth" = "orange", "Basic structural model"="blue", "Dynamic regression"="red")
+ggplot(df_filt, aes(x=n_months)) +
+  geom_line(aes(y=y, color="Observed data"), size=0.4) +
+  geom_line(aes(y=y_filt, color = "Linear Growth"), size=0.4) +
+  geom_line(aes(y=struct_fit, color="Basic structural model"), size=0.4) +
+  geom_line(aes(y=y_filt_DR, color="Dynamic regression"), size=0.4) +
+  #geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y=expression(CO~(ppm)), color = "") +
+  scale_y_continuous(breaks=seq(0,1.5,0.25)) +
+  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
+        scale_color_manual(values = colors) +
+        theme(legend.justification = c("left", "top"),
+              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
 \textcolor{red}{IL MODEL CHECKING LO LASCEREI SOLO PER HMM E LG, DIREI SOLTANTO "WE HAVE CHECKED THE RESIDUALS AND THEY..."}
