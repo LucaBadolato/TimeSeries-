@@ -585,40 +585,41 @@ y_m<-rename(y_m, c("CO"="louisiana_df.m_CO_mean", "SO2"="louisiana_df.m_SO2_mean
 y_m<-data.matrix(y_m)
 
 # Build SUR model
-buildSUR <- function(param){
-  Bmod=dlmModReg(x, addInt=TRUE)
-  Bmod$FF=matrix(c(1,1), nrow=1, ncol=2) %x% diag(2)
-  Bmod$JFF=matrix(c(0,1), nrow=1, ncol=2) %x% diag(2)
-  Bmod$GG=diag(4)
-  Bmod$V=diag(c(exp(param[1]), exp(param[2])))
-  Wa=matrix(c(exp(param[3]),param[4],exp(param[5]),param[6]),2,2)
-  Wb=matrix(c(exp(param[7]), param[8], exp(param[9]), param[10]),2,2)
-  W=bdiag(Wa, Wb) 
-  Bmod$W=W
-  Bmod$m0=rep(1,2*2)
-  Bmod$C0=diag(2*2)
-  return(Bmod)
+build_SUR <- function(param){
+  mod <- dlmModReg(x, addInt=TRUE)
+  mod$FF <- matrix(c(1,1), nrow=1, ncol=2) %x% diag(2)
+  mod$JFF <- matrix(c(0,1), nrow=1, ncol=2) %x% diag(2)
+  mod$GG <- diag(4)
+  mod$V <- diag(c(exp(param[1]), exp(param[2])))
+    Wa <- matrix(c(exp(param[3]), param[4], exp(param[5]), param[6]), nrow=2, ncol=2)
+    Wb <- matrix(c(exp(param[7]), param[8], exp(param[9]), param[10]), nrow=2, ncol=2)
+    W <- bdiag(Wa, Wb) 
+  mod$W=W
+  mod$m0 <- rep(1,2*2) # modificare
+  mod$C0 <- diag(1*2) # modificare
+  return(mod)
 }
 
 # Estimate MLE of parameters
-fit_SUR <- dlmMLE(y_m, parm=rep(1,10), buildSUR, hessian=TRUE)
-unlist(buildSUR(fit_SUR$par)[c("V","W")])
+fit_SUR <- dlmMLE(y_m, parm=rep(1,10), build_SUR, hessian=TRUE)
+unlist(build_SUR(fit_SUR$par)[c("V","W")])
 
 # Calculate standard errors of the MLE using delta method
-estVarLog_SUR <- solve(fit_SUR$hessian)
+estVarLog_SUR <- solve(fit_SUR$hessian) # Error: system is exactly singular
 estVar_SUR <- diag(exp(fit_SUR$par)) %*% estVarLog_SUR %*% + diag(exp(fit_SUR$par))
-#SE_DR <- sqrt(diag(estVar_SUR))
+SE_SUR <- sqrt(diag(estVar_SUR))
 
 # Put MLE in the model
-SUR <- buildSUR(fit_SUR$par)
+SUR <- build_SUR(fit_SUR$par)
 
 # Kalman filter
 SUR_Filt <- dlmFilter(y_m, SUR)
+SUR_sd <- residuals(SUR_Filt)$sd
 ```
 
 \subsection{(ADDITIONAL) Seemingly unrelated time series equations (SUTSE)}
 
-Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. We now model each time series using a linear growth model. We assume that growth $\beta_{i,t}$ is correlated among pollutants. In order to achieve "borrowing of strength", we put together the two individual DLM using a \textit{Seemingly unrelated time series equations model} (SUTSE):
+Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. From visual inspection of Figure \ref{fig:louisiana_plots} it appears that the two series display a similar type of qualitative behavior, that can be modeled by a linear growth DLM. To set up a multivariate model for the two series, we combine the two linear growth models in a comprehensive \textit{Seemingly unrelated time series equations model} (SUTSE). This is written as:
 \begin{align*}
   & Y_t = (F \otimes I_2) \theta_t + v_t, & v_t \sim \mathcal{N}_2(0,V) \\
   & \theta_t = (G \otimes I_2) \theta_{t-1} + w_t, & w_t \sim \mathcal{N}_4(0,W)
@@ -632,43 +633,44 @@ with
   \underset{2 \times 2}{G} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} \quad \text{ and } \quad \underset{4
   \times 4}{W} = blockdiag(W_{\mu}, W_{\beta}).
 \end{equation*}
-
-\textcolor{red}{IL CODICE SEGUENTE E' DA AGGIUSTARE!!! PER ORA SOLO COPIA-INCOLLA DA SUR}
+We assume that growth $\beta_{i,t}$ is correlated among pollutants. Moreover, to simplify the model in order to reduce the overall number of parameters, we also assume that the two linear growth models are integrated random walks, that is $W_{\mu}=0$.
 
 ```{r}
 # Build SUTSE model
-buildSUTSE <- function(param){
-  Bmod=dlmModPoly(order=2, addInt=TRUE)
-  #Bmod$FF=matrix(c(1,1), nrow=1, ncol=2) %x% diag(2)
-  #Bmod$JFF=matrix(c(0,1), nrow=1, ncol=2) %x% diag(2)
-  #Bmod$GG=diag(4)
-  #Bmod$V=diag(c(exp(param[1]), exp(param[2])))
-  #Wa=matrix(c(exp(param[3]),param[4],exp(param[5]),param[6]),2,2)
-  #Wb=matrix(c(exp(param[7]), param[8], exp(param[9]), param[10]),2,2)
-  #W=bdiag(Wa, Wb) 
-  #Bmod$W=W
-  #Bmod$m0=rep(1,2*2)
-  #Bmod$C0=diag(2*2)
-  return(Bmod)
+build_SUTSE <- function(param){
+  mod <- dlmModPoly(order=2)
+  mod$FF <- matrix(c(1,0), nrow=1, ncol=2) %x% diag(2)
+  mod$GG <- matrix(c(1,1,0,1), nrow=2, ncol=2) %x% diag(2)
+  mod$V <- matrix(c(exp(param[1]), param[2], exp(param[3]), param[4]), nrow=2, ncol=2)
+    Wu <- matrix(0, nrow=2, ncol=2)
+    Wb <- matrix(c(exp(param[5]), param[5], exp(param[7]), param[8]), nrow=2, ncol=2)
+    W <- bdiag(Wu, Wb)
+  mod$W=W
+  mod$m0 <- rep(1,2*2) # modificare
+  mod$C0 <- diag(2*2) # modificare
+  return(mod)
 }
 
 # Estimate MLE of parameters
-fit_SUTSE <- dlmMLE(y_m, parm=rep(1,10), buildSUTSE, hessian=TRUE)
-unlist(buildSUTSE(fit_SUTSE$par)[c("V","W")])
+fit_SUTSE <- dlmMLE(y_m, parm=rep(1,8), build_SUTSE, hessian=TRUE)
+unlist(build_SUTSE(fit_SUTSE$par)[c("V","W")])
 
 # Calculate standard errors of the MLE using delta method
-estVarLog_SUTSE <- solve(fit_SUTSE$hessian)
+estVarLog_SUTSE <- solve(fit_SUTSE$hessian) # Error: system is exactly singular
 estVar_SUTSE <- diag(exp(fit_SUTSE$par)) %*% estVarLog_SUTSE %*% + diag(exp(fit_SUTSE$par))
-#SE_DR <- sqrt(diag(estVar_SUR))
+SE_SUTSE <- sqrt(diag(estVar_SUTSE))
 
 # Put MLE in the model
-SUTSE <- buildSUTSE(fit_SUTSE$par)
+SUTSE <- build_SUTSE(fit_SUTSE$par)
 
 # Kalman filter
 SUTSE_Filt <- dlmFilter(y_m, SUTSE)
+SUTSE_sd <- residuals(SUTSE_Filt)$sd
 ```
 
 \section{Conclusion}
+
+In conclusion, \dots
 
 ```{r, include=F}
 source("forecasting_accuracy.R")
