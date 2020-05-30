@@ -352,19 +352,24 @@ Explanations of these results, which confirm a stable change in the evolution pr
 source("HMM_model_checking.R")
 ```
 
-\section{Section 2. Univariate DLM}
+\section{Section 2. Univariate DLMs}
 We now try to model the series of interest through Dynamic Linear Model specifications. Indeed, DLMs are very attractive, since they allow a natural interpretation of the process as the combination of several components, such as trend, seasonal or regressive ones. As a consequence, we consider different specifications which, simply combined, are able to explain all the features previously described\footnote{Therefore we are aware (and we expect) that by construction each model will miss some process characteristics. For example, residuals checking for a linear growth model may shows a seasonal behaviour but this is fully in conformity with the additive structure we consider.}. 
 
 \subsection{2.1. Linear growth model}
 
-The second univariate model that we consider to examine $\text{CO}$ is a linear growth model \footnote{Even if aware of the results obtained in the previous section, we decided to specify a dlm model considering both a level and a trend, thus using the same first guess as explained in the introduction. This allows a proper comparison of the results and it works also as a double check of the presence of trend.}, defined as usual as following: 
-\begin{eqnarray*} 
-  & Y_t = \begin{bmatrix}1 & 0 \end{bmatrix} \theta_t + v_t \quad & v_t \overset{iid}\sim
-  \mathcal{N}(0, \sigma_{V}^{2}) \\
-  & \theta_t = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}\theta_{t-1} + w_t \quad & w_t
+The first DLM specification we consider to examine $\text{CO}$ is a linear growth model, which is suitable to capture both a latent level, $\mu_{t}$, and a time varying splope in its dynamics, $\beta_{t}$. As usual, it is defined as following: 
+\begin{align*} 
+\begin{cases}
+   Y_t = \begin{bmatrix}1 & 0 \end{bmatrix} \theta_t + v_t \quad & v_t \overset{iid}\sim
+  \mathcal{N}(0, \sigma_{V}^{2}) 
+  \\
+  \\
+   \theta_t = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}\theta_{t-1} + w_t \quad & w_t
   \overset{iid}\sim \mathcal{N}_{2}(0, W = \begin{bmatrix}\sigma_{w_{1}}^{2} & 0 \\ 0 &  \sigma_{w_{1}}^{2} \end{bmatrix})
-\end{eqnarray*}
-where $\theta_t = \begin{pmatrix} \mu_{t} \\ \beta_{t} \end{pmatrix}$, $\theta_{0} \sim N_{2}(m_{0} = \begin{pmatrix} \hat{\mu_{0}} \\ \hat{\beta_{0}} \end{pmatrix}, C_{0})$ and $\theta_{0} \indep (v_{t}) \indep (w_{t})$. 
+  \\
+  \end{cases}
+\end{align*}
+where $\theta_t = \begin{pmatrix} \mu_{t} \\ \beta_{t} \end{pmatrix}$, $\theta_{0} \sim N_{2}(m_{0} = \begin{pmatrix} \hat{\mu_{0}} \\ \hat{\beta_{0}} \end{pmatrix}, C_{0})$ and $\theta_{0} \indep (v_{t}) \indep (w_{t})$. STARTING PRIORS TO BE COMMENTED.
 
 ```{r echo=FALSE, warning=FALSE}
 # Build DLM with polynomial specification
@@ -384,7 +389,8 @@ source("LG_alternative_models.R")
 
 ```
 
-In Table \ref{tab:MLE} are presented the MLEs of the unknown coefficients and the associated standard errors.
+In Table \ref{tab:MLE_lgm} are presented the MLEs of the unknown coefficients and the associated standard errors\footnote{We treat $\psi = (\sigma_{V}^{2}, \sigma_{W_{1}}^{2} \text{and} \ \sigma_{W_{2}}^{2})$ as unknown parameters and we estimate them by maximum likelihood. Then, we perform the analysis of interest plugging them in the model as if they were known costants. We follow this customary way to proceed also in the following sections.}.
+
 
 ```{r}
 # MLE
@@ -406,7 +412,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
                            "$\\hat{\\sigma}^2_{w_1}$",
                            "$\\hat{\\sigma}^2_{w_2}$"),
              escape=F, caption="Maximum Likelihood estimates of the unknown
-             parameters\\label{tab:MLE}") %>%
+             parameters\\label{tab:MLE_lgm}") %>%
   column_spec(1:3, width="5em") %>%
   collapse_rows(columns=1, latex_hline="none") %>%
   footnote(general="Standard errors in parentheses.",
@@ -438,7 +444,7 @@ S_to_N[1] <- exp(fit_LG$par[2]) * exp(-fit_LG$par[1])
 S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 ```
 
-\textcolor{red}{ COMMENTO:SIGNAL-TO-NOISE RATIO MOLTO BASSO, AS A CONSEQUENCE...}
+\textcolor{red}{ COMMENTO:SIGNAL-TO-NOISE RATIO MOLTO BASSO DA METTERE IN FONDO...}
 
 
 ```{r}
@@ -447,8 +453,6 @@ y_ts<-ts(y,frequency = 12)
 BSM <- StructTS(y_ts,type = "BSM")
 struct_fit <- BSM$fitted[,1]+BSM$fitted[,3]
 ```
-
-\textcolor{red}{NEL CASO NON CI FOSSE ABBASTANZA SPAZIO POTREMMO TOGLIERE IL PLOT DEI RESIDUALS CHE DEI 3 MI SEMBRA IL MENO INFORMATIVO (LUCA: in realta il primo grafico del linear che hai plottato è molto interessante perchè si vede chiaramente che la varianza degli errori non è time invariant ma ha un bel change dal 2008. possiamo dirlo e provare a fare le prossime specificazioni con la varianza che cambia dal 2008, probabilmente questo change è catturato meglio dagli errori dell'HMM e qui si può commentare la differenza tra i due. domani provo a capire come specificare un dlm con time variant variance qui su R.)}
 
 ```{r warning=FALSE}
 source("LG_model_checking.R")
@@ -507,8 +511,7 @@ y_filt_DR <- DR_Filt$f
 y_filt_DR[128] <- (y_filt_DR[127]+y_filt_DR[129])/2
 ```
 
-In Table \ref{tab:MLE} are presented the MLEs of the unknown coefficients and the associated standard errors.
-
+In Table \ref{tab:MLE_dr} are presented the MLEs of the unknown coefficients and the associated standard errors
 ```{r}
 # MLE
 MLE_sigmaV  <- paste0(round(parameters[1],5))
@@ -529,7 +532,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
                            "$\\hat{\\sigma}^2_{w_1}$",
                            "$\\hat{\\sigma}^2_{w_2}$"),
              escape=F, caption="Maximum Likelihood estimates of the unknown
-             parameters\\label{tab:MLE}") %>%
+             parameters\\label{tab:MLE_dr}") %>%
   column_spec(1:3, width="5em") %>%
   collapse_rows(columns=1, latex_hline="none") %>%
   footnote(general="Standard errors in parentheses",
@@ -579,9 +582,6 @@ ggplot(df_co_ci, aes(x=n_months)) +
 ```
 
 
-
-
-
 ```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
 # Build df
 df_filt <- data.frame(louisiana_df$n_months, y, y_filt, struct_fit, y_filt_DR)
@@ -607,7 +607,6 @@ ggplot(df_filt, aes(x=n_months)) +
               legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
 
-\textcolor{red}{IL MODEL CHECKING LO LASCEREI SOLO PER HMM E LG, DIREI SOLTANTO "WE HAVE CHECKED THE RESIDUALS AND THEY..."}
 
 ```{r}
 source("DR_model_checking.R")
