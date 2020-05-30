@@ -77,7 +77,7 @@ knitr::opts_chunk$set(message = FALSE,
 
 Pollution is one of the most debated social issues of our times. It has been attracting more and more attention given its serious implications on the health of both the Earth and human beings. The economic activity under the model of production and consumption that has been characterizing the last century is, with no doubt, at the very basis of such complex phenomenon. Only in the last fifteen years some consciousness about the importance of pollution in the long-run has evolved and serious interventions have been made. Moreover, among the numerous component which pollution can be split into, air pollution is certainly one of the most important and tightly linked to strict economic activity.
 
-Therefore, the purpose of the present work is to model through common statistical techniques the evolution of air pollution during this last crucial fifteen years in a developed economy, i.e. the United States, trying to grasp some intuition about this fundamental phenomenon.
+Therefore, the purpose of the present work is to model through common statistical techniques the evolution of air pollution during this last crucial fifteen years in a developed economy, i.e. the United States, trying to grasp some intuition about this fundamental phenomenon. Hence, after some preliminary descriptive steps, we present the models we think are more appropriate to analyze such complex phenomenon. Finally, we conclude with a comparison to underline pros and cons of each specification. 
 
 \section{Data}
 
@@ -91,7 +91,7 @@ The dataset \texttt{US\_pollution} contains monthly and daily data about air pol
 \end{itemize}
 \medskip
 
-Hence, the four variables of interest are interconnected and are the building blocks of a more general phenomenon, that is air pollution. Furthermore, they are related by a common latent process that can be summarized by several components such as industrialization, car traffic and regulation.
+Very intuitively, the four variables of interest are interconnected and are the building blocks of a more general phenomenon, that is air pollution. Furthermore, they are related by a common latent process that can be summarized by several components such as industrialization, car traffic and regulation.
 
 The preliminary analysis that led us from the raw data (with frequency of 4-intra-day observations) to the current dataset is made available in the GitHub repository at https://github.com/SimoneArrigoni/US_pollution. We relied on a moving average algorithm of order $120$ to smooth the data, assuming months of 30 days and a year of 360 days, with a minor approximation relative to the original data structure based on a actual 365 day-counts.
 
@@ -189,12 +189,13 @@ The time series, each with its specific features, do not in general look station
 
 $\text{CO}$ is perhaps, among the pollutants, the most tightly linked with the economic and industrial network of a country. Consequently, we select this as the series of main interest for our analysis, being the purpose of this work tracking the evolution of air pollution relative to an underlying economic process.
 
-As an exploratory step, we decompose the time series in its structural components using an additive model. First, we confirm the presence of seasonality. Second, the series is characterized by a negative trend up to a clear breakpoint between 2007 and 2008. The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
-These features suggest that the process may be described by a homogeneous Hidden Markov Model with a trend component.
+As an exploratory step, we decompose the time series in its structural components using an additive model \footnote{For sake of brevity we do not report the plots of the decomposed components.}. The decomposition confirms the presence of a quarterly seasonal component and shows a negative trend up to a clear breakpoint between 2007 and 2008. The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
 
 \section{Section 1. HMM}
 
-After estimating a homogeneous HMM with two states specified as:
+These features suggest that the process may be described by a homogeneous Hidden Markov Model with a trend component.
+
+Therefore, we estimate a homogeneous HMM with two states, specified as:
 \begin{align*}
 \begin{cases}
   Y_{t}=\mu_{1} + \beta_{1}t + \varepsilon_{t}, &
@@ -209,7 +210,7 @@ where there are three state-dependent parameters, namely the level, $\mu_i$, the
 source("HMM_2states.R")
 ```
 
-We noticed that two states are not sufficient to capture the actual behavior of the process (results are not reported for sake of brevity). Indeed, a better fit can be obtained using a model with three states that capture periods with negative trend and high volatility, periods with no trend and low volatility and periods with no trend and high volatility. The model is specified similarly as above with an additional equation for $S=3$ and ideally $\mu_1 > \mu_2 > \mu_3$, $\beta_1<0$, $\beta_2=\beta_3=0$ and $\sigma_2^2<\sigma_3^2<\sigma_1^2$.
+However, we noticed that two states are not sufficient to capture the actual behavior of the process\footnote{Again, results are not reported here but can be easily replicated using the provided R code.}. Indeed, a better fit can be obtained using a model with three hidden states that capture periods with negative trend and high volatility, periods with no trend and low volatility and periods with no trend and high volatility. The model is specified as above with an additional equation for $S=3$ and ideally $\mu_1 > \mu_2 > \mu_3$, $\beta_1<0$, $\beta_2=\beta_3=0$ and $\sigma_2^2<\sigma_3^2<\sigma_1^2$.
 
 ```{r echo=F, include=F}
 # Model specification with 3 states
@@ -343,17 +344,16 @@ HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
 ggarrange(HMM_main, HMM_additional, widths=c(4,2))
 ```
 
-Explanations of these results, which confirm a stable change in the evolution process of $\text{CO}$ in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in US electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Wien agreement). 
+Explanations of these results, which confirm a stable change in the evolution process of $\text{CO}$ in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in US electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Wien agreement)\footnote{A deeper analysis on the factors explaining this shift can be found in @Feng2015, in which they analyse the series of $\text{CO}_2$.}. 
 
-A deeper analysis on the factors explaining this shift can be found in @Feng2015, in which they analyse the series of $\text{CO}_2$.
-
-\textcolor{red}{MODEL CHECKING FOR HMM: DECIDERE L'ORIDINE. LASCIARLO QUI O PRESENTARE ENTRAMBI I MODEL CHECK PER HMM A LGM INSIEME PER CONFRONTARLI MEGLIO?}
+\textcolor{red}{REMEMBER MODEL CHECKING FOR HMM}
 
 ```{r warning=FALSE}
 source("HMM_model_checking.R")
 ```
 
 \section{Section 2. Univariate DLM}
+We now try to model the series of interest through Dynamic Linear Model specifications. Indeed, DLMs are very attractive, since they allow a natural interpretation of the process as the combination of several components, such as trend, seasonal or regressive ones. As a consequence, we consider different specifications which, simply combined, are able to explain all the features previously described\footnote{Therefore we are aware (and we expect) that by construction each model will miss some process characteristics. For example, residuals checking for a linear growth model may shows a seasonal behaviour but this is fully in conformity with the additive structure we consider.}. 
 
 \subsection{2.1. Linear growth model}
 
