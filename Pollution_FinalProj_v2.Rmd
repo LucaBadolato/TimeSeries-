@@ -357,7 +357,7 @@ We now try to model the series of interest through Dynamic Linear Model specific
 
 \subsection{2.1. Linear growth model}
 
-The first DLM specification we consider to examine $\text{CO}$ is a linear growth model, which is suitable to capture both a latent level, $\mu_{t}$, and a time varying splope in its dynamics, $\beta_{t}$. As usual, it is defined as following: 
+The first DLM specification we consider to examine $\text{CO}$ is a time invariant linear growth model, which is suitable to capture both a latent level, $\mu_{t}$, and a time varying splope in its dynamics, $\beta_{t}$. As usual, it is defined as following: 
 \begin{align*} 
 \begin{cases}
    Y_t = \begin{bmatrix}1 & 0 \end{bmatrix} \theta_t + v_t \quad & v_t \overset{iid}\sim
@@ -372,12 +372,11 @@ The first DLM specification we consider to examine $\text{CO}$ is a linear growt
 where $\theta_t = \begin{pmatrix} \mu_{t} \\ \beta_{t} \end{pmatrix}$, $\theta_{0} \sim N_{2}(m_{0} = \begin{pmatrix} \hat{\mu_{0}} \\ \hat{\beta_{0}} \end{pmatrix}, C_{0})$ and $\theta_{0} \indep (v_{t}) \indep (w_{t})$. STARTING PRIORS TO BE COMMENTED.
 
 ```{r echo=FALSE, warning=FALSE}
-# Build DLM with polynomial specification
-build_LG <- function(param){dlmModPoly(order=2, dV=exp(param[1]), dW=exp(param[2:3]),m0=c(y[1],0))}
+#Time invariant linear growth model:
+build_LG <- function(param) {dlm( m0=c(y[1],0), C0 = 0.001*diag(2), FF= matrix(c(1,0), nr=1), V = exp(param[1]), GG = matrix(c(1,0,1,1), nr=2), W = diag(c(exp(param[2]), exp(param[3]))) )}
 
 # Estimate MLE of parameters
 fit_LG <- dlmMLE(y, rep(0.5,3), build_LG, hessian=TRUE)
-#unlist(build_LG(fit_LG$par)[c("V","W")]) # convergence achieved
 
 # Calculate standard errors of the MLE using delta method
 estVarLog_LG <- solve(fit_LG$hessian)
@@ -446,7 +445,114 @@ S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 
 \textcolor{red}{ COMMENTO:SIGNAL-TO-NOISE RATIO MOLTO BASSO DA METTERE IN FONDO...}
 
+As expected, a first graphical inspection of the standardized one-step-ahead forecast error series (reported in Figure) shows both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{V}^{2}$ to be time dependent.
 
+For this purpose, we estimated a linear growth model specified as above but considering  $\sigma_{Vt}^{2} = \sigma_{V1}^{2}$ for observations before 2008 and  $\sigma_{Vt}^{2} = \sigma_{V2}^{2}$ for observations after 2008. The MLE estimators are reported in Table \ref{tab:MLE_lgm_v}.
+
+```{r echo=FALSE, warning=FALSE}
+#Time variant linear growth model:
+build_LG_v <- function(param) {dlm( m0=c(y[1],0), C0 = 0.001*diag(2), FF= matrix(c(1,0), nr=1), V = 1, GG = matrix(c(1,0,1,1), nr=2), W = diag(c(exp(param[3]), exp(param[4]))), JV = 1, X = rep( c(exp(param[1]), exp(param[2])), c(84, 102)) )}
+
+fit_LG_v <- dlmMLE(y, rep(0.5, 4), build_LG_v, hessian=TRUE)
+
+# Calculate standard errors of the MLE using delta method
+estVarLog_LG_v <- solve(fit_LG_v$hessian)
+estVar_LG_v <- diag(exp(fit_LG_v$par)) %*% estVarLog_LG_v %*% + diag(exp(fit_LG_v$par))
+SE_LG_v <- sqrt(diag(estVar_LG_v))
+```
+
+```{r}
+# MLE
+MLE_sigmaV1_v  <- paste0(round(exp(fit_LG_v$par[1]),5))
+MLE_sigmaV2_v  <- paste0(round(exp(fit_LG_v$par[2]),5))
+MLE_sigmaW1_v  <- paste0(round(exp(fit_LG_v$par[3]),9))
+MLE_sigmaW2_v  <- paste0(round(exp(fit_LG_v$par[4]),12))
+
+# se(MLE)
+se_sigmaV1_v  <- paste0('(', round(SE_LG_v[1],5), ')')
+se_sigmaV2_v  <- paste0('(', round(SE_LG_v[2],5), ')')
+se_sigmaW1_v  <- paste0('(', round(SE_LG_v[3],9), ')')
+se_sigmaW2_v  <- paste0('(', round(SE_LG_v[4],9), ')')
+
+# Summary table
+MLEsum <- data.frame(sigmaV1=c(MLE_sigmaV1_v, se_sigmaV1_v),
+                     sigmaV2=c(MLE_sigmaV2_v, se_sigmaV2_v),
+                     sigmaW1=c(MLE_sigmaW1_v, se_sigmaW1_v),
+                     sigmaW2=c(MLE_sigmaW2_v, se_sigmaW2_v))
+
+knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+             col.names = c("$\\hat{\\sigma}^2_{v1}$",
+                           "$\\hat{\\sigma}^2_{v2}$",
+                           "$\\hat{\\sigma}^2_{w_1}$",
+                           "$\\hat{\\sigma}^2_{w_2}$"),
+             escape=F, caption="Maximum Likelihood estimates of the unknown
+             parameters\\label{tab:MLE_lgm_v}") %>%
+  column_spec(1:4, width="5em") %>%
+  collapse_rows(columns=1, latex_hline="none") %>%
+  footnote(general="Standard errors in parentheses.",
+           general_title="Note:",
+           footnote_as_chunk=T, escape=F) %>%
+  kable_styling(latex_options="hold_position")
+```
+
+```{r}
+# Put MLE in the model
+LG_v <- build_LG_v(fit_LG_v$par)
+
+# Kalman filter
+LG_Filt_v <- dlmFilter(y, LG_v)
+
+# Remove the first item (m_0) in the vector of filtered states
+filt_est_v = dropFirst(LG_Filt_v$m)
+
+# Compute the vector of state variances and standard deviations
+list_c_v <- dlmSvd2var(LG_Filt_v$U.C, LG_Filt_v$D.C)
+vol_C_v <- sqrt(unlist(list_c_v))
+
+# One step ahead forecast
+y_filt_v <- LG_Filt_v$f
+```
+
+In Figure \ref{Fig:innovation process plot} we compare the standardized innovation process of the two specifications.The second specification reports an improvement, as the innovation process does not report anymore a clear change in variance and looks more close to a random walk\footnote{Note that there is still a not captured seasonal behaviour and some other noises that we will try to capture through a regression component}. 
+
+```{r, fig.width=20, fig.height=3.5, out.width='100%', fig.cap="\\label{Fig:innovation process plot}Standardized one-step-ahead forecast errors. (a) Time invariant model. (b) Time variant model."}
+res_LG <- residuals(LG_Filt, sd=FALSE)
+res_LG = data.frame(res_LG,louisiana_df$n_months)
+colnames(res_LG) = c("res", "time")
+
+A <- ggplot(res_LG, aes(x=time)) +
+  geom_line(aes(y=res), size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Residuals") +
+  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  scale_y_continuous(breaks=seq(-4.5,4.5,1), limits = c(-3,4.5)) +
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
+
+res_LG_v <- residuals(LG_Filt_v, sd=FALSE)
+res_LG_v = data.frame(res_LG_v,louisiana_df$n_months)
+colnames(res_LG_v) = c("res", "time")
+
+B <- ggplot(res_LG_v, aes(x=time)) +
+  geom_line(aes(y=res), size=0.4) +
+  theme_classic(base_size=9.5) +
+  theme(panel.grid.minor = element_line(size=0.5)) +
+  labs(x="Year", y="Residuals") +
+  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  scale_y_continuous(breaks=seq(-4.5,4.5,1), limits = c(-3,4.5)) +
+  theme(axis.text=element_text(size=19),
+        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
+
+ggarrange(A, B,
+          ncol=2, nrow=1, labels = c("(a)", "(b)"))
+```
+
+\subsection{2.2. Seasonal Dynamic Linear Model}
+
+SCRIVERE ALMENO IL MODELLO UTILIZZATO E UN PAIO DI RIGHE SUGLI IMPROVEMENT CHE DA. 
 ```{r}
 # Structural DLM with LG model and seasonality
 y_ts<-ts(y,frequency = 12)
@@ -458,7 +564,7 @@ struct_fit <- BSM$fitted[,1]+BSM$fitted[,3]
 source("LG_model_checking.R")
 ```
 
-\subsection{2.2. Dynamic linear regression}
+\subsection{2.3. Dynamic linear regression}
 
 We take as explanatory variable $x_t$ Louisiana's coal consumption for electricity generation (in particular, for the totality of the electric power industry). The model we consider is the following:
 \begin{eqnarray*} 
