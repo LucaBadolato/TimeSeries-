@@ -81,7 +81,7 @@ Therefore, the purpose of the present work is to model through common statistica
 
 \section{Data}
 
-The dataset \texttt{US\_pollution} contains monthly and daily data about air pollution for each state in the United States. It is provided by the U.S. Environmental Protection Agency (EPA). Specifically, four key indicators of air pollution are considered: 
+The dataset\footnote{The preliminary analysis that led us from the raw data (with frequency of 4-intra-day observations) to the current dataset is made available in the GitHub repository at \url{https://github.com/SimoneArrigoni/US_pollution}. We relied on a moving average algorithm of order $120$ to smooth the data, assuming months of 30 days and a year of 360 days, with a minor approximation relative to the original data structure based on a actual 365 day-counts.} \texttt{US\_pollution} contains monthly and daily data about air pollution for each state in the United States. It is provided by the U.S. Environmental Protection Agency (EPA). Specifically, four key indicators of air pollution are considered: 
 
 \begin{itemize}
 \item \textbf{Ground level ozone $\text{O}_{3}$} (\texttt{O3}): Bad ozone forms near the ground when pollutants (emitted by sources such as cars, power plants, industrial boilers, refineries, and chemical plants) react chemically in sunlight. Since it is more likely to form during warmer months, we expect to see a seasonal component. 
@@ -92,8 +92,6 @@ The dataset \texttt{US\_pollution} contains monthly and daily data about air pol
 \medskip
 
 Very intuitively, the four variables of interest are interconnected and are the building blocks of a more general phenomenon, that is air pollution. Furthermore, they are related by a common latent process that can be summarized by several components such as industrialization, car traffic and regulation.
-
-The preliminary analysis that led us from the raw data (with frequency of 4-intra-day observations) to the current dataset is made available in the GitHub repository at https://github.com/SimoneArrigoni/US_pollution. We relied on a moving average algorithm of order $120$ to smooth the data, assuming months of 30 days and a year of 360 days, with a minor approximation relative to the original data structure based on a actual 365 day-counts.
 
 ```{r echo=F}
 # Import the dataset
@@ -344,11 +342,11 @@ ggarrange(HMM_main, HMM_additional, widths=c(4,2))
 
 Explanations of these results, which confirm a stable change in the evolution process of $\text{CO}$ in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in US electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Wien agreement)\footnote{A deeper analysis on the factors explaining this shift can be found in Feng et al. (2015), in which they analyse the series of $\text{CO}_2$.}. 
 
-\textcolor{red}{REMEMBER MODEL CHECKING FOR HMM}
 ```{r warning=FALSE}
 source("HMM_model_checking.R")
 ```
 
+DUBBIO RESIDUI: PENSAVO DI INSERIRE QUI IL CORRELOGRAMMA E IL QQPLOT, COMMENTANDO CHE PER GLI ALTRI MODELLI NON LI AVREMMO RIPORTATI E COSì VIA E MI è VENUTO UN DUBBIO PERCHè VOLEVO STANDARDIZZARLI. COME LI STANDARDIZZO ESSENDOCI TRE VARIANZE? BISOGNA TESTARE FORSE LE TRE EQUAZIONI UNA PER VOLTA IN BASE ALLO STATO? NEL CASO PRENDO IL PRIMO STATO E PLOTTO I DUE GRAFICI COMMENTANTO IL TUTTO.  
 \section{Section 2. Univariate DLMs}
 
 We now try to model the series of interest through Dynamic Linear Model specifications. Indeed, DLMs are very attractive, since they allow a natural interpretation of the process as the combination of several components, such as trend, seasonal or regressive ones. As a consequence, we consider different specifications which, simply combined, are able to explain all the features previously described\footnote{Therefore we are aware (and we expect) that by construction each model will miss some process characteristics. For example, residuals checking for a linear growth model may shows a seasonal behaviour but this is fully in conformity with the additive structure we consider.}. 
@@ -448,7 +446,7 @@ S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 
 As expected, a first graphical inspection of the standardized one-step-ahead forecast error series (reported in Figure \ref{Fig:innovation process plot}(a)) shows both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{v}^{2}$ to be time dependent.
 
-For this purpose, we estimated a linear growth model specified as above but considering  ${\sigma_{v,t}}^{2} = {\sigma_{v,1}}^{2}$ for observations before 2008 and  $\sigma_{v,t}^{2} = \sigma_{v,2}^{2}$ for observations after 2008. The MLE estimators are reported in Table \ref{tab:MLE_lgm_v}.
+For this purpose, we estimated a linear growth model specified as above but considering  $\sigma_{v,t}^{2} = \sigma_{v,1}^{2}$ for observations before 2008 and  $\sigma_{v,t}^{2} = \sigma_{v,2}^{2}$ for observations after 2008. The MLE estimators are reported in Table \ref{tab:MLE_lgm_v}.
 
 ```{r echo=F, warning=F}
 # Time variant linear growth model
@@ -644,6 +642,7 @@ ggplot(res_LG_v_seas, aes(x=time)) +
         axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
 ```
+
 
 \subsection{2.3. Dynamic linear regression}
 
