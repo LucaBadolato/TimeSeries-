@@ -183,7 +183,6 @@ ggarrange(O3, NO2, CO, SO2,
 ```
 
 The time series, each with its specific features, do not in general look stationary. Hence, they cannot be analized with the common models based on the assumption of covariance-stationarity, such as the well-known ARMA models.
-\bigskip
 
 \section{$\text{CO}$ series}
 
@@ -193,7 +192,7 @@ As an exploratory step, we decompose the time series in its structural component
 
 \section{Section 1. HMM}
 
-These features suggest that the process may be described by a homogeneous Hidden Markov Model with a trend component.
+These features suggest that the process may be described by a homogeneous \textit{Hidden Markov Model} (HMM) with a trend component.
 
 Therefore, we estimate a homogeneous HMM with two states, specified as:
 \begin{align*}
@@ -280,7 +279,6 @@ HMM_summary <- depmixS4::summary(HMM_fit)
 ```
 
 ```{r, fig.width=20, fig.height=6, out.width='100%', fig.cap="\\label{fig:HMM_results}State-dependent means and standard deviations"}
-
 # Chart with state-dependent mean and standard deviations
 HMM_main_CO <- data.frame(state=1:nstates,
                       mu=HMM_summary[,1],
@@ -344,15 +342,15 @@ HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
 ggarrange(HMM_main, HMM_additional, widths=c(4,2))
 ```
 
-Explanations of these results, which confirm a stable change in the evolution process of $\text{CO}$ in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in US electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Wien agreement)\footnote{A deeper analysis on the factors explaining this shift can be found in @Feng2015, in which they analyse the series of $\text{CO}_2$.}. 
+Explanations of these results, which confirm a stable change in the evolution process of $\text{CO}$ in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in US electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Wien agreement)\footnote{A deeper analysis on the factors explaining this shift can be found in Feng et al. (2015), in which they analyse the series of $\text{CO}_2$.}. 
 
 \textcolor{red}{REMEMBER MODEL CHECKING FOR HMM}
-
 ```{r warning=FALSE}
 source("HMM_model_checking.R")
 ```
 
 \section{Section 2. Univariate DLMs}
+
 We now try to model the series of interest through Dynamic Linear Model specifications. Indeed, DLMs are very attractive, since they allow a natural interpretation of the process as the combination of several components, such as trend, seasonal or regressive ones. As a consequence, we consider different specifications which, simply combined, are able to explain all the features previously described\footnote{Therefore we are aware (and we expect) that by construction each model will miss some process characteristics. For example, residuals checking for a linear growth model may shows a seasonal behaviour but this is fully in conformity with the additive structure we consider.}. 
 
 \subsection{2.1. Linear growth model}
@@ -360,36 +358,39 @@ We now try to model the series of interest through Dynamic Linear Model specific
 The first DLM specification we consider to examine $\text{CO}$ is a time invariant linear growth model, which is suitable to capture both a latent level, $\mu_{t}$, and a time varying splope in its dynamics, $\beta_{t}$. As usual, it is defined as following: 
 \begin{align*} 
 \begin{cases}
-   Y_t = \begin{bmatrix}1 & 0 \end{bmatrix} \theta_t + v_t \quad & v_t \overset{iid}\sim
-  \mathcal{N}(0, \sigma_{V}^{2}) 
-  \\
-  \\
-   \theta_t = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}\theta_{t-1} + w_t \quad & w_t
-  \overset{iid}\sim \mathcal{N}_{2}(0, W = \begin{bmatrix}\sigma_{w_{1}}^{2} & 0 \\ 0 &  \sigma_{w_{1}}^{2} \end{bmatrix})
-  \\
+  Y_t = F \; \theta_t + v_t \quad & v_t \overset{iid}\sim \mathcal{N}(0, {\sigma_v}^2) \\
+  \theta_t =  G \; \theta_{t-1} + w_t \quad & w_t \overset{iid}\sim \mathcal{N}_{2}(0, W) \\
   \end{cases}
 \end{align*}
-where $\theta_t = \begin{pmatrix} \mu_{t} \\ \beta_{t} \end{pmatrix}$, $\theta_{0} \sim N_{2}(m_{0} = \begin{pmatrix} \hat{\mu_{0}} \\ \hat{\beta_{0}} \end{pmatrix}, C_{0})$ and $\theta_{0} \indep (v_{t}) \indep (w_{t})$. STARTING PRIORS TO BE COMMENTED.
+where
+\begin{equation*}
+  \theta_t = \begin{pmatrix} \mu_{t} \\ \beta_{t} \end{pmatrix}, \quad
+  F = \begin{bmatrix} 1 & 0 \end{bmatrix}, \quad
+  G = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}, \quad
+  W = \begin{bmatrix} \sigma_{w_1}^{2} & 0 \\ 0 & \sigma_{w_1}^{2} \end{bmatrix}, \quad
+  \theta_0 \sim N_{2}(m_0 = \begin{pmatrix} \hat{\mu_0} \\ \hat{\beta_0} \end{pmatrix}, C_0) \text{ and }
+  \theta_{0} \indep (v_t) \indep (w_t).
+\end{equation*}
 
-```{r echo=FALSE, warning=FALSE}
-#Time invariant linear growth model:
+\textcolor{red}{STARTING PRIORS TO BE COMMENTED.}
+
+```{r echo=F, warning=F}
+# Time invariant linear growth model
 build_LG <- function(param) {dlm( m0=c(y[1],0), C0 = 0.001*diag(2), FF= matrix(c(1,0), nr=1), V = exp(param[1]), GG = matrix(c(1,0,1,1), nr=2), W = diag(c(exp(param[2]), exp(param[3]))) )}
 
 # Estimate MLE of parameters
 fit_LG <- dlmMLE(y, rep(0.5,3), build_LG, hessian=TRUE)
 
-# Calculate standard errors of the MLE using delta method
+# Calculate SE of the MLE using delta method
 estVarLog_LG <- solve(fit_LG$hessian)
 estVar_LG <- diag(exp(fit_LG$par)) %*% estVarLog_LG %*% + diag(exp(fit_LG$par))
 SE_LG <- sqrt(diag(estVar_LG))
 
 # Alternative models
 source("LG_alternative_models.R")
-
 ```
 
-In Table \ref{tab:MLE_lgm} are presented the MLEs of the unknown coefficients and the associated standard errors\footnote{We treat $\psi = (\sigma_{V}^{2}, \sigma_{W_{1}}^{2} \text{and} \ \sigma_{W_{2}}^{2})$ as unknown parameters and we estimate them by maximum likelihood. Then, we perform the analysis of interest plugging them in the model as if they were known costants. We follow this customary way to proceed also in the following sections.}.
-
+In Table \ref{tab:MLE_lgm} are presented the MLEs of the unknown coefficients and the associated standard errors\footnote{We treat $\psi = (\sigma_{V}^{2}, \; \sigma_{W_{1}}^{2}, \;\sigma_{W_{2}}^{2})$ as unknown parameters and we estimate them by maximum likelihood. Then, we perform the analysis of interest plugging them in the model as if they were known costants. We follow this customary way to proceed also in the following sections.}.
 
 ```{r}
 # MLE
@@ -443,19 +444,19 @@ S_to_N[1] <- exp(fit_LG$par[2]) * exp(-fit_LG$par[1])
 S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 ```
 
-\textcolor{red}{ COMMENTO:SIGNAL-TO-NOISE RATIO MOLTO BASSO DA METTERE IN FONDO...}
+\textcolor{red}{COMMENTO: SIGNAL-TO-NOISE RATIO MOLTO BASSO DA METTERE IN FONDO...}
 
-As expected, a first graphical inspection of the standardized one-step-ahead forecast error series (reported in Figure) shows both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{V}^{2}$ to be time dependent.
+As expected, a first graphical inspection of the standardized one-step-ahead forecast error series (reported in Figure \ref{Fig:innovation process plot}(a)) shows both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{v}^{2}$ to be time dependent.
 
-For this purpose, we estimated a linear growth model specified as above but considering  $\sigma_{Vt}^{2} = \sigma_{V1}^{2}$ for observations before 2008 and  $\sigma_{Vt}^{2} = \sigma_{V2}^{2}$ for observations after 2008. The MLE estimators are reported in Table \ref{tab:MLE_lgm_v}.
+For this purpose, we estimated a linear growth model specified as above but considering  ${\sigma_{v,t}}^{2} = {\sigma_{v,1}}^{2}$ for observations before 2008 and  $\sigma_{v,t}^{2} = \sigma_{v,2}^{2}$ for observations after 2008. The MLE estimators are reported in Table \ref{tab:MLE_lgm_v}.
 
-```{r echo=FALSE, warning=FALSE}
-#Time variant linear growth model:
+```{r echo=F, warning=F}
+# Time variant linear growth model
 build_LG_v <- function(param) {dlm( m0=c(y[1],0), C0 = 0.001*diag(2), FF= matrix(c(1,0), nr=1), V = 1, GG = matrix(c(1,0,1,1), nr=2), W = diag(c(exp(param[3]), exp(param[4]))), JV = 1, X = rep( c(exp(param[1]), exp(param[2])), c(84, 102)) )}
 
 fit_LG_v <- dlmMLE(y, rep(0.5, 4), build_LG_v, hessian=TRUE)
 
-# Calculate standard errors of the MLE using delta method
+# Calculate SE of the MLE using delta method
 estVarLog_LG_v <- solve(fit_LG_v$hessian)
 estVar_LG_v <- diag(exp(fit_LG_v$par)) %*% estVarLog_LG_v %*% + diag(exp(fit_LG_v$par))
 SE_LG_v <- sqrt(diag(estVar_LG_v))
@@ -515,7 +516,7 @@ y_filt_v <- LG_Filt_v$f
 
 In Figure \ref{Fig:innovation process plot} we compare the standardized innovation process of the two specifications.The second specification reports an improvement, as the innovation process does not report anymore a clear change in variance and looks more close to a random walk\footnote{Note that there is still a not captured seasonal behaviour and some other noises that we will try to capture through a regression component}. 
 
-```{r, fig.width=20, fig.height=3.5, out.width='100%', fig.cap="\\label{Fig:innovation process plot}Standardized one-step-ahead forecast errors. (a) Time invariant model. (b) Time variant model."}
+```{r, fig.width=20, fig.height=3.5, out.width='100%', fig.cap="\\label{Fig:innovation process plot}Standardized one-step-ahead forecast errors. (a) Time invariant model; (b) Time variant model."}
 res_LG <- residuals(LG_Filt, sd=FALSE)
 res_LG = data.frame(res_LG,louisiana_df$n_months)
 colnames(res_LG) = c("res", "time")
@@ -540,7 +541,8 @@ B <- ggplot(res_LG_v, aes(x=time)) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Residuals") +
-  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(0,200,25),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
   scale_y_continuous(breaks=seq(-4.5,4.5,1), limits = c(-3,4.5)) +
   theme(axis.text=element_text(size=19),
         axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
@@ -551,6 +553,7 @@ ggarrange(A, B,
 ```
 
 \subsection{2.2. Seasonal Dynamic Linear Model}
+
 We now fit a seasonal dlm, suitable to capture the seasonal behavior of the process. As explained above, there are evidences that the frequency is 12 months. Indeed, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1} \dots \alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors. Therefore, in our representation we use an 11-dimensional state vector}. As usual, the model is specified as: 
 \begin{align*} 
 \begin{cases}
@@ -567,12 +570,13 @@ We now fit a seasonal dlm, suitable to capture the seasonal behavior of the proc
 
 \textcolor{red}{ WHICH ASSUMPTIONS?} Notice that the state vector $\theta_{t}$ contains 11 seasona factors properly permutated through the matrix $G$. Once again, we estimate the unkown variances by MLE, obtaining in Table \ref{tab:MLE_seasonal}: 
 ```{r}
-#Seasonal DLM 
+# Seasonal DLM 
 build_seasonal  <- function(param){dlmModSeas(frequency=12, dV = exp(param[1]), dW=c(exp(param[2]),0,0,0,0,0,0,0,0,0,0))}
 
 # Estimate MLE of parameters
 fit_seasonal <- dlmMLE(y, rep(0.5,2), build_seasonal, hessian=TRUE)
 #fit_stagional$convergence
+
 # Calculate standard errors of the MLE using delta method
 estVarLog_seasonal <- solve(fit_seasonal$hessian)
 estVar_seasonal <- diag(exp(fit_seasonal$par)) %*% estVarLog_seasonal %*% + diag(exp(fit_seasonal$par))
@@ -631,7 +635,6 @@ build_DR <- function(param){dlmModReg(x, dV=exp(param[1]), dW=c(0, param[2]), m0
 fit_DR <- dlmMLE(y, c(0.5, 0.5), build_DR, hessian=TRUE) 
 #fit_DR$convergence
 parameters = unlist(build_DR(fit_DR$par)[c("V","W")])
-
 #fit_DR$hessian 
 
 # Calculate standard errors based on numeriacally evaluated hessian matrix
@@ -683,7 +686,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
              parameters\\label{tab:MLE_dr}") %>%
   column_spec(1:3, width="5em") %>%
   collapse_rows(columns=1, latex_hline="none") %>%
-  footnote(general="Standard errors in parentheses",
+  footnote(general="Standard errors in parentheses.",
            general_title="Note:",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
@@ -692,9 +695,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
 Let's now compute the smoothing estimates of $\theta_t=(\alpha_t, \beta_t)'$, for $t=0, \ldots, T$. The smoothing estimates of $\beta_t$ are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:smooth_est}.
 
 ```{r, fig.width=7, fig.height=3, fig.cap="\\label{fig:smooth_est} Smoothing estimates of beta with credible intervals"}
-
 # Smoothing estimates
-
 cO_Smooth = dlmSmooth(y, DR)
 smooth_state_est <- dropFirst(cO_Smooth$s[,2])
 
@@ -723,7 +724,8 @@ ggplot(df_co_ci, aes(x=n_months)) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Beta", color = "black") +
-  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(0,200,25),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
   scale_y_continuous() +
   theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
@@ -735,7 +737,8 @@ df_filt <- data.frame(louisiana_df$n_months, y, y_filt, struct_fit, y_filt_DR)
 colnames(df_filt) = c("n_months", "y", "y_filt","struct_fit", "y_filt_DR")
 
 # Plot
-colors <- c("Observed data" = "black", "Linear Growth" = "springgreen4", "Basic structural model"="blue", "Dynamic regression"="red")
+colors <- c("Observed data" = "black", "Linear Growth" = "springgreen4", 
+            "Basic structural model"="blue", "Dynamic regression"="red")
 ggplot(df_filt, aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data"), size=0.4) +
   geom_line(aes(y=y_filt, color = "Linear Growth"), size=0.4) +
@@ -751,7 +754,7 @@ ggplot(df_filt, aes(x=n_months)) +
         axis.title.y=element_text(family="Times", margin=margin(r=5))) +
         scale_color_manual(values = colors) +
         theme(legend.justification = c("left", "top"),
-              legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+              legend.box.just = "left", legend.margin = margin(2, 2, 2, 2))
 ```
 
 ```{r}
@@ -764,22 +767,22 @@ source("DR_model_checking.R")
 
 As a last step, we build a multivariate dynamic regression model. In addition to the $\text{CO}$ series, we consider now also the $\text{SO}_2$ monthly data. Assuming that the intercepts and the slopes are correlated across the two pollutants, we can define a \textit{seemingly unrelated regression model} (SUR) as follows:
 \begin{align*}
-  & Y_t = (F_t \otimes I_2) \theta_t + v_t, & v_t \overset{iid}\sim \mathcal{N}_2(0,V) \\
-  & \theta_t = (G \otimes I_2) \theta_{t-1} + w_t, & w_t \overset{iid}\sim
+  & Y_t = (F_t \otimes I_2) \; \theta_t + v_t, & v_t \overset{iid}\sim \mathcal{N}_2(0,V) \\
+  & \theta_t = (G \otimes I_2) \; \theta_{t-1} + w_t, & w_t \overset{iid}\sim
   \mathcal{N}_4(0,W)
 \end{align*}
 with
 \begin{equation*}
   \underset{2 \times 1}{Y_t} = \begin{bmatrix} Y_{CO,t} \\ Y_{SO_2,t} \end{bmatrix}, \quad
-  \underset{4 \times 1}{\theta_t} = \begin{bmatrix} \\ \alpha_{CO,t} \\ \alpha_{SO_2,t}, \\ \beta_{CO,t} \\
+  \underset{4 \times 1}{\theta_t} = \begin{bmatrix} \alpha_{CO,t} \\ \alpha_{SO_2,t}, \\ \beta_{CO,t} \\
   \beta_{SO_2,t} \end{bmatrix}, \quad
   \underset{1 \times 2}{F_t} = \begin{bmatrix} 1 & x_t \end{bmatrix}, \quad
   \underset{2 \times 2}{G} = I_2 \quad \text{ and } \quad
-  \underset{4 \times 4}{W} = blockdiag(W_{\alpha}, W_{\beta}).
+  \underset{4 \times 4}{W} = \text{blockdiag}(W_{\alpha}, W_{\beta}).
 \end{equation*}
 Note that, since both pollutants are by-products of incomplete fuel combustion, we consider $x_{i,t}=x_t$, that is we take the same explanatory variable for the two series.
 
-```{r}
+```{r, include=F}
 # Build df
 y_m <- data.frame(louisiana_df$m_CO_mean, louisiana_df$m_SO2_mean)
 y_m <- rename(y_m, c("CO"="louisiana_df.m_CO_mean", "SO2"="louisiana_df.m_SO2_mean"))
@@ -831,25 +834,25 @@ SUR_sd <- residuals(SUR_Filt)$sd
 SUR_Smooth <- dlmSmooth(y_m, SUR)
 ```
 
-\subsection{(ADDITIONAL) Seemingly unrelated time series equations (SUTSE)}
+\subsection{(ADDITIONAL) 3.2. Seemingly unrelated time series equations (SUTSE)}
 
 Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. From visual inspection of Figure \ref{fig:louisiana_plots} it appears that the two series display a similar type of qualitative behavior, that can be modeled by a linear growth DLM. To set up a multivariate model for the two series, we combine the two linear growth models in a comprehensive \textit{seemingly unrelated time series equations model} (SUTSE). This is written as:
 \begin{align*}
-  & Y_t = (F \otimes I_2) \theta_t + v_t, & v_t \sim \mathcal{N}_2(0,V) \\
-  & \theta_t = (G \otimes I_2) \theta_{t-1} + w_t, & w_t \sim \mathcal{N}_4(0,W)
+  & Y_t = (F \otimes I_2) \; \theta_t + v_t, & v_t \sim \mathcal{N}_2(0,V) \\
+  & \theta_t = (G \otimes I_2) \; \theta_{t-1} + w_t, & w_t \sim \mathcal{N}_4(0,W)
 \end{align*}
 with
 \begin{equation*}
   \underset{2 \times 1}{Y_t} = \begin{bmatrix} Y_{CO,t} \\ Y_{SO_2,t} \end{bmatrix}, \quad
-  \underset{4 \times 1}{\theta_t} = \begin{bmatrix} \\ \mu_{CO,t} \\ \mu_{SO_2,t}, \\ \beta_{CO,t} \\
+  \underset{4 \times 1}{\theta_t} = \begin{bmatrix} \mu_{CO,t} \\ \mu_{SO_2,t}, \\ \beta_{CO,t} \\
   \beta_{SO_2,t} \end{bmatrix}, \quad
   \underset{1 \times 2}{F} = \begin{bmatrix} 1 & 0 \end{bmatrix}, \quad
   \underset{2 \times 2}{G} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} \quad \text{ and } \quad \underset{4
-  \times 4}{W} = blockdiag(W_{\mu}, W_{\beta}).
+  \times 4}{W} = \text{blockdiag}(W_{\mu}, W_{\beta}).
 \end{equation*}
 We assume that growth $\beta_{i,t}$ is correlated among pollutants. Moreover, to simplify the model in order to reduce the overall number of parameters, we also assume that the two linear growth models are integrated random walks, that is $W_{\mu}=0$.
 
-```{r}
+```{r, include=F}
 # Build SUTSE model
 build_SUTSE <- function(param){
   mod <- dlmModPoly(2)
@@ -903,7 +906,7 @@ source("forecasting_accuracy.R")
 # Forecasting accuracy: Summary table
 tabf <- matrix(nrow=3, ncol=8)
 rownames(tabf) <- c('MSE','MAE','MAPE')
-colnames(tabf) <- c('HMM', 'Linear growth', 'Constant speed', 'Integrated random walk', 'BSM','Dynamic regression', 'SUR', 'SUTSE')
+colnames(tabf) <- c('HMM', 'Lin. growth', 'Const. speed', 'Int. RW', 'BSM','Dyn. regr.', 'SUR', 'SUTSE')
 
 #tabf[1,1] <- MSE_HMM
 #tabf[2,1] <- MAE_HMM
