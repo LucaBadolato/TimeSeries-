@@ -81,15 +81,13 @@ Therefore, the purpose of the present work is to model through common statistica
 
 \section{Data}
 
-The dataset\footnote{The preliminary analysis that led us from the raw data (with frequency of 4-intra-day observations) to the current dataset is made available in the GitHub repository at \url{https://github.com/SimoneArrigoni/US_pollution}. We relied on a moving average algorithm of order $120$ to smooth the data, assuming months of 30 days and a year of 360 days, with a minor approximation relative to the original data structure based on a actual 365 day-counts.} \texttt{US\_pollution} contains monthly and daily data about air pollution for each state in the United States. It is provided by the U.S. Environmental Protection Agency (EPA). Specifically, four key indicators of air pollution are considered: 
-
+The dataset\footnote{The preliminary analysis that led us from the raw data (with frequency of 4-intra-day observations) to the current dataset is made available in the GitHub repository at \url{https://github.com/SimoneArrigoni/US_pollution}. We relied on a moving average algorithm of order $120$ to smooth the data, assuming months of 30 days and a year of 360 days, with a minor approximation relative to the original data structure based on a actual 365 day-counts.} \texttt{US\_pollution} contains monthly and daily data about air pollution for each state in the United States. It is provided by the U.S. Environmental Protection Agency (EPA). Specifically, four key indicators of air pollution are considered:
 \begin{itemize}
-\item \textbf{Ground level ozone $\text{O}_{3}$} (\texttt{O3}): Bad ozone forms near the ground when pollutants (emitted by sources such as cars, power plants, industrial boilers, refineries, and chemical plants) react chemically in sunlight. Since it is more likely to form during warmer months, we expect to see a seasonal component. 
-\item \textbf{Nitrogen dioxide $\text{NO}_{2}$} (\texttt{NO2}): It is produced as a result of road traffic and other fossil fuel combustion processes. Furthermore, its presence in air contributes to the formation and modification of other air pollutants, such as particle pollution.
-\item \textbf{Carbon monoxide $\text{CO}$} (\texttt{CO}):  It forms from incomplete combustions mainly from vehicle exhausts (roughly 75\% of all carbon monoxide emissions nationwide and up to 95\% in cities), fuel combustion in industrial processes and natural sources. Cold temperatures make combustion less complete, therefore we expect also in this case a seasonal behavior. 
-\item \textbf{Sulfur dioxide $\text{SO}_{2}$} (\texttt{SO2}): It is produced when sulfur-containing fuels are burned. It is common mainly in large industrial complexes. 
+\item \textbf{Ground level ozone ($\text{O}_{3}$)}: Bad ozone forms near the ground when pollutants (emitted by sources such as cars, power plants, industrial boilers, refineries, and chemical plants) react chemically in sunlight. Since it is more likely to form during warmer months, we expect to see a seasonal component. 
+\item \textbf{Nitrogen dioxide ($\text{NO}_{2}$)}: It is produced as a result of road traffic and other fossil fuel combustion processes. Furthermore, its presence in air contributes to the formation and modification of other air pollutants, such as particle pollution.
+\item \textbf{Carbon monoxide ($\text{CO}$)}:  It forms from incomplete combustions mainly from vehicle exhausts (roughly 75\% of all carbon monoxide emissions nationwide and up to 95\% in cities), fuel combustion in industrial processes and natural sources. Cold temperatures make combustion less complete, therefore we expect also in this case a seasonal behavior. 
+\item \textbf{Sulfur dioxide ($\text{SO}_{2}$)}: It is produced when sulfur-containing fuels are burned. It is common mainly in large industrial complexes. 
 \end{itemize}
-\medskip
 
 Very intuitively, the four variables of interest are interconnected and are the building blocks of a more general phenomenon, that is air pollution. Furthermore, they are related by a common latent process that can be summarized by several components such as industrialization, car traffic and regulation.
 
@@ -99,15 +97,14 @@ louisiana_df <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/U
 ```
 
 We will be focusing on measures for \textbf{Louisiana}, recorded monthly from January 2001 to June 2016, for a total of `r length(louisiana_df$n_months)` observations. The main advantage of studying the evolution of air pollution in the same country over the years is that this allows us to control for fixed effects and to better study the latent process of interest that relates the four pollution components.
-\bigskip
 
-We report in Table \ref{tab:louisiana_corr} pollutants'correlation coefficients.
+We report in Table \ref{tab:louisiana_corr} pollutants' correlation coefficients.
 
 ```{r}
 # Correlation plot
-datacor = subset(louisiana_df, select=c(m_O3_mean, m_NO2_mean, m_CO_mean, m_SO2_mean))
-cor.datacor = cor(datacor, use="complete.obs")
-cormat = round(cor(datacor),2)
+datacor <- subset(louisiana_df, select=c(m_O3_mean, m_NO2_mean, m_CO_mean, m_SO2_mean))
+cor.datacor <- cor(datacor, use="complete.obs")
+cormat <- round(cor(datacor),2)
 row.names(cormat) <- c("$\\text{O}_{3}$",
                        "$\\text{NO}_{2}$",
                        "$\\text{CO}$",
@@ -186,13 +183,11 @@ The time series, each with its specific features, do not in general look station
 
 $\text{CO}$ is perhaps, among the pollutants, the most tightly linked with the economic and industrial network of a country. Consequently, we select this as the series of main interest for our analysis, being the purpose of this work tracking the evolution of air pollution relative to an underlying economic process.
 
-As an exploratory step, we decompose the time series in its structural components using an additive model \footnote{For sake of brevity we do not report the plots of the decomposed components.}. The decomposition confirms the presence of a quarterly seasonal component and shows a negative trend up to a clear breakpoint between 2007 and 2008. The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
+As an exploratory step, we decompose the time series in its structural components using an additive model\footnote{For sake of brevity we do not report the plots of the decomposed components.}. The decomposition confirms the presence of a quarterly seasonal component and shows a negative trend up to a clear breakpoint between 2007 and 2008. The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
 
 \section{Section 1. HMM}
 
-These features suggest that the process may be described by a homogeneous \textit{Hidden Markov Model} (HMM) with a trend component.
-
-Therefore, we estimate a homogeneous HMM with two states, specified as:
+These features suggest that the process may be described by a homogeneous \textit{Hidden Markov Model} (HMM) with a trend component. Therefore, we estimate a homogeneous HMM with two states, specified as:
 \begin{align*}
 \begin{cases}
   Y_{t}=\mu_{1} + \beta_{1}t + \varepsilon_{t}, &
@@ -346,7 +341,8 @@ Explanations of these results, which confirm a stable change in the evolution pr
 source("HMM_model_checking.R")
 ```
 
-DUBBIO RESIDUI: PENSAVO DI INSERIRE QUI IL CORRELOGRAMMA E IL QQPLOT, COMMENTANDO CHE PER GLI ALTRI MODELLI NON LI AVREMMO RIPORTATI E COSì VIA E MI è VENUTO UN DUBBIO PERCHè VOLEVO STANDARDIZZARLI. COME LI STANDARDIZZO ESSENDOCI TRE VARIANZE? BISOGNA TESTARE FORSE LE TRE EQUAZIONI UNA PER VOLTA IN BASE ALLO STATO? NEL CASO PRENDO IL PRIMO STATO E PLOTTO I DUE GRAFICI COMMENTANTO IL TUTTO.  
+DUBBIO RESIDUI: PENSAVO DI INSERIRE QUI IL CORRELOGRAMMA E IL QQPLOT, COMMENTANDO CHE PER GLI ALTRI MODELLI NON LI AVREMMO RIPORTATI E COSì VIA E MI è VENUTO UN DUBBIO PERCHè VOLEVO STANDARDIZZARLI. COME LI STANDARDIZZO ESSENDOCI TRE VARIANZE? BISOGNA TESTARE FORSE LE TRE EQUAZIONI UNA PER VOLTA IN BASE ALLO STATO? NEL CASO PRENDO IL PRIMO STATO E PLOTTO I DUE GRAFICI COMMENTANTO IL TUTTO.
+
 \section{Section 2. Univariate DLMs}
 
 We now try to model the series of interest through Dynamic Linear Model specifications. Indeed, DLMs are very attractive, since they allow a natural interpretation of the process as the combination of several components, such as trend, seasonal or regressive ones. As a consequence, we consider different specifications which, simply combined, are able to explain all the features previously described\footnote{Therefore we are aware (and we expect) that by construction each model will miss some process characteristics. For example, residuals checking for a linear growth model may shows a seasonal behaviour but this is fully in conformity with the additive structure we consider.}. 
@@ -555,18 +551,18 @@ ggarrange(A, B,
 We now fit a seasonal dlm, suitable to capture the seasonal behavior of the process. As explained above, there are evidences that the frequency is 12 months. Indeed, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1} \dots \alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors. Therefore, in our representation we use an 11-dimensional state vector}. As usual, the model is specified as: 
 \begin{align*} 
 \begin{cases}
-   Y_t = \begin{bmatrix}1 & 0 & \cdots & 0 \end{bmatrix} \theta_t + v_t \quad & v_t \overset{iid}\sim
+   Y_t = \begin{bmatrix} 1 & 0 & \cdots & 0 \end{bmatrix} \theta_t + v_t \quad & v_t \overset{iid}\sim
   \mathcal{N}(0, \sigma_{V}^{2}) 
   \\
   \\
-   \theta_t = \begin{bmatrix} -1 &  & \cdots &  & -1 \\ 1 & 0  & 0 & \cdots & 0 \\ 0 & 1 & 0 & \cdots & 0 \\ \vdots &  & \ddots &  & \vdots \\ 0 & \cdots & 0& 1 & 0 \end{bmatrix} \theta_{t-1} + w_t \quad & w_t
-  \overset{iid}\sim \mathcal{N}_{2}(0, W = \begin{bmatrix}\sigma_{w}^{2} & 0 & \cdots  & 0 \\ 0 & 0 & \cdots  & 0 \\  \vdots &  & \ddots  & \vdots \\  0 & 0 & 0  & \cdots  \end{bmatrix})
+   \theta_t = \begin{bmatrix} -1 & & \cdots & & -1 \\ 1 & 0 & 0 & \cdots & 0 \\ 0 & 1 & 0 & \cdots & 0 \\ \vdots & & \ddots &  & \vdots \\ 0 & \cdots & 0& 1 & 0 \end{bmatrix} \theta_{t-1} + w_t \quad & w_t
+  \overset{iid}\sim \mathcal{N}_{2}(0, W = \begin{bmatrix}\sigma_{w}^{2} & 0 & \cdots  & 0 \\ 0 & 0 & \cdots & 0 \\  \vdots & & \ddots & \vdots \\  0 & 0 & 0 & \cdots \end{bmatrix})
   \\
   \end{cases}
 \end{align*}
 \
 
-\textcolor{red}{ WHICH ASSUMPTIONS?} Notice that the state vector $\theta_{t}$ contains 11 seasona factors properly permutated through the matrix $G$. Once again, we estimate the unkown variances by MLE, obtaining in Table \ref{tab:MLE_seasonal}: 
+\textcolor{red}{WHICH ASSUMPTIONS?} Notice that the state vector $\theta_{t}$ contains 11 seasona factors properly permutated through the matrix $G$. Once again, we estimate the unkown variances by MLE, obtaining in Table \ref{tab:MLE_seasonal}: 
 ```{r}
 # Seasonal DLM 
 build_seasonal  <- function(param){dlmModSeas(frequency=12, dV = exp(param[1]), dW=c(exp(param[2]),0,0,0,0,0,0,0,0,0,0))}
@@ -607,7 +603,6 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
   kable_styling(latex_options="hold_position")
 ```
 
-
 In order to evaluate the improvement that a seasonal component has in our analysis, we combined it with the time variant linear growth model previously specified and plot in Figure \ref{Fig: Innovation_process_combined} the innovation process series. Comparing this plot with the previously reported one, it is possible to see that we are now able to capture a month-specific effects. The series looks like a random walk plus noise and shows only a marginal noise, that we try to capture in the following sections.    
 
 ```{r, fig.width=10, fig.height=3.5, out.width='50%', fig.cap="\\label{Fig: Innovation_process_combined}innovation process plot: time variant linear growth model + seasonal dlm."}
@@ -637,25 +632,26 @@ ggplot(res_LG_v_seas, aes(x=time)) +
   theme_classic(base_size=9.5) +
   theme(panel.grid.minor = element_line(size=0.5)) +
   labs(x="Year", y="Residuals") +
-  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(0,200,25),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
   theme(axis.text=element_text(size=19),
         axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
 ```
 
-
 \subsection{2.3. Dynamic linear regression}
 
 We take as explanatory variable $x_t$ Louisiana's coal consumption for electricity generation (in particular, for the totality of the electric power industry). The model we consider is the following:
 \begin{eqnarray*} 
-y_t &=& \alpha_t + \beta_t x_t + v_t , \quad v_t \overset{i.i.d.}\sim  N(0, \sigma_{V}^{2})\\
-\theta_t &=& G \theta_{t-1} + w_t , \qquad w_t \overset{i.i.d.}\sim N(0, W)
+  y_t &=& \alpha_t + \beta_t x_t + v_t , \quad v_t \overset{i.i.d.}\sim  N(0, \sigma_{V}^{2}) \\
+  \theta_t &=& G \theta_{t-1} + w_t , \qquad w_t \overset{i.i.d.}\sim N(0, W)
 \end{eqnarray*}
 where
 \begin{eqnarray*}
-\theta_t=[\alpha_t, \beta_t]', \qquad  \theta_0 \sim N_2(m_0, C_0), \qquad \theta_0 \indep (v_t) \indep (w_t)
+  \theta_t=[\alpha_t \; \beta_t]', \qquad \theta_0 \sim \mathcal{N}_2(m_0, C_0), \qquad \theta_0 \indep (v_t)
+  \indep (w_t)
 \end{eqnarray*}
-and $G=I_2$ and $W=diag(\sigma_{W_{1}}^{2}, \sigma_{W_{2}}^{2})$ i.e the two time variyng coefficients $\alpha_t$ and $\beta_t$ are modeled as independent random walks. 
+and $G=I_2$ and $W=diag(\sigma_{W_{1}}^{2}, \sigma_{W_{2}}^{2})$, i.e the two time varying coefficients $\alpha_t$ and $\beta_t$ are modeled as independent random walks. 
 
 ```{r}
 # Import dataset
@@ -801,11 +797,10 @@ source("DR_model_checking.R")
 \subsection{3.1. Seemingly unrelated regression (SUR)}
 
 As a last step, we build a multivariate dynamic regression model. In addition to the $\text{CO}$ series, we consider now also the $\text{SO}_2$ monthly data. Assuming that the intercepts and the slopes are correlated across the two pollutants, we can define a \textit{seemingly unrelated regression model} (SUR) as follows:
-\begin{align*}
-  & Y_t = (F_t \otimes I_2) \; \theta_t + v_t, & v_t \overset{iid}\sim \mathcal{N}_2(0,V) \\
-  & \theta_t = (G \otimes I_2) \; \theta_{t-1} + w_t, & w_t \overset{iid}\sim
-  \mathcal{N}_4(0,W)
-\end{align*}
+\begin{eqnarray*}
+  Y_t = (F_t \otimes I_2) \; \theta_t + v_t, & v_t \overset{iid}\sim \mathcal{N}_2(0,V) \\
+  \theta_t = (G \otimes I_2) \; \theta_{t-1} + w_t, & w_t \overset{iid}\sim \mathcal{N}_4(0,W)
+\end{eqnarray*}
 with
 \begin{equation*}
   \underset{2 \times 1}{Y_t} = \begin{bmatrix} Y_{CO,t} \\ Y_{SO_2,t} \end{bmatrix}, \quad
@@ -872,12 +867,12 @@ SUR_Smooth <- dlmSmooth(y_m, SUR)
 \subsection{(ADDITIONAL) 3.2. Seemingly unrelated time series equations (SUTSE)}
 
 Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. From visual inspection of Figure \ref{fig:louisiana_plots} it appears that the two series display a similar type of qualitative behavior, that can be modeled by a linear growth DLM. To set up a multivariate model for the two series, we combine the two linear growth models in a comprehensive \textit{seemingly unrelated time series equations model} (SUTSE). This is written as:
-\begin{align*}
-  & Y_t = (F \otimes I_2) \; \theta_t + v_t, & v_t \sim \mathcal{N}_2(0,V) \\
-  & \theta_t = (G \otimes I_2) \; \theta_{t-1} + w_t, & w_t \sim \mathcal{N}_4(0,W)
+\begin{eqnarray*}
+  Y_t = (F \otimes I_2) \; \theta_t + v_t, & v_t \sim \mathcal{N}_2(0,V) \\
+  \theta_t = (G \otimes I_2) \; \theta_{t-1} + w_t, & w_t \sim \mathcal{N}_4(0,W)
 \end{align*}
 with
-\begin{equation*}
+\begin{eqnarray*}
   \underset{2 \times 1}{Y_t} = \begin{bmatrix} Y_{CO,t} \\ Y_{SO_2,t} \end{bmatrix}, \quad
   \underset{4 \times 1}{\theta_t} = \begin{bmatrix} \mu_{CO,t} \\ \mu_{SO_2,t}, \\ \beta_{CO,t} \\
   \beta_{SO_2,t} \end{bmatrix}, \quad
