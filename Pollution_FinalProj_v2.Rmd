@@ -580,14 +580,14 @@ and $G=I_2$ and $W=diag(\sigma_{W_{1}}^{2}, \sigma_{W_{2}}^{2})$ i.e the two tim
 ```{r}
 # Import dataset
 coal_cons <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_pollution/master/Louisiana_coal_consumption.csv"), sep=";", header=T, stringsAsFactors=F)
-x <- as.numeric(coal_cons$combined_heat.power_industrial_power)
+x <- as.numeric(coal_cons$tot_electric_power_industry)
 
 # Build dynamic linear regression model
 # note: initialize the algorithm using the initial level of y and the sample variance before the break
-build_DR <- function(param){dlmModReg(x, dV=exp(param[1]), dW=exp(param[2:3]), m0=c(y[1],0))}
+build_DR <- function(param){dlmModReg(x, dV=exp(param[1]), dW=c(0, param[2]), m0=c(y[1],0))}
 
 # Estimate MLE of parameters
-fit_DR <- dlmMLE(y, c(0.5, 0.5, 0.5), build_DR, hessian=TRUE) 
+fit_DR <- dlmMLE(y, c(0.5, 0.5), build_DR, hessian=TRUE) 
 #fit_DR$convergence
 parameters = unlist(build_DR(fit_DR$par)[c("V","W")])
 
@@ -617,7 +617,8 @@ y_filt_DR <- DR_Filt$f
 y_filt_DR[128] <- (y_filt_DR[127]+y_filt_DR[129])/2
 ```
 
-In Table \ref{tab:MLE_dr} are presented the MLEs of the unknown coefficients and the associated standard errors
+In Table \ref{tab:MLE_dr} are presented the MLEs of the unknown coefficients and the associated standard errors.
+
 ```{r}
 # MLE
 MLE_sigmaV  <- paste0(round(parameters[1],5))
@@ -687,7 +688,6 @@ ggplot(df_co_ci, aes(x=n_months)) +
         axis.title.y=element_text(family="Times", margin=margin(r=5)))
 ```
 
-
 ```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
 # Build df
 df_filt <- data.frame(louisiana_df$n_months, y, y_filt, struct_fit, y_filt_DR)
@@ -712,7 +712,6 @@ ggplot(df_filt, aes(x=n_months)) +
         theme(legend.justification = c("left", "top"),
               legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
 ```
-
 
 ```{r}
 source("DR_model_checking.R")
@@ -742,31 +741,41 @@ Note that, since both pollutants are by-products of incomplete fuel combustion, 
 ```{r}
 # Build df
 y_m <- data.frame(louisiana_df$m_CO_mean, louisiana_df$m_SO2_mean)
-y_m<-rename(y_m, c("CO"="louisiana_df.m_CO_mean", "SO2"="louisiana_df.m_SO2_mean"))
-y_m<-data.matrix(y_m)
+y_m <- rename(y_m, c("CO"="louisiana_df.m_CO_mean", "SO2"="louisiana_df.m_SO2_mean"))
+y_m <- data.matrix(y_m)
+m <- ncol(y_m)
 
 # Build SUR model
 build_SUR <- function(param){
-  mod <- dlmModReg(x, addInt=TRUE)
-  mod$FF <- matrix(c(1,1), nrow=1, ncol=2) %x% diag(2)
-  mod$JFF <- matrix(c(0,1), nrow=1, ncol=2) %x% diag(2)
-  mod$GG <- diag(4)
-  mod$V <- diag(c(exp(param[1]), exp(param[2])))
-    Wa <- matrix(c(exp(param[3]), param[4], exp(param[5]), param[6]), nrow=2, ncol=2)
-    Wb <- matrix(c(exp(param[7]), param[8], exp(param[9]), param[10]), nrow=2, ncol=2)
-    W <- bdiag(Wa, Wb) 
-  mod$W=W
-  mod$m0 <- rep(1,2*2) # modificare
-  mod$C0 <- diag(1*2) # modificare
+  mod <- dlmModReg(x)
+  mod$FF <- mod$FF %x% diag(m)
+  mod$JFF <- mod$JFF %x% diag(m)
+  mod$GG <- mod$GG %x% diag(m)
+  mod$V <- mod$V %x% matrix(0, m, m)
+  mod$V <- c(exp(param[1]), 0,
+             0, exp(param[2]))
+  ## Old version:
+  #mod$V <- diag(c(exp(param[1]), exp(param[2])))
+  mod$W <- mod$W %x% matrix(0, m, m)
+    Wa <- matrix(c(exp(param[3]), 0, 0, exp(param[4])), 2, 2)
+    Wb <- matrix(c(exp(param[5]), exp(param[6]), exp(param[7]), exp(param[8])), 2, 2)
+    W <- bdiag(Wa, Wb)
+  mod$W <- W
+  ## Alternative version (why doesn't it work?):
+  #mod$W <- c(exp(param[3]), 0, 0, 0,
+  #           0, exp(param[4]), 0, 0,
+  #           0, 0, exp(param[5]), exp(param[6]),
+  #           0, 0, exp(param[7]), exp(param[8]))
+  mod$m0 <- c(y_m[1,1], y_m[1,2], 0, 0)
   return(mod)
 }
 
 # Estimate MLE of parameters
-fit_SUR <- dlmMLE(y_m, parm=rep(0.5,10), build_SUR, hessian=TRUE)
+fit_SUR <- dlmMLE(y_m, parm=rep(0.5, 8), build_SUR, hessian=TRUE)
 unlist(build_SUR(fit_SUR$par)[c("V","W")])
 
-# Calculate standard errors of the MLE using delta method
-estVarLog_SUR <- solve(fit_SUR$hessian) # Error: system is exactly singular
+# Calculate SE of the MLE using delta method
+estVarLog_SUR <- solve(fit_SUR$hessian)
 estVar_SUR <- diag(exp(fit_SUR$par)) %*% estVarLog_SUR %*% + diag(exp(fit_SUR$par))
 SE_SUR <- sqrt(diag(estVar_SUR))
 
@@ -776,11 +785,14 @@ SUR <- build_SUR(fit_SUR$par)
 # Kalman filter
 SUR_Filt <- dlmFilter(y_m, SUR)
 SUR_sd <- residuals(SUR_Filt)$sd
+
+# Kalman smoother
+SUR_Smooth <- dlmSmooth(y_m, SUR)
 ```
 
 \subsection{(ADDITIONAL) Seemingly unrelated time series equations (SUTSE)}
 
-Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. From visual inspection of Figure \ref{fig:louisiana_plots} it appears that the two series display a similar type of qualitative behavior, that can be modeled by a linear growth DLM. To set up a multivariate model for the two series, we combine the two linear growth models in a comprehensive \textit{Seemingly unrelated time series equations model} (SUTSE). This is written as:
+Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. From visual inspection of Figure \ref{fig:louisiana_plots} it appears that the two series display a similar type of qualitative behavior, that can be modeled by a linear growth DLM. To set up a multivariate model for the two series, we combine the two linear growth models in a comprehensive \textit{seemingly unrelated time series equations model} (SUTSE). This is written as:
 \begin{align*}
   & Y_t = (F \otimes I_2) \theta_t + v_t, & v_t \sim \mathcal{N}_2(0,V) \\
   & \theta_t = (G \otimes I_2) \theta_{t-1} + w_t, & w_t \sim \mathcal{N}_4(0,W)
@@ -799,25 +811,34 @@ We assume that growth $\beta_{i,t}$ is correlated among pollutants. Moreover, to
 ```{r}
 # Build SUTSE model
 build_SUTSE <- function(param){
-  mod <- dlmModPoly(order=2)
-  mod$FF <- matrix(c(1,0), nrow=1, ncol=2) %x% diag(2)
-  mod$GG <- matrix(c(1,1,0,1), nrow=2, ncol=2) %x% diag(2)
-  mod$V <- matrix(c(exp(param[1]), param[2], exp(param[3]), param[4]), nrow=2, ncol=2)
-    Wu <- matrix(0, nrow=2, ncol=2)
-    Wb <- matrix(c(exp(param[5]), param[5], exp(param[7]), param[8]), nrow=2, ncol=2)
-    W <- bdiag(Wu, Wb)
-  mod$W=W
-  mod$m0 <- rep(1,2*2) # modificare
-  mod$C0 <- diag(2*2) # modificare
+  mod <- dlmModPoly(2)
+  mod$FF <- mod$FF %x% diag(m)
+  mod$GG <- mod$GG %x% diag(m)
+  mod$V <- mod$V %x% matrix(0, m, m)
+  mod$V <- c(exp(param[1]), exp(param[2]),
+             exp(param[3]), exp(param[4]))
+  ## Old version:
+  #mod$V <- matrix(c(exp(param[1]), param[2], exp(param[3]), param[4]), m, m)
+  mod$W <- mod$W %x% matrix(0, m, m)
+  mod$W <- c(0, 0, 0, 0,
+             0, 0, 0, 0,
+             0, 0, exp(param[5]), exp(param[6]),
+             0, 0, exp(param[7]), exp(param[8]))  
+  ## Old version:  
+    #Wu <- matrix(0, m, m)
+    #Wb <- matrix(c(exp(param[5]), param[5], exp(param[7]), param[8]), m, m)
+    #W <- bdiag(Wu, Wb)
+  #mod$W <- W
+  mod$m0 <- c(y_m[1,1], y_m[1,2], 0, 0)
   return(mod)
 }
-
+  
 # Estimate MLE of parameters
-fit_SUTSE <- dlmMLE(y_m, parm=rep(1,8), build_SUTSE, hessian=TRUE)
+fit_SUTSE <- dlmMLE(y_m, parm=rep(0.5, 8), build_SUTSE, hessian=TRUE)
 unlist(build_SUTSE(fit_SUTSE$par)[c("V","W")])
 
-# Calculate standard errors of the MLE using delta method
-estVarLog_SUTSE <- solve(fit_SUTSE$hessian) # Error: system is exactly singular
+# Calculate SE of the MLE using delta method
+estVarLog_SUTSE <- solve(fit_SUTSE$hessian)
 estVar_SUTSE <- diag(exp(fit_SUTSE$par)) %*% estVarLog_SUTSE %*% + diag(exp(fit_SUTSE$par))
 SE_SUTSE <- sqrt(diag(estVar_SUTSE))
 
