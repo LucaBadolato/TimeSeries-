@@ -551,17 +551,58 @@ ggarrange(A, B,
 ```
 
 \subsection{2.2. Seasonal Dynamic Linear Model}
+We now fit a seasonal dlm, suitable to capture the seasonal behavior of the process. As explained above, there are evidences that the frequency is 12 months. Indeed, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1} \dots \alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors. Therefore, in our representation we use an 11-dimensional state vector}. As usual, the model is specified as: 
+\begin{align*} 
+\begin{cases}
+   Y_t = \begin{bmatrix}1 & 0 & \cdots & 0 \end{bmatrix} \theta_t + v_t \quad & v_t \overset{iid}\sim
+  \mathcal{N}(0, \sigma_{V}^{2}) 
+  \\
+  \\
+   \theta_t = \begin{bmatrix} -1 &  & \cdots &  & -1 \\ 1 & 0  & 0 & \cdots & 0 \\ 0 & 1 & 0 & \cdots & 0 \\ \vdots &  & \ddots &  & \vdots \\ 0 & \cdots & 0& 1 & 0 \end{bmatrix} \theta_{t-1} + w_t \quad & w_t
+  \overset{iid}\sim \mathcal{N}_{2}(0, W = \begin{bmatrix}\sigma_{w}^{2} & 0 & \cdots  & 0 \\ 0 & 0 & \cdots  & 0 \\  \vdots &  & \ddots  & \vdots \\  0 & 0 & 0  & \cdots  \end{bmatrix})
+  \\
+  \end{cases}
+\end{align*}
+\
 
-SCRIVERE ALMENO IL MODELLO UTILIZZATO E UN PAIO DI RIGHE SUGLI IMPROVEMENT CHE DA. 
+\textcolor{red}{ WHICH ASSUMPTIONS?} Notice that the state vector $\theta_{t}$ contains 11 seasona factors properly permutated through the matrix $G$. Once again, we estimate the unkown variances by MLE, obtaining in Table \ref{tab:MLE_seasonal}: 
 ```{r}
-# Structural DLM with LG model and seasonality
-y_ts<-ts(y,frequency = 12)
-BSM <- StructTS(y_ts,type = "BSM")
-struct_fit <- BSM$fitted[,1]+BSM$fitted[,3]
+#Seasonal DLM 
+build_seasonal  <- function(param){dlmModSeas(frequency=12, dV = exp(param[1]), dW=c(exp(param[2]),0,0,0,0,0,0,0,0,0,0))}
+
+# Estimate MLE of parameters
+fit_seasonal <- dlmMLE(y, rep(0.5,2), build_seasonal, hessian=TRUE)
+#fit_stagional$convergence
+# Calculate standard errors of the MLE using delta method
+estVarLog_seasonal <- solve(fit_seasonal$hessian)
+estVar_seasonal <- diag(exp(fit_seasonal$par)) %*% estVarLog_seasonal %*% + diag(exp(fit_seasonal$par))
+SE_seasonal <- sqrt(diag(estVar_seasonal))
+
 ```
 
-```{r warning=FALSE}
-source("LG_model_checking.R")
+```{r}
+# MLE
+MLE_sigmaV  <- paste0(round(exp(fit_seasonal$par[1]),5))
+MLE_sigmaW <- paste0(round(exp(fit_seasonal$par[2]),9))
+
+# se(MLE)
+se_sigmaV  <- paste0('(', round(SE_seasonal[1],5), ')')
+se_sigmaW <- paste0('(', round(SE_seasonal[2],9), ')')
+
+# Summary table
+MLEsum <- data.frame(sigmaV=c(MLE_sigmaV, se_sigmaV),
+                     sigmaW=c(MLE_sigmaW, se_sigmaW))
+knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+             col.names = c("$\\hat{\\sigma}^2_{v}$",
+                           "$\\hat{\\sigma}^2_{w}$"),
+             escape=F, caption="Maximum Likelihood estimates of the unknown
+             parameters\\label{tab:MLE_seasonal}") %>%
+  column_spec(1:2, width="5em") %>%
+  collapse_rows(columns=1, latex_hline="none") %>%
+  footnote(general="Standard errors in parentheses.",
+           general_title="Note:",
+           footnote_as_chunk=T, escape=F) %>%
+  kable_styling(latex_options="hold_position")
 ```
 
 \subsection{2.3. Dynamic linear regression}
