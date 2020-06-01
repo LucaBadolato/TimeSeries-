@@ -81,10 +81,8 @@ Therefore, the purpose of the present work is to model through common statistica
 
 \section{Data}
 
-The dataset \texttt{US\_pollution} contains monthly and daily data about air pollution for each state in the United States\footnote{The preliminary analysis that led us from the raw data (with frequency of 4-intra-day observations) to the current dataset is made available in the GitHub repository at \url{https://github.com/SimoneArrigoni/US_pollution}. We relied on a moving average algorithm of order $120$ to smooth the data, assuming months of 30 days and a year of 360 days, with a minor approximation relative to the original data structure based on a actual 365 day-counts.}. It is provided by the U.S. Environmental Protection Agency (EPA). Specifically, four key indicators of air pollution are considered:
+The dataset \texttt{US\_pollution} contains monthly and daily data about air pollution for each state in the United States\footnote{The preliminary analysis that led us from the raw data (with frequency of 4-intra-day observations) to the current dataset is made available in the GitHub repository at \url{https://github.com/SimoneArrigoni/US_pollution}. We relied on a moving average algorithm of order $120$ to smooth the data, assuming months of 30 days and a year of 360 days, with a minor approximation relative to the original data structure based on a actual 365 day-counts.}. It is provided by the U.S. Environmental Protection Agency (EPA). Specifically, four key indicators of air pollution are considered: \textbf{Carbon monoxide ($\text{CO}$)}, \textbf{Sulfur dioxide ($\text{SO}_{2}$)},\textbf{Ground level ozone ($\text{O}_{3}$)} and \textbf{Nitrogen dioxide ($\text{NO}_{2}$)}. Particularly suitable for our analysis: 
 \begin{itemize}
-\item \textbf{Ground level ozone ($\text{O}_{3}$)}: Bad ozone forms near the ground when pollutants (emitted by sources such as cars, power plants, industrial boilers, refineries, and chemical plants) react chemically in sunlight. Since it is more likely to form during warmer months, we expect to see a seasonal component. 
-\item \textbf{Nitrogen dioxide ($\text{NO}_{2}$)}: It is produced as a result of road traffic and other fossil fuel combustion processes. Furthermore, its presence in air contributes to the formation and modification of other air pollutants, such as particle pollution.
 \item \textbf{Carbon monoxide ($\text{CO}$)}:  It forms from incomplete combustions mainly from vehicle exhausts (roughly 75\% of all carbon monoxide emissions nationwide and up to 95\% in cities), fuel combustion in industrial processes and natural sources. Cold temperatures make combustion less complete, therefore we expect also in this case a seasonal behavior. 
 \item \textbf{Sulfur dioxide ($\text{SO}_{2}$)}: It is produced when sulfur-containing fuels are burned. It is common mainly in large industrial complexes. 
 \end{itemize}
@@ -120,9 +118,7 @@ knitr::kable(cormat, "latex", booktabs=T, align="c", escape=F,
 kable_styling(latex_options="hold_position")
 ```
 
-Provided that the correlation between pollutants shows significant differences in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution [@Logan1981], a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field [@Voulgarakis2011]. $\text{CO}$ is also positively correlated with $\text{SO}_2$ which is justified by the fact that they share a main source of production, i.e. coal extraction and combustion.
-
-Other studies report that, in the US, $\text{O}_3$ is on average positively correlated with $\text{NO}_2$, which is opposite to our empirical findings about Louisiana, where they are slightly negatively correlated. A possible explanation can be given by substitution effects: an increase of nitrogen dioxide levels can be associated to the use of more fossil fuels that produce $\text{NO}_2$ instead of others. This might be related to Louisiana's fixed effects, however further research would be beyond the purpose of our study.
+Provided that the correlation between pollutants shows significant differences in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution [@Logan1981], a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field [@Voulgarakis2011]. $\text{CO}$ is also positively correlated with $\text{SO}_2$ which is justified by the fact that they share a main source of production, i.e. coal extraction and combustion\footnote{Other studies report that, in the US, $\text{O}_3$ is on average positively correlated with $\text{NO}_2$, which is opposite to our empirical findings about Louisiana, where they are slightly negatively correlated. A possible explanation can be given by substitution effects: an increase of nitrogen dioxide levels can be associated to the use of more fossil fuels that produce $\text{NO}_2$ instead of others. This might be related to Louisiana's fixed effects, however further research would be beyond the purpose of our study.}.
 
 We plot in Figure \ref{fig:louisiana_plots} the time series for the four pollutants under study to give a first qualitative description of the phenomenon.
 
@@ -802,7 +798,7 @@ ggplot(df_co_ci, aes(x=n_months)) +
 source("DR_model_checking.R")
 ```
 
-Let's plot the filtering states estimates obtained with the models fitted so far (Figure \ref{fig:filter_est}).
+Let's plot the filtering states estimates obtained with the models fitted so far (Figure \ref{fig:filter_est})\footnote{for sake of clarity we decided to report only the temporal window around the breakpoint.}.
 
 ```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
 # Build df
@@ -813,7 +809,7 @@ colnames(df_filt) <- c("n_months", "y", "y_filt_LG", "y_filt_LG_v", "y_filt_LG_v
 colors <- c("Observed data" = "black", "Time-invariant linear growth" = "springgreen4", 
             "Time-variant linear growth"="blue", "Time-variant linear growth + Seasonality"="orange",
             "Dynamic regression"="red")
-ggplot(df_filt, aes(x=n_months)) +
+ggplot(df_filt[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data"), size=0.4) +
   geom_line(aes(y=y_filt_LG, color = "Time-invariant linear growth"), size=0.4) +
   geom_line(aes(y=y_filt_LG_v, color = "Time-variant linear growth"), size=0.4) +
@@ -823,14 +819,14 @@ ggplot(df_filt, aes(x=n_months)) +
   #geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
   theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
-  scale_y_continuous(breaks=seq(0,3,0.25)) +
-  scale_x_continuous(breaks=seq(0,186,24),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  scale_y_continuous(breaks=seq(0,1,0.2)) +
+  scale_x_continuous(breaks=seq(61,109,24),
+                     labels=format(seq(as.Date("2006/1/1"),as.Date("2011/12/31"), "2 years"), "%Y")) +
   theme(axis.text.x=element_text(family="Times", margin=margin(t=2)),
         axis.text.y=element_text(family="Times", margin=margin(r=2)),
         axis.title.x=element_text(size=8, family="Times", margin=margin(t=2)),
         axis.title.y=element_text(size=8, family="Times", margin=margin(r=2)),
-        panel.grid.major=element_line(size=0.5),
+        panel.grid.major=element_line(size=0.02),
         panel.grid.minor=element_blank(),) +
         scale_color_manual(values=colors) +
         theme(legend.justification=c("left", "top"), legend.text=element_text(family="Times"),
