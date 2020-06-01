@@ -61,7 +61,7 @@ library(latex2exp)
 library(kableExtra)
 library(ggpubr)
 library(reshape2)
-library(dlm)
+library(cowplot)
 
 # Settings
 knitr::opts_chunk$set(message = FALSE, 
@@ -130,51 +130,62 @@ We plot in Figure \ref{fig:louisiana_plots} the time series for the four polluta
 
 # Time series plots
 O3 <- ggplot(louisiana_df, aes(x=n_months, y=m_O3_mean)) +
-  geom_line(color="steelblue", size=0.7) +
+  geom_line(color="black", size=0.7) +
   theme_bw(base_size=9) +
   labs(y=expression(O[3]~(ppm)), x="Year") +
-  scale_x_continuous(breaks=seq(0,200,25),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  theme(axis.text.x=element_text(size=19, family="Times", margin=margin(t=8)),
-        axis.text.y=element_text(size=19, family="Times", margin=margin(r=8)),
-        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),
+        plot.margin=unit(c(0,1,1,0), "cm"))
 
 NO2 <- ggplot(louisiana_df, aes(x=n_months, y=m_NO2_mean)) +
-  geom_line(color="steelblue", size=0.7) +
+  geom_line(color="black", size=0.7) +
   theme_bw(base_size=9) +
   labs(y=expression(NO[2]~(ppb)), x="Year") +
-  scale_x_continuous(breaks=seq(0,200,25),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  theme(axis.text.x=element_text(size=19, family="Times", margin=margin(t=8)),
-        axis.text.y=element_text(size=19, family="Times", margin=margin(r=8)),
-        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),
+        plot.margin=unit(c(0,0,1,1), "cm"))
 
 CO <- ggplot(louisiana_df, aes(x=n_months, y=m_CO_mean)) +
-  geom_line(color="steelblue", size=0.7) +
+  geom_line(color="black", size=0.7) +
   theme_bw(base_size=9) +
   labs(y=expression(CO~(ppm)), x="Year") +
-  scale_x_continuous(breaks=seq(0,200,25),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  theme(axis.text.x=element_text(size=19, family="Times", margin=margin(t=8)),
-        axis.text.y=element_text(size=19, family="Times", margin=margin(r=8)),
-        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),
+        plot.margin=unit(c(1,1,0,0), "cm"))
 
 SO2 <- ggplot(louisiana_df, aes(x=n_months, y=m_SO2_mean)) +
-  geom_line(color="steelblue", size=0.7) +
+  geom_line(color="black", size=0.7) +
   theme_bw(base_size=9) +
   labs(y=expression(SO[2]~(ppb)), x="Year") +
-  scale_x_continuous(breaks=seq(0,200,25),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  theme(axis.text.x=element_text(size=19, family="Times", margin=margin(t=8)),
-        axis.text.y=element_text(size=19, family="Times", margin=margin(r=8)),
-        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),        
+        plot.margin=unit(c(1,0,0,1), "cm"))
 
-ggarrange(O3, NO2, CO, SO2,
-          ncol=2, nrow=2)
+ggarrange(O3, NO2, CO, SO2, ncol=2, nrow=2, align="v")
 ```
 
 The time series, each with its specific features, do not in general look stationary. Hence, they cannot be analized with the common models based on the assumption of covariance-stationarity, such as the well-known ARMA models.
@@ -244,6 +255,7 @@ MLEsum <- data.frame(state=c(rep("S=1",2), rep("S=2",2), rep("S=3",2)),
                      mu=c(mu1hat, SE_mu1hat, mu2hat, SE_mu2hat,mu3hat, SE_mu3hat),
                      beta=c(beta1hat, SE_beta1hat, beta2hat, SE_beta2hat, beta3hat, SE_beta3hat),
                      sd=c(sd1hat, SE_sd1hat, sd2hat, SE_sd2hat, sd3hat, SE_sd3hat))
+
 knitr::kable(MLEsum, "latex", booktabs=T, align="c",
              col.names=c("State",
                          "$\\hat{\\mu}_{MLE}$",
@@ -267,7 +279,6 @@ The series with HMM estimated state-dependent means and state-dependent standard
 # Decoding
 # Get the estimated state for each timestep 
 estStates_HMM <- posterior(HMM_fit)
-
 HMM_summary <- depmixS4::summary(HMM_fit)
 ```
 
@@ -287,17 +298,17 @@ HMM_main <- ggplot(df_to_plot, aes(x=xtime, y=yvalue)) +
   geom_point(aes(x=xtime, y=mu+beta*xtime), col="blue", size=.8) +
   geom_ribbon(aes(ymin=mu+beta*xtime-2*sigma, ymax=mu+beta*xtime+2*sigma), alpha=.1) +
   theme_bw() +
-  theme(plot.title=element_text(hjust=0.5)) +
   labs(y=expression(CO~(ppm)), x="Year") +
-  scale_x_continuous(breaks=seq(0,200,25),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"),"2 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
   scale_y_continuous(breaks=seq(0,1.5,0.25)) +
-   theme(plot.margin=unit(c(0.5,1,0.5,0.5), "cm"),
-         plot.title=element_text(size=10, margin=margin(0,0,10,0)),
-         axis.text.x=element_text(size=20, family="Times", margin=margin(t=8)),
-         axis.text.y=element_text(size=20, family="Times", margin=margin(r=8)),
+   theme(axis.text.x=element_text(size=25, family="Times", margin=margin(t=8)),
+         axis.text.y=element_text(size=25, family="Times", margin=margin(r=8)),
          axis.title.x=element_text(size=25, family="Times", margin=margin(t=8)),
-         axis.title.y=element_text(size=25, family="Times", margin=margin(r=8)))
+         axis.title.y=element_text(size=25, family="Times", margin=margin(r=8)),
+         panel.grid.major=element_line(size=0.5),
+         panel.grid.minor=element_blank(),
+         plot.margin=unit(c(0.5,1,0.5,0.5), "cm"))
 
 # Chart with Viterbi states and posterior probabilities
 HMM_additional_CO <- data.frame(time_index=louisiana_df$n_months,
@@ -311,20 +322,22 @@ lab_names <- c('S1'="Post. S=1",'S2'="Post. S=2",'state'="Vit. states")
 
 HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
   geom_line(color="black", size=0.7) +
-  facet_wrap(variable~., scales="free", ncol=1,
+  facet_wrap(variable~., scales="free_y", ncol=1,
              strip.position="left",
              labeller = as_labeller(lab_names)) +
   labs(x="Year") +
   scale_y_continuous(breaks=my_breaks) +
-  scale_x_continuous(breaks=seq(0,200,25),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
   theme_bw() +
   theme(panel.spacing=unit(1.5, "lines"),
-        axis.text.x=element_text(size=20, family="Times", margin=margin(t=8)),
-        axis.text.y=element_text(size=20, family="Times", margin=margin(r=8, l=8)),
+        axis.text.x=element_text(size=25, family="Times", margin=margin(t=8)),
+        axis.text.y=element_text(size=25, family="Times", margin=margin(r=8, l=8)),
         axis.title.x=element_text(size=25, family="Times", margin=margin(t=8)),
         axis.title.y=element_blank(),
-        strip.text=element_text(size=17, family="Times",face="bold"),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),
+        strip.text=element_text(size=25, family="Times",face="bold"),
         strip.background=element_rect(colour="black", fill=NA),
         strip.placement="outside")
 
@@ -332,7 +345,7 @@ HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
 ## ggarrange(HMM_main, HMM_additional, ncol=1, widths = c(6,0.3), heights = c(1,0.8))
 
 # Option 2
-ggarrange(HMM_main, HMM_additional, widths=c(4,2))
+ggarrange(HMM_main, HMM_additional, widths=c(4,2), align="h")
 ```
 
 Explanations of these results, which confirm a stable change in the evolution process of $\text{CO}$ in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in US electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Wien agreement)\footnote{A deeper analysis on the factors explaining this shift can be found in Feng et al. (2015), in which they analyse the series of $\text{CO}_2$.}. 
@@ -341,7 +354,7 @@ Explanations of these results, which confirm a stable change in the evolution pr
 source("HMM_model_checking.R")
 ```
 
-DUBBIO RESIDUI: PENSAVO DI INSERIRE QUI IL CORRELOGRAMMA E IL QQPLOT, COMMENTANDO CHE PER GLI ALTRI MODELLI NON LI AVREMMO RIPORTATI E COSì VIA E MI è VENUTO UN DUBBIO PERCHè VOLEVO STANDARDIZZARLI. COME LI STANDARDIZZO ESSENDOCI TRE VARIANZE? BISOGNA TESTARE FORSE LE TRE EQUAZIONI UNA PER VOLTA IN BASE ALLO STATO? NEL CASO PRENDO IL PRIMO STATO E PLOTTO I DUE GRAFICI COMMENTANTO IL TUTTO.
+\textcolor{red}{DUBBIO RESIDUI: PENSAVO DI INSERIRE QUI IL CORRELOGRAMMA E IL QQPLOT, COMMENTANDO CHE PER GLI ALTRI MODELLI NON LI AVREMMO RIPORTATI E COSì VIA E MI è VENUTO UN DUBBIO PERCHè VOLEVO STANDARDIZZARLI. COME LI STANDARDIZZO ESSENDOCI TRE VARIANZE? BISOGNA TESTARE FORSE LE TRE EQUAZIONI UNA PER VOLTA IN BASE ALLO STATO? NEL CASO PRENDO IL PRIMO STATO E PLOTTO I DUE GRAFICI COMMENTANTO IL TUTTO.}
 
 \section{Section 2. Univariate DLMs}
 
@@ -370,7 +383,7 @@ where
 
 ```{r echo=F, warning=F}
 # Time invariant linear growth model
-build_LG <- function(param) {dlm( m0=c(y[1],0), C0 = 0.001*diag(2), FF= matrix(c(1,0), nr=1), V = exp(param[1]), GG = matrix(c(1,0,1,1), nr=2), W = diag(c(exp(param[2]), exp(param[3]))) )}
+build_LG <- function(param){dlm(m0 = c(y[1],0), C0 = 0.001*diag(2), FF = matrix(c(1,0), nr=1), V = exp(param[1]), GG = matrix(c(1,0,1,1), nr=2), W = diag(c(exp(param[2]), exp(param[3]))))}
 
 # Estimate MLE of parameters
 fit_LG <- dlmMLE(y, rep(0.5,3), build_LG, hessian=TRUE)
@@ -401,6 +414,7 @@ se_sigmaW2 <- paste0('(', round(SE_LG[3],9), ')')
 MLEsum <- data.frame(sigmaV=c(MLE_sigmaV, se_sigmaV),
                      sigmaW1=c(MLE_sigmaW1, se_sigmaW1),
                      sigmaW2=c(MLE_sigmaW2, se_sigmaW2))
+
 knitr::kable(MLEsum, "latex", booktabs=T, align="c",
              col.names = c("$\\hat{\\sigma}^2_{v}$",
                            "$\\hat{\\sigma}^2_{w_1}$",
@@ -423,14 +437,14 @@ LG <- build_LG(fit_LG$par)
 LG_Filt <- dlmFilter(y, LG)
 
 # Remove the first item (m_0) in the vector of filtered states
-filt_est = dropFirst(LG_Filt$m)
+filt_est_LG = dropFirst(LG_Filt$m)
 
 # Compute the vector of state variances and standard deviations
-list_c <- dlmSvd2var(LG_Filt$U.C, LG_Filt$D.C)
-vol_C <- sqrt(unlist(list_c))
+list_c_LG <- dlmSvd2var(LG_Filt$U.C, LG_Filt$D.C)
+vol_C_LG <- sqrt(unlist(list_c_LG))
 
 # One step ahead forecast
-y_filt <- LG_Filt$f
+y_filt_LG <- LG_Filt$f
 
 # Signal-to-noise ratio
 S_to_N <- matrix(NA,2,1)
@@ -446,8 +460,9 @@ For this purpose, we estimated a linear growth model specified as above but cons
 
 ```{r echo=F, warning=F}
 # Time variant linear growth model
-build_LG_v <- function(param) {dlm( m0=c(y[1],0), C0 = 0.001*diag(2), FF= matrix(c(1,0), nr=1), V = 1, GG = matrix(c(1,0,1,1), nr=2), W = diag(c(exp(param[3]), exp(param[4]))), JV = 1, X = rep( c(exp(param[1]), exp(param[2])), c(84, 102)) )}
+build_LG_v <- function(param){dlm(m0 = c(y[1],0), C0 = 0.001*diag(2), FF = matrix(c(1,0), nr=1), V = 1, GG = matrix(c(1,0,1,1), nr=2), W = diag(c(exp(param[3]), exp(param[4]))), JV = 1, X = rep(c(exp(param[1]), exp(param[2])), c(84, 102)))}
 
+# Estimate MLE of parameters
 fit_LG_v <- dlmMLE(y, rep(0.5, 4), build_LG_v, hessian=TRUE)
 
 # Calculate SE of the MLE using delta method
@@ -498,52 +513,61 @@ LG_v <- build_LG_v(fit_LG_v$par)
 LG_Filt_v <- dlmFilter(y, LG_v)
 
 # Remove the first item (m_0) in the vector of filtered states
-filt_est_v = dropFirst(LG_Filt_v$m)
+filt_est_LG_v = dropFirst(LG_Filt_v$m)
 
 # Compute the vector of state variances and standard deviations
-list_c_v <- dlmSvd2var(LG_Filt_v$U.C, LG_Filt_v$D.C)
-vol_C_v <- sqrt(unlist(list_c_v))
+list_c_LG_v <- dlmSvd2var(LG_Filt_v$U.C, LG_Filt_v$D.C)
+vol_C_LG_v <- sqrt(unlist(list_c_LG_v))
 
 # One step ahead forecast
-y_filt_v <- LG_Filt_v$f
+y_filt_LG_v <- LG_Filt_v$f
 ```
 
 In Figure \ref{Fig:innovation process plot} we compare the standardized innovation process of the two specifications.The second specification reports an improvement, as the innovation process does not report anymore a clear change in variance and looks more close to a random walk\footnote{Note that there is still a not captured seasonal behaviour and some other noises that we will try to capture through a regression component}. 
 
 ```{r, fig.width=20, fig.height=3.5, out.width='100%', fig.cap="\\label{Fig:innovation process plot}Standardized one-step-ahead forecast errors. (a) Time invariant model; (b) Time variant model."}
-res_LG <- residuals(LG_Filt, sd=FALSE)
-res_LG = data.frame(res_LG,louisiana_df$n_months)
-colnames(res_LG) = c("res", "time")
 
-A <- ggplot(res_LG, aes(x=time)) +
-  geom_line(aes(y=res), size=0.4) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor = element_line(size=0.5)) +
-  labs(x="Year", y="Residuals") +
-  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  scale_y_continuous(breaks=seq(-4.5,4.5,1), limits = c(-3,4.5)) +
-  theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
+res_LG <- residuals(LG_Filt, sd=FALSE)
+res_LG <- data.frame(res_LG,louisiana_df$n_months)
+colnames(res_LG) <- c("res", "time")
 
 res_LG_v <- residuals(LG_Filt_v, sd=FALSE)
 res_LG_v = data.frame(res_LG_v,louisiana_df$n_months)
 colnames(res_LG_v) = c("res", "time")
 
-B <- ggplot(res_LG_v, aes(x=time)) +
-  geom_line(aes(y=res), size=0.4) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor = element_line(size=0.5)) +
+# Innovation process plot
+A <- ggplot(res_LG, aes(x=time)) +
+  geom_line(aes(y=res), size=0.5) +
+  theme_bw(base_size=9.5) +
   labs(x="Year", y="Residuals") +
-  scale_x_continuous(breaks=seq(0,200,25),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  scale_y_continuous(breaks=seq(-4.5,4.5,1), limits = c(-3,4.5)) +
-  theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  scale_y_continuous(breaks=seq(-5,5,1), limits = c(-3,4)) +
+  theme(axis.text.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),
+        plot.margin=unit(c(0,1,0,1.2), "cm"))
 
-ggarrange(A, B,
-          ncol=2, nrow=1, labels = c("(a)", "(b)"))
+B <- ggplot(res_LG_v, aes(x=time)) +
+  geom_line(aes(y=res), size=0.5) +
+  theme_bw(base_size=9.5) +
+  labs(x="Year", y="Residuals") +
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  scale_y_continuous(breaks=seq(-5,5,1), limits = c(-3,4)) +
+  theme(axis.text.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),
+        plot.margin=unit(c(0,0,0,1.2), "cm"))
+
+ggarrange(A, B, ncol=2, nrow=1, align="h",
+          labels=c("(a)", "(b)"), font.label=list(size=30, family="Times"))
 ```
 
 \subsection{2.2. Seasonal Dynamic Linear Model}
@@ -560,36 +584,35 @@ We now fit a seasonal dlm, suitable to capture the seasonal behavior of the proc
   \\
   \end{cases}
 \end{align*}
-\
 
-\textcolor{red}{WHICH ASSUMPTIONS?} Notice that the state vector $\theta_{t}$ contains 11 seasona factors properly permutated through the matrix $G$. Once again, we estimate the unkown variances by MLE, obtaining in Table \ref{tab:MLE_seasonal}: 
+\textcolor{red}{WHICH ASSUMPTIONS?} Notice that the state vector $\theta_{t}$ contains 11 seasonal factors properly permutated through the matrix $G$. Once again, we estimate the unkown variances by MLE, obtaining in Table \ref{tab:MLE_seasonal}: 
 ```{r}
 # Seasonal DLM 
-build_seasonal  <- function(param){dlmModSeas(frequency=12, dV = exp(param[1]), dW=c(exp(param[2]),0,0,0,0,0,0,0,0,0,0))}
+build_seas <- function(param){dlmModSeas(frequency = 12, dV = exp(param[1]), dW = c(exp(param[2]),0,0,0,0,0,0,0,0,0,0))}
 
 # Estimate MLE of parameters
-fit_seasonal <- dlmMLE(y, rep(0.5,2), build_seasonal, hessian=TRUE)
+fit_seas <- dlmMLE(y, rep(0.5,2), build_seas, hessian=TRUE)
 #fit_stagional$convergence
 
-# Calculate standard errors of the MLE using delta method
-estVarLog_seasonal <- solve(fit_seasonal$hessian)
-estVar_seasonal <- diag(exp(fit_seasonal$par)) %*% estVarLog_seasonal %*% + diag(exp(fit_seasonal$par))
-SE_seasonal <- sqrt(diag(estVar_seasonal))
-
+# Calculate SE of the MLE using delta method
+estVarLog_seas <- solve(fit_seas$hessian)
+estVar_seas <- diag(exp(fit_seas$par)) %*% estVarLog_seas %*% + diag(exp(fit_seas$par))
+SE_seas <- sqrt(diag(estVar_seas))
 ```
 
 ```{r}
 # MLE
-MLE_sigmaV  <- paste0(round(exp(fit_seasonal$par[1]),5))
-MLE_sigmaW <- paste0(round(exp(fit_seasonal$par[2]),9))
+MLE_sigmaV  <- paste0(round(exp(fit_seas$par[1]),5))
+MLE_sigmaW <- paste0(round(exp(fit_seas$par[2]),9))
 
 # se(MLE)
-se_sigmaV  <- paste0('(', round(SE_seasonal[1],5), ')')
-se_sigmaW <- paste0('(', round(SE_seasonal[2],9), ')')
+se_sigmaV  <- paste0('(', round(SE_seas[1],5), ')')
+se_sigmaW <- paste0('(', round(SE_seas[2],9), ')')
 
 # Summary table
 MLEsum <- data.frame(sigmaV=c(MLE_sigmaV, se_sigmaV),
                      sigmaW=c(MLE_sigmaW, se_sigmaW))
+
 knitr::kable(MLEsum, "latex", booktabs=T, align="c",
              col.names = c("$\\hat{\\sigma}^2_{v}$",
                            "$\\hat{\\sigma}^2_{w}$"),
@@ -605,16 +628,16 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
 
 In order to evaluate the improvement that a seasonal component has in our analysis, we combined it with the time variant linear growth model previously specified and plot in Figure \ref{Fig: Innovation_process_combined} the innovation process series. Comparing this plot with the previously reported one, it is possible to see that we are now able to capture a month-specific effects. The series looks like a random walk plus noise and shows only a marginal noise, that we try to capture in the following sections.    
 
-```{r, fig.width=10, fig.height=3.5, out.width='50%', fig.cap="\\label{Fig: Innovation_process_combined}innovation process plot: time variant linear growth model + seasonal dlm."}
-
-Seas <- build_seasonal(fit_seasonal$par)
+```{r}
+# Put MLE in the model + Add DLMs
+Seas <- build_seas(fit_seas$par)
 LG_v_seas <- LG_v + Seas
 
 # Kalman filter
 LG_v_seas_Filt <- dlmFilter(y, LG_v_seas)
 
 # Remove the first item (m_0) in the vector of filtered states
-LG_v_seas_filt_est = dropFirst(LG_v_seas_Filt$m)
+filt_est_LG_v_seas = dropFirst(LG_v_seas_Filt$m)
 
 # Compute the vector of state variances and standard deviations
 list_c_LG_v_seas <- dlmSvd2var(LG_v_seas_Filt$U.C, LG_v_seas_Filt$D.C)
@@ -622,21 +645,26 @@ vol_C_LG_v_seas <- sqrt(unlist(list_c_LG_v_seas))
 
 # One step ahead forecast
 y_filt_LG_v_seas <- LG_v_seas_Filt$f
+```
+
+```{r, fig.width=10, fig.height=3.5, out.width='50%', fig.cap="\\label{Fig: Innovation_process_combined}Innovation process plot: time variant linear growth model + seasonal DLM."}
 
 res_LG_v_seas <- residuals(LG_v_seas_Filt, sd=FALSE)
 res_LG_v_seas = data.frame(res_LG_v_seas,louisiana_df$n_months)
 colnames(res_LG_v_seas) = c("res", "time")
 
+# Innovation process plot
 ggplot(res_LG_v_seas, aes(x=time)) +
   geom_line(aes(y=res), size=0.4) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor = element_line(size=0.5)) +
+  theme_bw(base_size=9) +
+  theme(panel.grid.major=element_line(size=0.5)) +
   labs(x="Year", y="Residuals") +
-  scale_x_continuous(breaks=seq(0,200,25),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  theme(axis.text=element_text(size=19),
-        axis.title.x=element_text(size=21, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=21, family="Times", margin=margin(r=5)))
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=25, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=25, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=25, family="Times", margin=margin(r=5)))
 ```
 
 \subsection{2.3. Dynamic linear regression}
@@ -680,16 +708,14 @@ DR <- build_DR(fit_DR$par)
 DR_Filt <- dlmFilter(y, DR)
 
 # Remove the first item (m_0) in the vector of filtered states
-filt_est = dropFirst(DR_Filt$m)
+filt_est_DR = dropFirst(DR_Filt$m)
 
 # Compute the vector of state variances and standard deviations
-list_c <- dlmSvd2var(DR_Filt$U.C, DR_Filt$D.C)
-vol_C <- sqrt(unlist(list_c))
+list_c_DR <- dlmSvd2var(DR_Filt$U.C, DR_Filt$D.C)
+vol_C_DR <- sqrt(unlist(list_c_DR))
 
 # One step ahead forecast
 y_filt_DR <- DR_Filt$f
-# We observed an outlier at prediction 128, that has been removed. The data point has been filled by linear interpolation
-y_filt_DR[128] <- (y_filt_DR[127]+y_filt_DR[129])/2
 ```
 
 In Table \ref{tab:MLE_dr} are presented the MLEs of the unknown coefficients and the associated standard errors.
@@ -709,6 +735,7 @@ se_sigmaW2 <- paste0('(', round(SE_DR[3],9), ')')
 MLEsum <- data.frame(sigmaV=c(MLE_sigmaV, se_sigmaV),
                      sigmaW1=c(MLE_sigmaW1, se_sigmaW1),
                      sigmaW2=c(MLE_sigmaW2, se_sigmaW2))
+
 knitr::kable(MLEsum, "latex", booktabs=T, align="c",
              col.names = c("$\\hat{\\sigma}^2_{v}$",
                            "$\\hat{\\sigma}^2_{w_1}$",
@@ -725,18 +752,16 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
 
 Let's now compute the smoothing estimates of $\theta_t=(\alpha_t, \beta_t)'$, for $t=0, \ldots, T$. The smoothing estimates of $\beta_t$ are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:smooth_est}.
 
-```{r, fig.width=7, fig.height=3, fig.cap="\\label{fig:smooth_est} Smoothing estimates of beta with credible intervals"}
+```{r, fig.width=6, fig.height=2, fig.cap="\\label{fig:smooth_est} Smoothing estimates of beta with credible intervals"}
 # Smoothing estimates
-cO_Smooth = dlmSmooth(y, DR)
+cO_Smooth <- dlmSmooth(y, DR)
 smooth_state_est <- dropFirst(cO_Smooth$s[,2])
 
 # Smoothing variances
 smooth_var <- dlmSvd2var(cO_Smooth$U.S, cO_Smooth$D.S)
 smooth_sd <- (unlist(smooth_var))^.5
 beta_sd <- vector(mode = "numeric", length = length(smooth_var))
-for (i in 1:length(smooth_var)){
-  beta_sd[i] <- smooth_sd[i*4]
-}
+for (i in 1:length(smooth_var)){ beta_sd[i] <- smooth_sd[i*4] }
 smooth_sd_est <- dropFirst(beta_sd)
 
 # C.I. upper and lower bounds
@@ -746,50 +771,65 @@ lower_smooth <- smooth_state_est - 1.64*smooth_sd_est # lower bound of 90% C.I.
 # Create df
 df_co_ci <- data.frame(louisiana_df$n_months, smooth_state_est, upper_smooth, lower_smooth)
 colnames(df_co_ci) = c("n_months", "smooth_state_est", "upper_smooth","lower_smooth")
+
 # Plot the smoothing estimates with their credible intervals
 ggplot(df_co_ci, aes(x=n_months)) +
   geom_line(aes(y=smooth_state_est), size=0.5) +
-  geom_line(aes(y=upper_smooth), color = "red", linetype = "dashed", size=0.2) +
-  geom_line(aes(y=lower_smooth), color = "red", linetype = "dashed", size=0.2) +
+  geom_line(aes(y=upper_smooth), color="red", linetype="dashed", size=0.2) +
+  geom_line(aes(y=lower_smooth), color="red", linetype="dashed", size=0.2) +
   geom_ribbon(aes(ymin=lower_smooth, ymax=upper_smooth), alpha=.1, fill="red") +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor = element_line(size=0.5)) +
-  labs(x="Year", y="Beta", color = "black") +
-  scale_x_continuous(breaks=seq(0,200,25),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
+  theme_bw(base_size=9) +
+  theme(panel.grid.major=element_line(size=0.5)) +
+  labs(x="Year", y="Beta", color="black") +
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
   scale_y_continuous() +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
-```
-
-```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
-# Build df
-df_filt <- data.frame(louisiana_df$n_months, y, y_filt, struct_fit, y_filt_DR)
-colnames(df_filt) = c("n_months", "y", "y_filt","struct_fit", "y_filt_DR")
-
-# Plot
-colors <- c("Observed data" = "black", "Linear Growth" = "springgreen4", 
-            "Basic structural model"="blue", "Dynamic regression"="red")
-ggplot(df_filt, aes(x=n_months)) +
-  geom_line(aes(y=y, color="Observed data"), size=0.4) +
-  geom_line(aes(y=y_filt, color = "Linear Growth"), size=0.4) +
-  geom_line(aes(y=struct_fit, color="Basic structural model"), size=0.4) +
-  geom_line(aes(y=y_filt_DR, color="Dynamic regression"), size=0.4) +
-  #geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
-  theme_classic(base_size=9.5) +
-  theme(panel.grid.minor = element_line(size=0.5)) +
-  labs(x="Year", y=expression(CO~(ppm)), color = "") +
-  scale_y_continuous(breaks=seq(0,1.5,0.25)) +
-  scale_x_continuous(breaks=seq(0,200,25),labels=format(seq(as.Date("2001/1/1"),as.Date("2017/6/1"), "2 years"), "%Y")) +
-  theme(axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5))) +
-        scale_color_manual(values = colors) +
-        theme(legend.justification = c("left", "top"),
-              legend.box.just = "left", legend.margin = margin(2, 2, 2, 2))
+  theme(axis.text.x=element_text(size=15, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=15, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=15, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=15, family="Times", margin=margin(r=5)))
 ```
 
 ```{r}
 source("DR_model_checking.R")
+```
+
+Let's plot the filtering states estimates obtained with the models fitted so far (Figure \ref{fig:filter_est}).
+
+```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
+# Build df
+df_filt <- data.frame(louisiana_df$n_months, y, y_filt_LG, y_filt_LG_v, y_filt_LG_v_seas, y_filt_DR) # + struct_fit,
+colnames(df_filt) <- c("n_months", "y", "y_filt_LG", "y_filt_LG_v", "y_filt_LG_v_seas", "y_filt_DR") # + "struct_fit",
+
+# Plot
+colors <- c("Observed data" = "black", "Time-invariant linear growth" = "springgreen4", 
+            "Time-variant linear growth"="blue", "Time-variant linear growth + Seasonality"="orange",
+            "Dynamic regression"="red")
+ggplot(df_filt, aes(x=n_months)) +
+  geom_line(aes(y=y, color="Observed data"), size=0.4) +
+  geom_line(aes(y=y_filt_LG, color = "Time-invariant linear growth"), size=0.4) +
+  geom_line(aes(y=y_filt_LG_v, color = "Time-variant linear growth"), size=0.4) +
+  geom_line(aes(y=y_filt_LG_v_seas, color = "Time-variant linear growth + Seasonality"), size=0.4) +
+  geom_line(aes(y=y_filt_DR, color="Dynamic regression"), size=0.4) +
+  #geom_line(aes(y=struct_fit, color="Basic structural model"), size=0.4) +
+  #geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
+  theme_bw(base_size=9) +
+  theme(panel.grid.major=element_line(size=0.5)) +
+  labs(x="Year", y=expression(CO~(ppm)), color = "") +
+  scale_y_continuous(breaks=seq(0,1.5,0.25)) +
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(size=15, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=15, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=15, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=15, family="Times", margin=margin(r=5))) +
+        scale_color_manual(values=colors) +
+        theme(legend.justification=c("left", "top"), legend.text=element_text(size=12, family="Times"),
+              legend.box.just="bottom", legend.margin=margin(2, 2, 2, 2))
+
+# Alternative legend position
+#        theme(legend.position="bottom", legend.text=element_text(size=12, family="Times"),
+#              legend.spacing.x=unit(1, "cm"))
 ```
 
 \section{Section 3. Multivariate DLM}
@@ -933,7 +973,28 @@ source("forecasting_accuracy.R")
 ```
 
 ```{r, include=T}
-# Forecasting accuracy: Summary table
+# Forecasting accuracy: Summary table (v1)
+for_accuracy <- data.frame(#HMM      = c(MSE_HMM,        MAE_HMM,        MAPE_HMM),
+                           LG        = c(MSE_LG,         MAE_LG,         MAPE_LG),
+                           #LG_2     = c(MSE_LG_2,       MAE_LG_2,       MAPE_LG_2),
+                           #LG_3     = c(MSE_LG_3,       MAE_LG_3,       MAPE_LG_3),
+                           LG_v      = c(MSE_LG_v,       MAE_LG_v,       MAPE_LG_v),
+                           LG_v_seas = c(MSE_LG_v_seas,  MAE_LG_v_seas,  MAPE_LG_v_seas),
+                           DR        = c(MSE_DR,         MAE_DR,         MAPE_DR),
+                           SUR       = c(MSE_SUR,        MAE_SUR,        MAPE_SUR),
+                           SUTSE     = c(MSE_SUTSE,      MAE_SUTSE,      MAPE_SUTSE))
+
+knitr::kable(for_accuracy, "latex", booktabs=T, align="c",
+             col.names=c('HMM', 'Time-invar LG', 'Time-var LG', 'Time-var LG + Seas', 'DR', 'SUR', 'SUTSE'),
+             row.names=c('MSE','MAE','MAPE'),
+             escape=F, caption="Measures of predictive accuracy") %>%
+  column_spec(1:8, width="4em") %>%
+  kable_styling(latex_options="hold_position")
+
+
+########################## old version of the table below here ##########################
+
+# Forecasting accuracy: Summary table (v2)
 tabf <- matrix(nrow=3, ncol=8)
 rownames(tabf) <- c('MSE','MAE','MAPE')
 colnames(tabf) <- c('HMM', 'Lin. growth', 'Const. speed', 'Int. RW', 'BSM','Dyn. regr.', 'SUR', 'SUTSE')
