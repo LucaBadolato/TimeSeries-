@@ -194,16 +194,16 @@ The time series, each with its specific features, do not in general look station
 
 $\text{CO}$ is perhaps, among the pollutants, the most tightly linked with the economic and industrial network of a country. Consequently, we select this as the series of main interest for our analysis, being the purpose of this work tracking the evolution of air pollution relative to an underlying economic process.
 
-As an exploratory step, we decompose the time series in its structural components using an additive model\footnote{For sake of brevity we do not report the plots of the decomposed components.}. The decomposition confirms the presence of a quarterly seasonal component and shows a negative trend up to a clear breakpoint between 2007 and 2008. The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
+As an exploratory step, we decompose the time series in its structural components using an additive model\footnote{For sake of brevity we do not report the plots of the decomposed components.}. The decomposition confirms the presence of a quarterly seasonal component and shows a negative trend up to a clear breakpoint between 2007 and 2009. The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
 
 \section{Section 1. HMM}
 
-These features suggest that the process may be described by a homogeneous \textit{Hidden Markov Model} (HMM) with a trend component. Therefore, we estimate a homogeneous HMM with two states, specified as:
+These features suggest that the process may be described by a homogeneous \textit{hidden Markov model} (HMM) with a trend component. Therefore, we estimate a homogeneous HMM with two states, specified as:
 \begin{align*}
 \begin{cases}
   Y_{t}=\mu_{1} + \beta_{1}t + \varepsilon_{t}, &
   \varepsilon_{t}\overset{iid}{\sim}N(0,\sigma_{1}^2) \qquad \text{if} \; S_{t}=1 \\
-  Y_{t}=\mu_{2}+ + \beta_{2}t + \varepsilon_{t}, &
+  Y_{t}=\mu_{2} + \beta_{2}t + \varepsilon_{t}, &
   \varepsilon_{t}\overset{iid}{\sim}N(0,\sigma_{2}^2) \qquad \text{if} \; S_{t}=2 \\
 \end{cases}
 \end{align*}
@@ -302,10 +302,10 @@ HMM_main <- ggplot(df_to_plot, aes(x=xtime, y=yvalue)) +
   scale_x_continuous(breaks=seq(0,186,24),
                      labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
   scale_y_continuous(breaks=seq(0,1.5,0.25)) +
-   theme(axis.text.x=element_text(size=18, family="Times", margin=margin(t=8)),
-         axis.text.y=element_text(size=18, family="Times", margin=margin(r=8)),
-         axis.title.x=element_text(size=18, family="Times", margin=margin(t=8)),
-         axis.title.y=element_text(size=18, family="Times", margin=margin(r=8)),
+   theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=8)),
+         axis.text.y=element_text(size=20, family="Times", margin=margin(r=8)),
+         axis.title.x=element_text(size=20, family="Times", margin=margin(t=8)),
+         axis.title.y=element_text(size=20, family="Times", margin=margin(r=8)),
          panel.grid.major=element_line(size=0.5),
          panel.grid.minor=element_blank(),
          plot.margin=unit(c(0.5,1,0.5,0.5), "cm"))
@@ -327,17 +327,17 @@ HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
              labeller = as_labeller(lab_names)) +
   labs(x="Year") +
   scale_y_continuous(breaks=my_breaks) +
-  scale_x_continuous(breaks=seq(0,186,24),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(0,186,36),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "3 years"), "%Y")) +
   theme_bw() +
   theme(panel.spacing=unit(1.5, "lines"),
-        axis.text.x=element_text(size=18, family="Times", margin=margin(t=8)),
-        axis.text.y=element_text(size=18, family="Times", margin=margin(r=8, l=8)),
-        axis.title.x=element_text(size=18, family="Times", margin=margin(t=8)),
+        axis.text.x=element_text(size=20, family="Times", margin=margin(t=8)),
+        axis.text.y=element_text(size=20, family="Times", margin=margin(r=8, l=8)),
+        axis.title.x=element_text(size=20, family="Times", margin=margin(t=8)),
         axis.title.y=element_blank(),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        strip.text=element_text(size=20, family="Times",face="bold"),
+        strip.text=element_text(size=20, family="Times", face="bold"),
         strip.background=element_rect(colour="black", fill=NA),
         strip.placement="outside")
 
@@ -364,15 +364,15 @@ We now try to model the series of interest through \textit{dynamic linear model}
 
 The first DLM specification we consider to examine $\text{CO}$ is a time invariant linear growth model, which is suitable to capture both a latent level, $\mu_{t}$, and a time varying splope in its dynamics, $\beta_{t}$. As usual, it is defined as following: 
 \begin{eqnarray*}
-  & Y_t = F \; \theta_t + v_t, \quad & v_t \overset{iid}\sim \mathcal{N}(0, {\sigma_v}^2) \\
-  & \theta_t =  G \; \theta_{t-1} + w_t, \quad & w_t \overset{iid}\sim \mathcal{N}_{2}(0, W)
+  & Y_t = F \theta_t + v_t, \quad & v_t \overset{iid}\sim \mathcal{N}(0, \sigma_v^2) \\
+  & \theta_t =  G \theta_{t-1} + w_t, \quad & w_t \overset{iid}\sim \mathcal{N}_{2}(0, W)
 \end{eqnarray*}
 where
 \begin{equation*}
   \theta_t = \begin{pmatrix} \mu_{t} \\ \beta_{t} \end{pmatrix}, \quad
   F = \begin{bmatrix} 1 & 0 \end{bmatrix}, \quad
   G = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}, \quad
-  W = \begin{bmatrix} \sigma_{w_1}^{2} & 0 \\ 0 & \sigma_{w_1}^{2} \end{bmatrix}, \quad
+  W = \begin{bmatrix} \sigma_{w_1}^{2} & 0 \\ 0 & \sigma_{w_2}^{2} \end{bmatrix}, \quad
   \theta_0 \sim \mathcal{N}_{2}(m_0, C_0) \quad \text{ and } \quad \theta_{0} \indep (v_t) \indep (w_t).
 \end{equation*}
 
@@ -394,18 +394,18 @@ SE_LG <- sqrt(diag(estVar_LG))
 source("LG_alternative_models.R")
 ```
 
-In Table \ref{tab:MLE_lgm} are presented the MLEs of the unknown coefficients and the associated standard errors\footnote{We treat $\psi = (\sigma_{V}^{2}, \; \sigma_{W_{1}}^{2}, \;\sigma_{W_{2}}^{2})$ as unknown parameters and we estimate them by maximum likelihood. Then, we perform the analysis of interest plugging them in the model as if they were known costants. We follow this customary way to proceed also in the following sections.}.
+In Table \ref{tab:MLE_lgm} are presented the MLEs of the unknown coefficients and the associated standard errors\footnote{We treat $\psi = (\sigma_{v}^{2}, \; \sigma_{w_1}^{2}, \;\sigma_{w_2}^{2})$ as unknown parameters and we estimate them by maximum likelihood. Then, we perform the analysis of interest plugging them in the model as if they were known costants. We follow this customary way to proceed also in the following sections.}.
 
 ```{r}
 # MLE
-MLE_sigmaV  <- paste0(round(exp(fit_LG$par[1]),5))
+MLE_sigmaV  <- paste0(round(exp(fit_LG$par[1]),4))
 MLE_sigmaW1 <- paste0(round(exp(fit_LG$par[2]),9))
-MLE_sigmaW2 <- paste0(round(exp(fit_LG$par[3]),9))
+MLE_sigmaW2 <- paste0(round(exp(fit_LG$par[3]),7))
 
 # se(MLE)
-se_sigmaV  <- paste0('(', round(SE_LG[1],5), ')')
-se_sigmaW1 <- paste0('(', round(SE_LG[2],9), ')')
-se_sigmaW2 <- paste0('(', round(SE_LG[3],9), ')')
+se_sigmaV  <- paste0('(', round(SE_LG[1],4), ')')
+se_sigmaW1 <- paste0('(', round(SE_LG[2],6), ')')
+se_sigmaW2 <- paste0('(', round(SE_LG[3],7), ')')
 
 # Summary table
 MLEsum <- data.frame(sigmaV=c(MLE_sigmaV, se_sigmaV),
@@ -453,7 +453,7 @@ S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 
 As expected, a first graphical inspection of the standardized one-step-ahead forecast error series (reported in Figure \ref{Fig:innovation process plot}(a)) shows both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{v}^{2}$ to be time dependent.
 
-For this purpose, we estimated a linear growth model specified as above but considering  $\sigma_{v,t}^{2} = \sigma_{v,1}^{2}$ for observations before 2008 and  $\sigma_{v,t}^{2} = \sigma_{v,2}^{2}$ for observations after 2008. The MLE estimators are reported in Table \ref{tab:MLE_lgm_v}.
+For this purpose, we estimated a linear growth model specified as above but considering  $\sigma_{vt}^{2} = \sigma_{v1}^{2}$ for observations before 2008 and $\sigma_{vt}^{2} = \sigma_{v2}^{2}$ for observations after 2008. The MLE estimators are reported in Table \ref{tab:MLE_lgm_v}.
 
 ```{r echo=F, warning=F}
 # Time variant linear growth model
@@ -470,15 +470,15 @@ SE_LG_v <- sqrt(diag(estVar_LG_v))
 
 ```{r}
 # MLE
-MLE_sigmaV1_v  <- paste0(round(exp(fit_LG_v$par[1]),5))
-MLE_sigmaV2_v  <- paste0(round(exp(fit_LG_v$par[2]),5))
-MLE_sigmaW1_v  <- paste0(round(exp(fit_LG_v$par[3]),9))
+MLE_sigmaV1_v  <- paste0(round(exp(fit_LG_v$par[1]),4))
+MLE_sigmaV2_v  <- paste0(round(exp(fit_LG_v$par[2]),4))
+MLE_sigmaW1_v  <- paste0(round(exp(fit_LG_v$par[3]),4))
 MLE_sigmaW2_v  <- paste0(round(exp(fit_LG_v$par[4]),12))
 
 # se(MLE)
-se_sigmaV1_v  <- paste0('(', round(SE_LG_v[1],5), ')')
-se_sigmaV2_v  <- paste0('(', round(SE_LG_v[2],5), ')')
-se_sigmaW1_v  <- paste0('(', round(SE_LG_v[3],9), ')')
+se_sigmaV1_v  <- paste0('(', round(SE_LG_v[1],4), ')')
+se_sigmaV2_v  <- paste0('(', round(SE_LG_v[2],4), ')')
+se_sigmaW1_v  <- paste0('(', round(SE_LG_v[3],4), ')')
 se_sigmaW2_v  <- paste0('(', round(SE_LG_v[4],9), ')')
 
 # Summary table
@@ -535,7 +535,7 @@ colnames(res_LG_v) = c("res", "time")
 # Innovation process plot
 A <- ggplot(res_LG, aes(x=time)) +
   geom_line(aes(y=res), size=0.5) +
-  theme_bw(base_size=9.5) +
+  theme_bw(base_size=9) +
   labs(x="Year", y="Residuals") +
   scale_x_continuous(breaks=seq(0,186,24),
                      labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
@@ -550,15 +550,15 @@ A <- ggplot(res_LG, aes(x=time)) +
 
 B <- ggplot(res_LG_v, aes(x=time)) +
   geom_line(aes(y=res), size=0.5) +
-  theme_bw(base_size=9.5) +
+  theme_bw(base_size=9) +
   labs(x="Year", y="Residuals") +
   scale_x_continuous(breaks=seq(0,186,24),
                      labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
   scale_y_continuous(breaks=seq(-5,5,1), limits = c(-3,4)) +
-  theme(axis.text.x=element_text(size=18, family="Times", margin=margin(t=5)),
-        axis.text.y=element_text(size=18, family="Times", margin=margin(r=5)),
-        axis.title.x=element_text(size=18, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=18, family="Times", margin=margin(r=5)),
+  theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
         plot.margin=unit(c(0,0,0,0.8), "cm"))
@@ -569,16 +569,21 @@ ggarrange(A, B, ncol=2, nrow=1, labels=c("(a)", "(b)"),
 
 \subsection{2.2. Seasonal Dynamic Linear Model}
 
-We now fit a seasonal dlm, suitable to capture the seasonal behavior of the process. As explained above, there are evidences that the frequency is 12 months. Indeed, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1} \dots \alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors. Therefore, in our representation we use an 11-dimensional state vector}. As usual, the model is specified as: 
+We now fit a seasonal DLM, suitable to capture the seasonal behavior of the process. As explained above, there are evidences that the frequency is 12 months. Indeed, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors. Therefore, in our representation we use an 11-dimensional state vector}. As usual, the model is specified as: 
 \begin{align*} 
 \begin{cases}
-   Y_t = \begin{bmatrix} 1 & 0 & \cdots & 0 \end{bmatrix} \theta_t + v_t \quad & v_t \overset{iid}\sim
-  \mathcal{N}(0, \sigma_{V}^{2}) 
+   Y_t = \begin{bmatrix} 1 & 0 & \cdots & 0 \end{bmatrix} \theta_t + v_t,
+   \quad & v_t \overset{iid}\sim \mathcal{N}(0, \sigma_{v}^{2}) 
   \\
-  \\
-   \theta_t = \begin{bmatrix} -1 & & \cdots & & -1 \\ 1 & 0 & 0 & \cdots & 0 \\ 0 & 1 & 0 & \cdots & 0 \\ \vdots & & \ddots &  & \vdots \\ 0 & \cdots & 0 & 1 & 0 \end{bmatrix} \theta_{t-1} + w_t \quad & w_t
-  \overset{iid}\sim \mathcal{N}_{2}(0, W = \begin{bmatrix}\sigma_{w}^{2} & 0 & \cdots  & 0 \\ 0 & 0 & \cdots & 0 \\  \vdots & & \ddots & \vdots \\  0 & 0 & \cdots & 0 \end{bmatrix})
-  \\
+   \theta_t = \begin{bmatrix} -1      &        & \cdots &        & -1     \\
+                               1      & 0      & 0      & \cdots & 0      \\ 
+                               0      & 1      & 0      & \cdots & 0      \\ 
+                               \vdots &        & \ddots &        & \vdots \\
+                               0      & \cdots & 0      & 1      & 0      \end{bmatrix} \theta_{t-1} + w_t,
+   \quad & w_t \overset{iid}\sim \mathcal{N}_2(0, W=\begin{bmatrix} \sigma_w^2 & 0 & \cdots & 0      \\
+                                                                    0          & 0 & \cdots & 0      \\ 
+                                                                    \vdots     &   & \ddots & \vdots \\
+                                                                    0          & 0 & \cdots & 0 \end{bmatrix})
   \end{cases}
 \end{align*}
 
@@ -600,12 +605,12 @@ SE_seas <- sqrt(diag(estVar_seas))
 
 ```{r}
 # MLE
-MLE_sigmaV  <- paste0(round(exp(fit_seas$par[1]),5))
+MLE_sigmaV  <- paste0(round(exp(fit_seas$par[1]),4))
 MLE_sigmaW <- paste0(round(exp(fit_seas$par[2]),9))
 
 # se(MLE)
-se_sigmaV  <- paste0('(', round(SE_seas[1],5), ')')
-se_sigmaW <- paste0('(', round(SE_seas[2],9), ')')
+se_sigmaV  <- paste0('(', round(SE_seas[1],4), ')')
+se_sigmaW <- paste0('(', round(SE_seas[2],6), ')')
 
 # Summary table
 MLEsum <- data.frame(sigmaV=c(MLE_sigmaV, se_sigmaV),
@@ -653,23 +658,26 @@ colnames(res_LG_v_seas) = c("res", "time")
 
 # Innovation process plot
 ggplot(res_LG_v_seas, aes(x=time)) +
-  geom_line(aes(y=res), size=0.4) +
+  geom_line(aes(y=res), size=0.5) +
   theme_bw(base_size=9) +
-  theme(panel.grid.major=element_line(size=0.5)) +
   labs(x="Year", y="Residuals") +
   scale_x_continuous(breaks=seq(0,186,24),
                      labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
-  theme(axis.text.x=element_text(size=25, family="Times", margin=margin(t=5)),
-        axis.text.y=element_text(size=25, family="Times", margin=margin(r=5)),
-        axis.title.x=element_text(size=25, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=25, family="Times", margin=margin(r=5)))
+  scale_y_continuous(breaks=seq(-5,5,1), limits = c(-4,3)) +
+  theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),
+        plot.margin=unit(c(0,0,0,0.8), "cm"))
 ```
 
 \subsection{2.3. Dynamic linear regression}
 
 We take as explanatory variable $x_t$ Louisiana's coal consumption for electricity generation (in particular, for the totality of the electric power industry). The model we consider is the following:
 \begin{eqnarray*} 
-  & y_t = \alpha_t + \beta_t x_t + v_t, & v_t \overset{iid}\sim \mathcal{N}(0, \sigma_{V}^{2}) \\
+  & y_t = \alpha_t + \beta_t x_t + v_t, & v_t \overset{iid}\sim \mathcal{N}(0, \sigma_{v}^{2}) \\
   & \theta_t = G \theta_{t-1} + w_t, & w_t \overset{iid}\sim \mathcal{N}(0, W)
 \end{eqnarray*}
 where
@@ -678,7 +686,7 @@ where
   \theta_0 \sim \mathcal{N}_2(m_0, C_0), \quad
   \theta_0 \indep (v_t) \indep (w_t)
 \end{equation*}
-and $G=I_2$ and $W=\text{diag}(\sigma_{W_{1}}^{2}, \sigma_{W_{2}}^{2})$, i.e the two time varying coefficients $\alpha_t$ and $\beta_t$ are modeled as independent random walks. 
+and $G=I_2$ and $W=\text{diag}(\sigma_{w_1}^{2}, \sigma_{w_2}^{2})$, i.e the two time varying coefficients $\alpha_t$ and $\beta_t$ are modeled as independent random walks. 
 
 ```{r}
 # Import dataset
@@ -721,12 +729,12 @@ In Table \ref{tab:MLE_dr} are presented the MLEs of the unknown coefficients and
 
 ```{r}
 # MLE
-MLE_sigmaV  <- paste0(round(parameters[1],5))
-MLE_sigmaW1 <- paste0(round(parameters[2],5))
+MLE_sigmaV  <- paste0(round(parameters[1],4))
+MLE_sigmaW1 <- paste0(round(parameters[2],9))
 MLE_sigmaW2 <- paste0(round(parameters[5],9))
 
 # se(MLE)
-se_sigmaV  <- paste0('(', round(SE_DR[1],5), ')')
+se_sigmaV  <- paste0('(', round(SE_DR[1],4), ')')
 se_sigmaW1 <- paste0('(', round(SE_DR[2],5), ')')
 se_sigmaW2 <- paste0('(', round(SE_DR[3],9), ')')
 
@@ -773,20 +781,21 @@ colnames(df_co_ci) = c("n_months", "smooth_state_est", "upper_smooth","lower_smo
 
 # Plot the smoothing estimates with their credible intervals
 ggplot(df_co_ci, aes(x=n_months)) +
-  geom_line(aes(y=smooth_state_est), size=0.5) +
+  geom_line(aes(y=smooth_state_est), size=0.4) +
   geom_line(aes(y=upper_smooth), color="red", linetype="dashed", size=0.2) +
   geom_line(aes(y=lower_smooth), color="red", linetype="dashed", size=0.2) +
   geom_ribbon(aes(ymin=lower_smooth, ymax=upper_smooth), alpha=.1, fill="red") +
   theme_bw(base_size=9) +
-  theme(panel.grid.major=element_line(size=0.5)) +
   labs(x="Year", y="Beta", color="black") +
+  scale_y_continuous() +
   scale_x_continuous(breaks=seq(0,186,24),
                      labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
-  scale_y_continuous() +
-  theme(axis.text.x=element_text(family="Times", margin=margin(t=5)),
-        axis.text.y=element_text(family="Times", margin=margin(r=5)),
-        axis.title.x=element_text(family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(family="Times", margin=margin(r=5)))
+  theme(axis.text.x=element_text(family="Times", margin=margin(t=2)),
+        axis.text.y=element_text(family="Times", margin=margin(r=2)),
+        axis.title.x=element_text(size=8, family="Times", margin=margin(t=2)),
+        axis.title.y=element_text(size=8, family="Times", margin=margin(r=2)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank())
 ```
 
 ```{r}
@@ -813,25 +822,26 @@ ggplot(df_filt, aes(x=n_months)) +
   #geom_line(aes(y=struct_fit, color="Basic structural model"), size=0.4) +
   #geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
   theme_bw(base_size=9) +
-  theme(panel.grid.major=element_line(size=0.5)) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
-  scale_y_continuous(breaks=seq(0,1.5,0.25)) +
+  scale_y_continuous(breaks=seq(0,3,0.25)) +
   scale_x_continuous(breaks=seq(0,186,24),
                      labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
-  theme(axis.text.x=element_text(size=8, family="Times", margin=margin(t=5)),
-        axis.text.y=element_text(size=8, family="Times", margin=margin(r=5)),
-        axis.title.x=element_text(size=8, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=8, family="Times", margin=margin(r=5))) +
+  theme(axis.text.x=element_text(family="Times", margin=margin(t=2)),
+        axis.text.y=element_text(family="Times", margin=margin(r=2)),
+        axis.title.x=element_text(size=8, family="Times", margin=margin(t=2)),
+        axis.title.y=element_text(size=8, family="Times", margin=margin(r=2)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),) +
         scale_color_manual(values=colors) +
         theme(legend.justification=c("left", "top"), legend.text=element_text(family="Times"),
-              legend.box.just="bottom", legend.margin=margin(2,2,2,2))
+              legend.box.just="bottom", legend.margin=margin(2,0,2,2))
 
 # Alternative legend position
 #        theme(legend.position="bottom", legend.text=element_text(size=12, family="Times"),
 #              legend.spacing.x=unit(1, "cm"))
 ```
 
-\section{Section 3. Multivariate DLM}
+\section{Section 3. Multivariate DLMs}
 
 \subsection{3.1. Seemingly unrelated regression (SUR)}
 
@@ -903,7 +913,7 @@ SUR_sd <- residuals(SUR_Filt)$sd
 SUR_Smooth <- dlmSmooth(y_m, SUR)
 ```
 
-\subsection{(ADDITIONAL) 3.2. Seemingly unrelated time series equations (SUTSE)}
+\subsection{3.2. Seemingly unrelated time series equations (SUTSE)}
 
 Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. From visual inspection of Figure \ref{fig:louisiana_plots} it appears that the two series display a similar type of qualitative behavior, that can be modeled by a linear growth DLM. To set up a multivariate model for the two series, we combine the two linear growth models in a comprehensive \textit{seemingly unrelated time series equations model} (SUTSE). This is written as:
 \begin{eqnarray*}
@@ -973,7 +983,8 @@ source("forecasting_accuracy.R")
 
 ```{r, include=T}
 # Forecasting accuracy: Summary table (v1)
-for_accuracy <- data.frame(#HMM       = c(MSE_HMM,        MAE_HMM,        MAPE_HMM),
+for_accuracy <- data.frame(measure   = c("MSE",          "MAE",          "MAPE"),
+                           #HMM      = c(MSE_HMM,        MAE_HMM,        MAPE_HMM),
                            LG        = c(MSE_LG,         MAE_LG,         MAPE_LG),
                            #LG_2     = c(MSE_LG_2,       MAE_LG_2,       MAPE_LG_2),
                            #LG_3     = c(MSE_LG_3,       MAE_LG_3,       MAPE_LG_3),
@@ -984,12 +995,12 @@ for_accuracy <- data.frame(#HMM       = c(MSE_HMM,        MAE_HMM,        MAPE_H
                            SUTSE     = c(MSE_SUTSE,      MAE_SUTSE,      MAPE_SUTSE))
 
 knitr::kable(for_accuracy, "latex", booktabs=T, align="c",
-             col.names=c('Time-invar LG', 'Time-var LG', 'Time-var LG + Seas', 'DR', 'SUR', 'SUTSE'),
-             #col.names=c('HMM', 'Time-invar LG', 'Time-var LG', 'Time-var LG + Seas', 'DR', 'SUR', 'SUTSE'),
+             col.names=c('', 'Time-invar LG', 'Time-var LG', 'Time-var LG + Seas', 'DR', 'SUR', 'SUTSE'),
+             #col.names=c('Measure', 'HMM', 'Time-invar LG', 'Time-var LG', 'Time-var LG + Seas',
+             #            'DR', 'SUR', 'SUTSE'),
              escape=F, caption="Measures of predictive accuracy") %>%
-  column_spec(1:8, width="7em") %>%
+  column_spec(1:9, width="5em") %>%
   kable_styling(latex_options="hold_position")
-
 
 ########################## old version of the table below here ##########################
 
