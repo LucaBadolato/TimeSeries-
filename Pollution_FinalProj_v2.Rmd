@@ -832,6 +832,8 @@ ggplot(df_filt[61:109,], aes(x=n_months)) +
 #        theme(legend.position="bottom", legend.text=element_text(size=12, family="Times"),
 #              legend.spacing.x=unit(1, "cm"))
 ```
+It is possible to see the effect that the signal-to-noise ratio has on the filtering estimates. For example, the time invariant linear growth model reports a relative magnitude of $W$ on $V$ higher than the time variant one and, consequently, its filtered values tend to follow more closely the data. 
+
 \section{Section 3. Multivariate DLMs}
 
 \subsection{3.1. Seemingly unrelated regression (SUR)}
