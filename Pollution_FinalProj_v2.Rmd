@@ -371,8 +371,7 @@ where
   W = \begin{bmatrix} \sigma_{w_1}^{2} & 0 \\ 0 & \sigma_{w_2}^{2} \end{bmatrix}, \quad
   \theta_0 \sim \mathcal{N}_{2}(m_0, C_0) \quad \text{ and } \quad \theta_{0} \indep (v_t) \indep (w_t).
 \end{equation*}
-
-\textcolor{red}{STARTING PRIORS TO BE COMMENTED.}
+Particularly, we decided to impose as starting condition $m_0 = \begin{pmatrix} y_{1} \\ 0 \end{pmatrix}$ and $C_0 = \begin{bmatrix} 0.001 & 0 \\ 0 & 0.001 \end{bmatrix}$, a relatively large variance to take into account our uncertainty. 
 
 ```{r echo=F, warning=F}
 # Time invariant linear growth model
@@ -444,8 +443,6 @@ S_to_N <- matrix(NA,2,1)
 S_to_N[1] <- exp(fit_LG$par[2]) * exp(-fit_LG$par[1])
 S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 ```
-
-\textcolor{red}{COMMENTO: SIGNAL-TO-NOISE RATIO MOLTO BASSO DA METTERE IN FONDO...}
 
 As expected, a first graphical inspection of the standardized one-step-ahead forecast error series (reported in Figure \ref{Fig:innovation process plot}(a)) shows both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{v}^{2}$ to be time dependent.
 
@@ -567,7 +564,6 @@ ggarrange(A, B, ncol=2, nrow=1, labels=c("(a)", "(b)"),
 
 We now fit a seasonal DLM, suitable to capture the seasonal behavior of the process. As explained above, there are evidences that the frequency is 12 months. Indeed, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors. Therefore, in our representation we use an 11-dimensional state vector}. As usual, the model is specified as: 
 \begin{align*} 
-\begin{cases}
    Y_t = \begin{bmatrix} 1 & 0 & \cdots & 0 \end{bmatrix} \theta_t + v_t,
    \quad & v_t \overset{iid}\sim \mathcal{N}(0, \sigma_{v}^{2}) 
   \\
@@ -580,7 +576,6 @@ We now fit a seasonal DLM, suitable to capture the seasonal behavior of the proc
                                                                     0          & 0 & \cdots & 0      \\ 
                                                                     \vdots     &   & \ddots & \vdots \\
                                                                     0          & 0 & \cdots & 0 \end{bmatrix})
-  \end{cases}
 \end{align*}
 
 \textcolor{red}{WHICH ASSUMPTIONS?} Notice that the state vector $\theta_{t}$ contains 11 seasonal factors properly permutated through the matrix $G$. Once again, we estimate the unkown variances by MLE, obtaining in Table \ref{tab:MLE_seasonal}.
@@ -755,7 +750,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
 
 Let's now compute the smoothing estimates of $\theta_t=[\alpha_t \; \beta_t]'$, for $t=0,\ldots,T$. The smoothing estimates of $\beta_t$ are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:smooth_est}.
 
-```{r, fig.width=6, fig.height=2, fig.cap="\\label{fig:smooth_est} Smoothing estimates of beta with credible intervals"}
+```{r, fig.width=6, fig.height=2, out.width='50%', fig.cap="\\label{fig:smooth_est} Smoothing estimates of beta with credible intervals"}
 # Smoothing estimates
 cO_Smooth <- dlmSmooth(y, DR)
 smooth_state_est <- dropFirst(cO_Smooth$s[,2])
@@ -798,9 +793,10 @@ ggplot(df_co_ci, aes(x=n_months)) +
 source("DR_model_checking.R")
 ```
 
-Let's plot the filtering states estimates obtained with the models fitted so far (Figure \ref{fig:filter_est})\footnote{for sake of clarity we decided to report only the temporal window around the breakpoint.}.
+\subsection{2.4. Performance comparison}
 
-```{r, fig.width=7, fig.height=2, fig.cap="\\label{fig:filter_est} Filtering states estimates"}
+We treat the data under study as streaming data, periodically updated by EPA. Therefore, our main interest is forecasting, which is also a useful way to check the performance of the different specifications considered so far. To properly begin our comparison, we plot the filtering states estimates obtained with the models fitted in the previous sections (Figure \ref{fig:filter_est})\footnote{for sake of clarity we decided to report only the temporal window around the breakpoint.}.
+```{r, fig.width=7, fig.height=2, out.width='75%', fig.cap="\\label{fig:filter_est} Filtering states estimates"}
 # Build df
 df_filt <- data.frame(louisiana_df$n_months, y, y_filt_LG, y_filt_LG_v, y_filt_LG_v_seas, y_filt_DR) # + struct_fit,
 colnames(df_filt) <- c("n_months", "y", "y_filt_LG", "y_filt_LG_v", "y_filt_LG_v_seas", "y_filt_DR") # + "struct_fit",
@@ -836,7 +832,6 @@ ggplot(df_filt[61:109,], aes(x=n_months)) +
 #        theme(legend.position="bottom", legend.text=element_text(size=12, family="Times"),
 #              legend.spacing.x=unit(1, "cm"))
 ```
-
 \section{Section 3. Multivariate DLMs}
 
 \subsection{3.1. Seemingly unrelated regression (SUR)}
