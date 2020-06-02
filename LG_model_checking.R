@@ -112,7 +112,7 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
   cowplot::plot_grid(plot.acf)
 }
 
-b <- ggplot.corr(data=res_LG$res, lag.max=24, ci=0.95, large.sample.size=FALSE, horizontal=TRUE)
+b <- ggplot.corr(data=res_LG$res, lag.max=12, ci=0.95, large.sample.size=FALSE, horizontal=TRUE)
 
 c <- ggplot(res_LG, aes(sample=res)) +
   stat_qq(col="blue") +

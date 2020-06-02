@@ -346,12 +346,6 @@ ggarrange(HMM_main, HMM_additional, widths=c(4,2), align="h")
 
 Explanations of these results, which confirm a stable change in the evolution process of $\text{CO}$ in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in U.S. electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Wien agreement)\footnote{A deeper analysis on the factors explaining this shift can be found in Feng et al. (2015), in which they analyse the series of $\text{CO}_2$.}. 
 
-```{r warning=FALSE}
-source("HMM_model_checking.R")
-```
-
-\textcolor{red}{DUBBIO RESIDUI: PENSAVO DI INSERIRE QUI IL CORRELOGRAMMA E IL QQPLOT, COMMENTANDO CHE PER GLI ALTRI MODELLI NON LI AVREMMO RIPORTATI E COSì VIA E MI è VENUTO UN DUBBIO PERCHè VOLEVO STANDARDIZZARLI. COME LI STANDARDIZZO ESSENDOCI TRE VARIANZE? BISOGNA TESTARE FORSE LE TRE EQUAZIONI UNA PER VOLTA IN BASE ALLO STATO? NEL CASO PRENDO IL PRIMO STATO E PLOTTO I DUE GRAFICI COMMENTANTO IL TUTTO.}
-
 \section{Section 2. Univariate DLMs}
 
 We now try to model the series of interest through \textit{dynamic linear model} (DLM) specifications. Indeed, DLMs are very attractive, since they allow a natural interpretation of the process as the combination of several components, such as trend, seasonal or regressive ones. As a consequence, we consider different specifications which, simply combined, are able to explain all the features previously described\footnote{Therefore we are aware (and we expect) that by construction each model will miss some process characteristics. For example, residuals checking for a linear growth model may shows a seasonal behaviour but this is fully in conformity with the additive structure we consider.}. 
@@ -560,6 +554,62 @@ ggarrange(A, B, ncol=2, nrow=1, labels=c("(a)", "(b)"),
           font.label=list(size=20, family="Times"))
 ```
 
+Finally, once the model is specified, it is possible to do perform the analysis of interest, such as filtering and k-step ahead forecasting. Furthermore, it is possible to check the model assumptions testing the properties of the innovation process e.g. through a correlogram and a qq-plot. We report in Figure \ref{Fig: summary} a summary related to the time-invariant linear growth model. 
+
+```{r, fig.width=20, fig.height=3.5, out.width='100%', fig.cap="\\label{Fig: summary}Time-invariant linear growth model: (a) 10-step-ahead forecast; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors."}
+#10-STEP AHEAD FORECAST
+fore <- dlmForecast(LG_Filt, nAhead=10, sampleNew=3)
+
+f_values <- matrix(NA, nrow=40, ncol=1)
+pl <- matrix(NA, nrow=40, ncol=1)
+pu <- matrix(NA, nrow=40, ncol=1)
+obs <- matrix(NA, nrow=40, ncol=1)
+filt <- matrix(NA, nrow=40, ncol=1)
+f_values[31:40] <- fore$f #Forecasts
+sqrtQ <- sapply(fore$Q, function(x) sqrt(x[1,1]))
+pl[31:40] <- fore$f[,1] + qnorm(0.05, sd = sqrtQ)
+pu[31:40] <- fore$f[,1] + qnorm(0.95, sd = sqrtQ)
+obs[1:30] <- y[157:186]
+
+new_sample <- matrix(NA, nrow=40, ncol=3)
+for (t in 1:3){
+  new_sample[31:40,t] <- fore$newObs[[t]]  
+}
+
+df_forecast <- data.frame(obs, f_values, pl, pu, new_sample)
+
+# Plot
+colors <- c("Observed data" = "black", "Forecasts" = "red", "Forecast sample"="steelblue")
+f <- ggplot(df_forecast, aes(x=c(1:40))) +
+  geom_line(aes(y=obs, color="Observed data"), size=0.4) +
+  geom_line(aes(y=f_values, color = "Forecasts"), size=0.4) +
+  geom_line(aes(y=pl, color = "Forecasts"), linetype ="dashed", size=0.4) +
+  geom_line(aes(y=pu, color = "Forecasts"),  linetype ="dashed", size=0.4) +
+  geom_line(aes(y=new_sample[,1], color = "Forecast sample"), size=0.3) +
+  geom_line(aes(y=new_sample[,2], color = "Forecast sample"), size=0.3) +
+  geom_line(aes(y=new_sample[,3], color = "Forecast sample"), size=0.3) +
+  theme_bw(base_size=9) +
+  labs(x="Year", y=expression(CO~(ppm)), color = "") +
+  scale_y_continuous(breaks=seq(0,0.5,0.2)) +
+  scale_x_continuous(breaks=seq(1,60,12),
+                     labels=format(seq(as.Date("2014/1/1"),as.Date("2018/12/31"), "1 years"),"%Y")) +
+  theme(axis.text.x=element_text(size=19, family="Times", margin=margin(t=2)),
+        axis.text.y=element_text(family="Times", margin=margin(r=2)),
+        axis.title.x=element_text(size=19, family="Times", margin=margin(t=2)),
+        axis.title.y=element_text(size=19, family="Times", margin=margin(r=2)),
+        panel.grid.major=element_line(size=0.02),
+        panel.grid.minor=element_blank(),) +
+  scale_color_manual(values=colors) +
+  theme(legend.text=element_text(size=12),legend.position = c(0.05, 0.99), legend.justification = c("left", "top"),
+        legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+
+source("LG_model_checking.R")
+
+summary <- ggarrange(f, b, c, ncol = 3, labels = c("(a)","(b)", "(c)"))
+summary                       
+
+```
+Concerning figure (a), as expected the forecast function is linear (particularly, we recall $f_{t} (k) = \hat{\mu}_{t} + k \hat{beta}_{t}$) and the variance increases with $k$ due to the more uncertainty.  Concerning figures (b) and (c) even if we report evidence of departure from normality assumptions, as previously clarify, this was also expected given the behavior of the process under analysis\footnote{Notice that together with the k-step-ahead point forecasts we plotted 3 samples from the forecast distribution. We present the k step ahead forecast only for this model, since the R package \textit{dlm} for the moment does not allow to compute it for non-constant models. In any case, a one-step in-sample forecast comparison will be provided in Section 2.4.  We decided to formally report the model checking only for the first model we are considering, however, we checked also all the subsequent specifications, available in the provided code. }. 
 \subsection{2.2. Seasonal Dynamic Linear Model}
 
 We now fit a seasonal DLM, suitable to capture the seasonal behavior of the process. As explained above, there are evidences that the frequency is 12 months. Indeed, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors. Therefore, in our representation we use an 11-dimensional state vector}. As usual, the model is specified as: 
@@ -795,17 +845,17 @@ source("DR_model_checking.R")
 
 \subsection{2.4. Performance comparison}
 
-We treat the data under study as streaming data, periodically updated by EPA. Therefore, our main interest is forecasting, which is also a useful way to check the performance of the different specifications considered so far. To properly begin our comparison, we plot the filtering states estimates obtained with the models fitted in the previous sections (Figure \ref{fig:filter_est})\footnote{for sake of clarity we decided to report only the temporal window around the breakpoint.}.
-```{r, fig.width=7, fig.height=2, out.width='75%', fig.cap="\\label{fig:filter_est} Filtering states estimates"}
+We treat the data under study as streaming data, periodically updated by EPA. Therefore, our main interest is forecasting, which is also a useful way to check the performance of the different specifications considered so far. Therefore, we plot the one-step-ahead obtained with the models fitted in the previous sections (Figure \ref{fig:one-step-forecast_est})\footnote{for sake of clarity we decided to report only the temporal window around the breakpoint.}.
+```{r, fig.width=7, fig.height=2, out.width='75%', fig.cap="\\label{fig:one-step-forecast_est} One-step-ahead forecast estimates"}
 # Build df
-df_filt <- data.frame(louisiana_df$n_months, y, y_filt_LG, y_filt_LG_v, y_filt_LG_v_seas, y_filt_DR) # + struct_fit,
-colnames(df_filt) <- c("n_months", "y", "y_filt_LG", "y_filt_LG_v", "y_filt_LG_v_seas", "y_filt_DR") # + "struct_fit",
+df_forecast <- data.frame(louisiana_df$n_months, y, y_filt_LG, y_filt_LG_v, y_filt_LG_v_seas, y_filt_DR) # + struct_fit,
+colnames(df_forecast) <- c("n_months", "y", "y_filt_LG", "y_filt_LG_v", "y_filt_LG_v_seas", "y_filt_DR") # + "struct_fit",
 
 # Plot
 colors <- c("Observed data" = "black", "Time-invariant linear growth" = "springgreen4", 
             "Time-variant linear growth"="blue", "Time-variant linear growth + Seasonality"="orange",
             "Dynamic regression"="red")
-ggplot(df_filt[61:109,], aes(x=n_months)) +
+ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data"), size=0.4) +
   geom_line(aes(y=y_filt_LG, color = "Time-invariant linear growth"), size=0.4) +
   geom_line(aes(y=y_filt_LG_v, color = "Time-variant linear growth"), size=0.4) +
@@ -832,8 +882,8 @@ ggplot(df_filt[61:109,], aes(x=n_months)) +
 #        theme(legend.position="bottom", legend.text=element_text(size=12, family="Times"),
 #              legend.spacing.x=unit(1, "cm"))
 ```
-It is possible to see the effect that the signal-to-noise ratio has on the filtering estimates. For example, the time invariant linear growth model reports a relative magnitude of $W$ on $V$ higher than the time variant one and, consequently, its filtered values tend to follow more closely the data. 
 
+It is possible to see the effect that the signal-to-noise ratio has on the one-step-ahead forecast . For example, the time invariant linear growth model reports a relative magnitude of $W$ on $V$ higher than the time variant one and, consequently, its point forecasts tend to follow more closely the data. AGGIUNGERE TABELLA MAE,MAPE,MSE
 \section{Section 3. Multivariate DLMs}
 
 \subsection{3.1. Seemingly unrelated regression (SUR)}
