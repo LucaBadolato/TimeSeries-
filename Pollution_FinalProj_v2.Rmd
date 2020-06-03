@@ -184,9 +184,7 @@ SO2 <- ggplot(louisiana_df, aes(x=n_months, y=m_SO2_mean)) +
 ggarrange(CO, SO2, ncol=2, nrow=1, align="v")
 ```
 
-The time series, each with its specific features, do not in general look stationary. Hence, they cannot be analized with the common models based on the assumption of covariance-stationarity, such as the well-known ARMA models.
-
-\section{$\text{CO}$ series}
+The time series, each with its specific features, do not in general look stationary.
 
 $\text{CO}$ is perhaps, among the pollutants, the most tightly linked with the economic and industrial network of a country. Consequently, we select this as the series of main interest for our analysis, being the purpose of this work tracking the evolution of air pollution relative to an underlying economic process.
 
@@ -350,7 +348,7 @@ Explanations of these results, which confirm a stable change in the evolution pr
 
 We try to model the series of interest through \textit{dynamic linear model} (DLM) specifications. Indeed, DLMs are very attractive, since they allow a natural interpretation of the process as the combination of several components, such as trend, seasonal and regressive ones. As a consequence, we consider different specifications which, simply combined, are able to explain all the features previously described\footnote{Therefore we are aware (and we expect) that by construction each model will miss some process' characteristics. For example, residuals for a linear growth model may shows a seasonal behaviour but this is fully alligned with the additive structure we consider.}. 
 
-\subsection{2.1. Linear growth model}
+\subsection{Linear growth model}
 
 The first DLM specification we consider to examine $\text{CO}$ is a time invariant linear growth model, which is suitable to capture both a latent level, $\mu_{t}$, and a time varying splope in its dynamics, $\beta_{t}$. As usual, it is defined as following: 
 \begin{eqnarray*}
@@ -376,7 +374,7 @@ fit_LG <- dlmMLE(y, rep(0.5,3), build_LG, hessian=TRUE)
 
 # Calculate SE of the MLE using delta method
 estVarLog_LG <- solve(fit_LG$hessian)
-estVar_LG <- diag(exp(fit_LG$par)) %*% estVarLog_LG %*% + diag(exp(fit_LG$par))
+estVar_LG <- diag(exp(fit_LG$par)) %*% estVarLog_LG %*%  diag(exp(fit_LG$par))
 SE_LG <- sqrt(diag(estVar_LG))
 
 # Alternative models
@@ -438,7 +436,7 @@ fit_LG_v <- dlmMLE(y, rep(0.5, 4), build_LG_v, hessian=TRUE)
 
 # Calculate SE of the MLE using delta method
 estVarLog_LG_v <- solve(fit_LG_v$hessian)
-estVar_LG_v <- diag(exp(fit_LG_v$par)) %*% estVarLog_LG_v %*% + diag(exp(fit_LG_v$par))
+estVar_LG_v <- diag(exp(fit_LG_v$par)) %*% estVarLog_LG_v %*%  diag(exp(fit_LG_v$par))
 SE_LG_v <- sqrt(diag(estVar_LG_v))
 ```
 
@@ -603,7 +601,7 @@ ggarrange(f_main,f_additional, widths=c(4,2), align="h",labels = "(a)")
 
 Concerning figure (a), as expected the forecast function is linear (particularly, we recall $f_{t} (k) = \hat{\mu}_{t} + k \; \hat{\beta}_{t}$) and the variance increases with $k$ due to the more uncertainty.  Figure (c) report evidence of departure from normality, specifically due to the presence of fat tails in the empirical distribution. Hence, it suggests that a better specification should rely on leptokurtic distributions, such as the \textit{student's t} or the \textit{Generalized Pareto Distribution}. However, we do not conduct deeper analysis in this respect being beyond the purpose of this work.\footnote{Notice that together with the k-step-ahead point forecasts we plotted 3 samples from the forecast distribution. We present the k step ahead forecast only for this model, since the R package \textit{dlm} for the moment does not allow to compute it for non-constant models. Also, a one-step in-sample forecast comparison will be provided in Section 2.4.  We decided to formally report the model checking only once, however, we checked also all the subsequent specifications, as one can find in the provided code.}. \textcolor{red}{BISOGNA SCRIVERE QUALCOSA SU FIG b?}
 
-\subsection{2.2. Seasonal Dynamic Linear Model}
+\subsection{Seasonal Dynamic Linear Model}
 
 
 ```{r}
@@ -611,12 +609,12 @@ Concerning figure (a), as expected the forecast function is linear (particularly
 build_seas <- function(param){dlmModSeas(frequency = 12, dV = exp(param[1]), dW = c(exp(param[2]),0,0,0,0,0,0,0,0,0,0))}
 
 # Estimate MLE of parameters
-fit_seas <- dlmMLE(y, rep(0.5,2), build_seas, hessian=TRUE)
+fit_seas <- dlmMLE(y, rep(1,2), build_seas, hessian=TRUE)
 #fit_stagional$convergence
 
 # Calculate SE of the MLE using delta method
 estVarLog_seas <- solve(fit_seas$hessian)
-estVar_seas <- diag(exp(fit_seas$par)) %*% estVarLog_seas %*% + diag(exp(fit_seas$par))
+estVar_seas <- diag(exp(fit_seas$par)) %*% estVarLog_seas %*% diag(exp(fit_seas$par))
 SE_seas <- sqrt(diag(estVar_seas))
 ```
 
@@ -665,7 +663,14 @@ filt_est_LG_v_seas = dropFirst(LG_v_seas_Filt$m)
 
 # Compute the vector of state variances and standard deviations
 list_c_LG_v_seas <- dlmSvd2var(LG_v_seas_Filt$U.C, LG_v_seas_Filt$D.C)
-vol_C_LG_v_seas <- sqrt(unlist(list_c_LG_v_seas))
+
+my_C <- matrix(NA, nrow=length(y)+1, ncol = 13 )
+
+for (t in 1:length(y)+1) {
+  my_mat <- data.frame(list_c_LG_v_seas[t])
+  my_mat <- as.matrix(my_mat)
+  my_C[t,] <- diag(my_mat)}
+vol_C_LG_v_seas <- sqrt(my_C)
 
 # One step ahead forecast
 y_filt_LG_v_seas <- LG_v_seas_Filt$f
@@ -694,7 +699,7 @@ ggplot(res_LG_v_seas, aes(x=time)) +
         plot.margin=unit(c(0,0,0,0.8), "cm"))
 ```
 
-\subsection{2.3. Dynamic linear regression}
+\subsection{Dynamic linear regression}
 
 We take as explanatory variable $x_t$ Louisiana's $\text{SO}_2$. The model we consider is the following:
 \begin{eqnarray*} 
@@ -720,12 +725,12 @@ build_DR <- function(param){dlmModReg(x, dV=exp(param[1]), dW=c(exp(param[2]), e
 # Estimate MLE of parameters
 fit_DR <- dlmMLE(y, c(0.5, 0.5, 0.5), build_DR, hessian=TRUE) 
 #fit_DR$convergence
-parameters = unlist(build_DR(fit_DR$par)[c("V","W")])
+param_DR = unlist(build_DR(fit_DR$par)[c("V","W")])
 #fit_DR$hessian 
 
 # Calculate standard errors based on numeriacally evaluated hessian matrix
 estVarLog_DR <- solve(fit_DR$hessian)
-estVar_DR <- diag(exp(fit_DR$par)) %*% estVarLog_DR %*% + diag(exp(fit_DR$par))
+estVar_DR <- diag(exp(fit_DR$par)) %*% estVarLog_DR %*% diag(exp(fit_DR$par))
 SE_DR <- sqrt(diag(estVar_DR))
 
 # Put MLE in the model
@@ -739,7 +744,14 @@ filt_est_DR = dropFirst(DR_Filt$m)
 
 # Compute the vector of state variances and standard deviations
 list_c_DR <- dlmSvd2var(DR_Filt$U.C, DR_Filt$D.C)
-vol_C_DR <- sqrt(unlist(list_c_DR))
+
+my_C <- matrix(NA, nrow=length(y)+1, ncol = 2)
+
+for (t in 1:length(y)+1) {
+  my_mat <- data.frame(list_c_DR[t])
+  my_mat <- as.matrix(my_mat)
+  my_C[t,] <- diag(my_mat)}
+vol_C_DR <- sqrt(my_C)
 
 # One step ahead forecast
 y_filt_DR <- DR_Filt$f
@@ -749,9 +761,9 @@ In Table \ref{tab:MLE_dr} are presented the MLEs of the unknown coefficients and
 
 ```{r}
 # MLE
-MLE_sigmaV  <- paste0(round(parameters[1],4))
-MLE_sigmaW1 <- paste0(round(parameters[2],4))
-MLE_sigmaW2 <- paste0(round(parameters[5],4))
+MLE_sigmaV  <- paste0(round(param_DR[1],4))
+MLE_sigmaW1 <- paste0(round(param_DR[2],4))
+MLE_sigmaW2 <- paste0(round(param_DR[5],4))
 
 # se(MLE)
 se_sigmaV  <- paste0('(', round(SE_DR[1],4), ')')
@@ -789,10 +801,14 @@ smooth_state_est_beta  <- dropFirst(cO_Smooth$s[,2])
 smooth_var <- dlmSvd2var(cO_Smooth$U.S, cO_Smooth$D.S)
 smooth_sd <- (unlist(smooth_var))^.5
 alpha_sd <- vector(mode = "numeric", length = length(smooth_var))
+
 for (i in 1:length(smooth_var)){ alpha_sd[i] <- smooth_sd[1+i*4] }
+
 smooth_sd_est_alpha <- dropFirst(alpha_sd)
 beta_sd <- vector(mode = "numeric", length = length(smooth_var))
+
 for (i in 1:length(smooth_var)){ beta_sd[i] <- smooth_sd[i*4] }
+
 smooth_sd_est_beta <- dropFirst(beta_sd)
 
 # C.I. upper and lower bounds
@@ -855,7 +871,7 @@ ggarrange(smooth_alpha, smooth_beta, ncol=2, nrow=1, labels=c("(a)", "(b)"),
 source("DR_model_checking.R")
 ```
 
-\subsection{2.4. Performance comparison}
+\subsection{Performance comparison}
 
 We treat the data under study as streaming data, periodically updated by EPA. Therefore, our main interest is forecasting, which is also a useful way to check the performance of the different specifications considered so far. Therefore, we plot the one-step-ahead obtained with the models fitted in the previous sections (Figure \ref{fig:one-step-forecast_est})\footnote{for sake of clarity we decided to report only the temporal window around the breakpoint.}.
 
@@ -898,6 +914,127 @@ ggplot(df_forecast[61:109,], aes(x=n_months)) +
 It is possible to see the effect that the signal-to-noise ratio has on the one-step-ahead forecast . For example, the time invariant linear growth model reports a relative magnitude of $W$ on $V$ higher than the time variant one and, consequently, its point forecasts tend to follow more closely the data. \textcolor{red}{AGGIUNGERE TABELLA MAE,MAPE,MSE}
 
 \section{Section 3. Multivariate DLMs}
+
+\subsection{Seemingly unrelated time series equations (SUTSE)}
+
+Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. From visual inspection of Figure \ref{fig:louisiana_plots} it appears that the two series display a similar type of qualitative behavior, that can be modeled by a linear growth DLM. To set up a multivariate model for the two series, we combine the two linear growth models in a comprehensive \textit{seemingly unrelated time series equations model} (SUTSE). This is written as:
+\begin{eqnarray*}
+  & Y_t = (F \otimes I_2) \; \theta_t + v_t, & v_t \sim \mathcal{N}_{2}(0,V) \\
+  & \theta_t = (G \otimes I_2) \; \theta_{t-1} + w_t, & w_t \sim \mathcal{N}_{4}(0,W)
+\end{eqnarray*}
+with
+\begin{equation*}
+  \underset{2 \times 1}{Y_t} = \begin{bmatrix} Y_{CO,t} \\ Y_{SO_2,t} \end{bmatrix}, \quad
+  \underset{4 \times 1}{\theta_t} = \begin{bmatrix} \mu_{CO,t} \\ \mu_{SO_2,t}, \\ \beta_{CO,t} \\
+  \beta_{SO_2,t} \end{bmatrix}, \quad
+  \underset{1 \times 2}{F} = \begin{bmatrix} 1 & 0 \end{bmatrix}, \quad
+  \underset{2 \times 2}{G} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} \quad \text{ and } \quad \underset{4
+  \times 4}{W} = \text{blockdiag}(W_{\mu}, W_{\beta}).
+\end{equation*}
+We assume that growth $\beta_{i,t}$ is correlated among pollutants. Moreover, to simplify the model in order to reduce the overall number of parameters, we also assume that the two linear growth models are integrated random walks, that is $W_{\mu}=0$.
+
+```{r}
+# Build df multivariate
+y_m <- data.frame(louisiana_df$m_CO_mean, louisiana_df$m_SO2_mean)
+y_m <- rename(y_m, c("CO"="louisiana_df.m_CO_mean", "SO2"="louisiana_df.m_SO2_mean"))
+y_m <- data.matrix(y_m)
+m <- ncol(y_m)
+```
+
+
+```{r}
+# Build SUTSE model
+build_SUTSE <- function(param){
+  mod <- dlmModPoly(2)
+  mod$FF <- mod$FF %x% diag(m)
+  mod$GG <- mod$GG %x% diag(m)
+  mod$V <- diag(c(param[1],param[2]),2)
+  W_mu <- matrix(0, m, m)
+  W_beta <- matrix(c(param[3], param[4],param[5], param[6]), m, m)
+  mod$W <- bdiag(W_mu, W_beta)
+  mod$m0 <- c(y_m[1,1], y_m[1,2], 0, 0)
+  return(mod)
+}
+  
+# Estimate MLE of parameters
+fit_SUTSE <- dlmMLE(y_m, parm=rep(1, 6), lower=c(0.0001, 0.0001,0,0,0,0), build_SUTSE, hessian=TRUE)
+param_SUTSE <- unlist(build_SUTSE(fit_SUTSE$par)[c("V","W")])
+
+# Calculate SE of the MLE using delta method
+estVarLog_SUTSE <- solve(fit_SUTSE$hessian)
+estVar_SUTSE <- diag(exp(fit_SUTSE$par)) %*% estVarLog_SUTSE %*%  diag(exp(fit_SUTSE$par))
+SE_SUTSE <- sqrt(diag(estVar_SUTSE))
+
+# Put MLE in the model
+SUTSE <- build_SUTSE(fit_SUTSE$par)
+
+# Kalman filter
+SUTSE_Filt <- dlmFilter(y_m, SUTSE)
+
+#one step ahead forecast
+y_filt_SUTSE <- SUTSE_Filt$f
+
+## Credible intrvals of the one-step ahead forecast
+SUTSE_sd <- residuals(SUTSE_Filt)$sd
+SUTSE_lb_CO <- SUTSE_Filt$f[,1] - 1.64 * SUTSE_sd[,1]
+SUTSE_ub_CO <- SUTSE_Filt$f[,1] + 1.64 * SUTSE_sd[,1]
+SUTSE_lb_SO2 <- SUTSE_Filt$f[,2] - 1.64 * SUTSE_sd[,2]
+SUTSE_ub_SO2 <- SUTSE_Filt$f[,2] + 1.64 * SUTSE_sd[,2]
+
+```
+
+```{r}
+df_SUTSE <- data.frame(y_m, louisiana_df$n_months,y_filt_SUTSE,SUTSE_lb_CO,SUTSE_lb_SO2,SUTSE_ub_CO,SUTSE_ub_SO2)
+
+CO_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df$n_months)) +
+  geom_line(aes(y=y_m[,1]), size=0.4) +
+  geom_line(aes(y=y_filt_SUTSE[,1]), size=0.8, color="red") +
+  geom_line(aes(y=SUTSE_ub_CO), color="red", linetype="dotted", size=0.2) +
+  geom_line(aes(y=SUTSE_lb_CO), color="red", linetype="dotted", size=0.2) +
+  geom_ribbon(aes(ymin=SUTSE_lb_CO, ymax=SUTSE_ub_CO), alpha=.1, fill="red") +
+  theme_bw(base_size=9) +
+  labs(x="Year", y="Predicted CO", color="black") +
+  scale_y_continuous() +
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),
+        plot.margin=unit(c(0,0,0,0.8), "cm"))
+
+
+SO2_forecast <- ggplot(df_SUTSE, aes(x=n_months)) +
+  geom_line(aes(y=y_m[,2]), size=0.4) +
+  geom_line(aes(y=y_filt_SUTSE[,2]), size=0.8, color="red") +
+  geom_line(aes(y=SUTSE_ub_SO2), color="red", linetype="dotted", size=0.2) +
+  geom_line(aes(y=SUTSE_lb_SO2), color="red", linetype="dotted", size=0.2) +
+  geom_ribbon(aes(ymin=SUTSE_lb_CO, ymax=SUTSE_ub_CO), alpha=.1, fill="red") +
+  theme_bw(base_size=9) +
+  labs(x="Year", y="Predicted CO", color="black") +
+  scale_y_continuous() +
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),
+        plot.margin=unit(c(0,0,0,0.8), "cm"))
+
+ggarrange(CO_forecast, SO2_forecast, ncol=2, nrow=1, labels=c("(a)", "(b)"),
+          font.label=list(size=20, family="Times"))
+
+```
+
+
+```{r}
+source("forecasting_accuracy.R")
+```
+
 
 \newpage
 \section{References}
