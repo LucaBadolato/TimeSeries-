@@ -462,23 +462,23 @@ MLEsum_lgv <- data.frame(sigmaV1=c(MLE_sigmaV1_v, se_sigmaV1_v),
                      sigmaW2=c(MLE_sigmaW2_v, se_sigmaW2_v))
 
 MLEsum <- data.frame(MLEsum_lg, MLEsum_lgv)
-knitr::kable(MLEsum, "latex", booktabs=T, align="c",
-             col.names = c("$\\hat{\\sigma}^2_{v}$",
-                           "$\\hat{\\sigma}^2_{w_1}$",
-                           "$\\hat{\\sigma}^2_{w_2}$",
-                           "$\\hat{\\sigma}^2_{v1}$",
-                           "$\\hat{\\sigma}^2_{v2}$",
-                           "$\\hat{\\sigma}^2_{w_1}$",
-                           "$\\hat{\\sigma}^2_{w_2}$"),
-             escape=F, caption="Maximum Likelihood estimates of the unknown
+MLEsum_table <- knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+                             col.names = c("$\\hat{\\sigma}^2_{v}$",
+                                           "$\\hat{\\sigma}^2_{w_1}$",
+                                           "$\\hat{\\sigma}^2_{w_2}$",
+                                           "$\\hat{\\sigma}^2_{v1}$",
+                                           "$\\hat{\\sigma}^2_{v2}$",
+                                           "$\\hat{\\sigma}^2_{w_1}$",
+                                           "$\\hat{\\sigma}^2_{w_2}$"),
+                             escape=F, caption="Maximum Likelihood estimates of the unknown
              parameters\\label{tab:MLE}") %>%
   column_spec(1:7, width="5em") %>%
   collapse_rows(columns=1, latex_hline="none") %>%
   footnote(general="Standard errors in parentheses.",
            general_title="Note:",
            footnote_as_chunk=T, escape=F) %>%
-  kable_styling(latex_options="hold_position") #%>%
-#add_header_above(c("Group 1" = 3, "Group 2" = 4)) 
+  kable_styling(latex_options="hold_position")
+add_header_above(MLEsum_table, c("Time-invariant LG" = 3, "Time-variant LG" = 4))
 ```
 
 ```{r}
@@ -549,7 +549,8 @@ ggarrange(A, B, ncol=2, nrow=1, labels=c("(a)", "(b)"),
 Finally, once the model is specified, it is possible to do perform the analysis of interest, such as filtering and k-step ahead forecasting. Furthermore, it is possible to check the model assumptions testing the properties of the innovation process e.g. through a correlogram and a qq-plot. We report in Figure \ref{Fig: summary} a summary related to the time-invariant linear growth model. 
 
 ```{r, fig.width=20, fig.height=3.5, out.width='100%', fig.cap="\\label{Fig: summary}Time-invariant linear growth model: (a) 10-step-ahead forecast; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors."}
-#10-STEP AHEAD FORECAST
+
+# 10-steps-ahead forecast
 fore <- dlmForecast(LG_Filt, nAhead=10, sampleNew=3)
 
 f_values <- matrix(NA, nrow=40, ncol=1)
@@ -564,9 +565,7 @@ pu[31:40] <- fore$f[,1] + qnorm(0.95, sd = sqrtQ)
 obs[1:30] <- y[157:186]
 
 new_sample <- matrix(NA, nrow=40, ncol=3)
-for (t in 1:3){
-  new_sample[31:40,t] <- fore$newObs[[t]]  
-}
+for (t in 1:3){ new_sample[31:40,t] <- fore$newObs[[t]] }
 
 df_forecast <- data.frame(obs, f_values, pl, pu, new_sample)
 
@@ -592,33 +591,19 @@ f <- ggplot(df_forecast, aes(x=c(1:40))) +
         panel.grid.major=element_line(size=0.02),
         panel.grid.minor=element_blank(),) +
   scale_color_manual(values=colors) +
-  theme(legend.text=element_text(size=12),legend.position = c(0.05, 0.99), legend.justification = c("left", "top"),
-        legend.box.just = "left",legend.margin = margin(2, 2, 2, 2))
+  theme(legend.text=element_text(size=12),legend.position = c(0.05,0.99),
+        legend.justification = c("left","top"), legend.box.just = "left",legend.margin = margin(2,2,2,2))
 
 source("LG_model_checking.R")
 
-summary <- ggarrange(f, b, c, ncol = 3, labels = c("(a)","(b)", "(c)"))
-summary                       
-
+ggarrange(f, b, c, ncol = 3, labels = c("(a)","(b)", "(c)"))
 ```
-Concerning figure (a), as expected the forecast function is linear (particularly, we recall $f_{t} (k) = \hat{\mu}_{t} + k \hat{beta}_{t}$) and the variance increases with $k$ due to the more uncertainty.  Concerning figures (b) and (c) even if we report evidence of departure from normality assumptions, as previously clarify, this was also expected given the behavior of the process under analysis\footnote{Notice that together with the k-step-ahead point forecasts we plotted 3 samples from the forecast distribution. We present the k step ahead forecast only for this model, since the R package \textit{dlm} for the moment does not allow to compute it for non-constant models. In any case, a one-step in-sample forecast comparison will be provided in Section 2.4.  We decided to formally report the model checking only for the first model we are considering, however, we checked also all the subsequent specifications, available in the provided code. }. 
+
+Concerning figure (a), as expected the forecast function is linear (particularly, we recall $f_{t} (k) = \hat{\mu}_{t} + k \hat{beta}_{t}$) and the variance increases with $k$ due to the more uncertainty.  Concerning figures (b) and (c) even if we report evidence of departure from normality assumptions, as previously clarify, this was also expected given the behavior of the process under analysis\footnote{Notice that together with the k-step-ahead point forecasts we plotted 3 samples from the forecast distribution. We present the k step ahead forecast only for this model, since the R package \textit{dlm} for the moment does not allow to compute it for non-constant models. In any case, a one-step in-sample forecast comparison will be provided in Section 2.4.  We decided to formally report the model checking only for the first model we are considering, however, we checked also all the subsequent specifications, available in the provided code.}.
+
 \subsection{2.2. Seasonal Dynamic Linear Model}
 
-We now fit a seasonal DLM, suitable to capture the seasonal behavior of the process. As explained above, there are evidences that the frequency is 12 months. Indeed, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors. Therefore, in our representation we use an 11-dimensional state vector}. As usual, the model is specified as: 
-\begin{align*} 
-   Y_t = \begin{bmatrix} 1 & 0 & \cdots & 0 \end{bmatrix} \theta_t + v_t,
-   \quad & v_t \overset{iid}\sim \mathcal{N}(0, \sigma_{v}^{2}) 
-  \\
-   \theta_t = \begin{bmatrix} -1      &        & \cdots &        & -1     \\
-                               1      & 0      & 0      & \cdots & 0      \\ 
-                               0      & 1      & 0      & \cdots & 0      \\ 
-                               \vdots &        & \ddots &        & \vdots \\
-                               0      & \cdots & 0      & 1      & 0      \end{bmatrix} \theta_{t-1} + w_t,
-   \quad & w_t \overset{iid}\sim \mathcal{N}_2(0, W=\begin{bmatrix} \sigma_w^2 & 0 & \cdots & 0      \\
-                                                                    0          & 0 & \cdots & 0      \\ 
-                                                                    \vdots     &   & \ddots & \vdots \\
-                                                                    0          & 0 & \cdots & 0 \end{bmatrix})
-\end{align*}
+We now fit a seasonal DLM, suitable to capture the seasonal behavior of the process. As explained above, there are evidences that the frequency is 12 months. Indeed, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors. Therefore, in our representation we use an 11-dimensional state vector}. \textcolor{red}{The DLM is specified as in @Petris2008}.
 
 \textcolor{red}{WHICH ASSUMPTIONS?} Notice that the state vector $\theta_{t}$ contains 11 seasonal factors properly permutated through the matrix $G$. Once again, we estimate the unkown variances by MLE, obtaining in Table \ref{tab:MLE_seasonal}.
 
@@ -708,7 +693,7 @@ ggplot(res_LG_v_seas, aes(x=time)) +
 
 \subsection{2.3. Dynamic linear regression}
 
-We take as explanatory variable $x_t$ Louisiana's coal consumption for electricity generation (in particular, for the totality of the electric power industry). The model we consider is the following:
+We take as explanatory variable $x_t$ Louisiana's $\text{SO}_2$. The model we consider is the following:
 \begin{eqnarray*} 
   & y_t = \alpha_t + \beta_t x_t + v_t, & v_t \overset{iid}\sim \mathcal{N}(0, \sigma_{v}^{2}) \\
   & \theta_t = G \theta_{t-1} + w_t, & w_t \overset{iid}\sim \mathcal{N}(0, W)
@@ -719,19 +704,18 @@ where
   \theta_0 \sim \mathcal{N}_2(m_0, C_0), \quad
   \theta_0 \indep (v_t) \indep (w_t)
 \end{equation*}
-and $G=I_2$ and $W=\text{diag}(\sigma_{w_1}^{2}, \sigma_{w_2}^{2})$, i.e the two time varying coefficients $\alpha_t$ and $\beta_t$ are modeled as independent random walks. 
+and $G=I_2$ and $W=\text{diag}(\sigma_{w_1}^{2}, \sigma_{w_2}^{2})$, i.e the two time varying coefficients $\alpha_t$ and $\beta_t$ are modeled as independent random walks \textcolor{red}{(we consider both the system variances unknown)}.
 
 ```{r}
-# Import dataset
-coal_cons <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_pollution/master/Louisiana_coal_consumption.csv"), sep=";", header=T, stringsAsFactors=F)
-x <- as.numeric(coal_cons$tot_electric_power_industry)
+# Define regressor
+x <- louisiana_df$m_SO2_mean
 
 # Build dynamic linear regression model
 # note: initialize the algorithm using the initial level of y and the sample variance before the break
-build_DR <- function(param){dlmModReg(x, dV=exp(param[1]), dW=c(0, param[2]), m0=c(y[1],0))}
+build_DR <- function(param){dlmModReg(x, dV=exp(param[1]), dW=c(exp(param[2]), exp(param[3])), m0=c(y[1],0))}
 
 # Estimate MLE of parameters
-fit_DR <- dlmMLE(y, c(0.5, 0.5), build_DR, hessian=TRUE) 
+fit_DR <- dlmMLE(y, c(0.5, 0.5, 0.5), build_DR, hessian=TRUE) 
 #fit_DR$convergence
 parameters = unlist(build_DR(fit_DR$par)[c("V","W")])
 #fit_DR$hessian 
@@ -763,13 +747,13 @@ In Table \ref{tab:MLE_dr} are presented the MLEs of the unknown coefficients and
 ```{r}
 # MLE
 MLE_sigmaV  <- paste0(round(parameters[1],4))
-MLE_sigmaW1 <- paste0(round(parameters[2],9))
-MLE_sigmaW2 <- paste0(round(parameters[5],9))
+MLE_sigmaW1 <- paste0(round(parameters[2],4))
+MLE_sigmaW2 <- paste0(round(parameters[5],4))
 
 # se(MLE)
 se_sigmaV  <- paste0('(', round(SE_DR[1],4), ')')
-se_sigmaW1 <- paste0('(', round(SE_DR[2],5), ')')
-se_sigmaW2 <- paste0('(', round(SE_DR[3],9), ')')
+se_sigmaW1 <- paste0('(', round(SE_DR[2],4), ')')
+se_sigmaW2 <- paste0('(', round(SE_DR[3],4), ')')
 
 # Summary table
 MLEsum <- data.frame(sigmaV=c(MLE_sigmaV, se_sigmaV),
@@ -792,43 +776,73 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
 
 Let's now compute the smoothing estimates of $\theta_t=[\alpha_t \; \beta_t]'$, for $t=0,\ldots,T$. The smoothing estimates of $\beta_t$ are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:smooth_est}.
 
-```{r, fig.width=6, fig.height=2, out.width='50%', fig.cap="\\label{fig:smooth_est} Smoothing estimates of beta with credible intervals"}
+```{r, fig.width=20, fig.height=4, out.width='100%', fig.cap="\\label{fig:smooth_est} Smoothing estimates of alpha (Panel a) and beta (Panel b) with credible intervals"}
 # Smoothing estimates
 cO_Smooth <- dlmSmooth(y, DR)
-smooth_state_est <- dropFirst(cO_Smooth$s[,2])
+smooth_state_est_alpha <- dropFirst(cO_Smooth$s[,1])
+smooth_state_est_beta  <- dropFirst(cO_Smooth$s[,2])
 
 # Smoothing variances
 smooth_var <- dlmSvd2var(cO_Smooth$U.S, cO_Smooth$D.S)
 smooth_sd <- (unlist(smooth_var))^.5
+alpha_sd <- vector(mode = "numeric", length = length(smooth_var))
+for (i in 1:length(smooth_var)){ alpha_sd[i] <- smooth_sd[1+i*4] }
+smooth_sd_est_alpha <- dropFirst(alpha_sd)
 beta_sd <- vector(mode = "numeric", length = length(smooth_var))
 for (i in 1:length(smooth_var)){ beta_sd[i] <- smooth_sd[i*4] }
-smooth_sd_est <- dropFirst(beta_sd)
+smooth_sd_est_beta <- dropFirst(beta_sd)
 
 # C.I. upper and lower bounds
-upper_smooth <- smooth_state_est + 1.64*smooth_sd_est # upper bound of 90% C.I.
-lower_smooth <- smooth_state_est - 1.64*smooth_sd_est # lower bound of 90% C.I.
+upper_smooth_alpha <- smooth_state_est_alpha + 1.64*smooth_sd_est_alpha # upper bound of 90% C.I.
+lower_smooth_alpha <- smooth_state_est_alpha - 1.64*smooth_sd_est_alpha # lower bound of 90% C.I.
+upper_smooth_beta <- smooth_state_est_beta + 1.64*smooth_sd_est_beta # upper bound of 90% C.I.
+lower_smooth_beta <- smooth_state_est_beta - 1.64*smooth_sd_est_beta # lower bound of 90% C.I.
 
 # Create df
-df_co_ci <- data.frame(louisiana_df$n_months, smooth_state_est, upper_smooth, lower_smooth)
-colnames(df_co_ci) = c("n_months", "smooth_state_est", "upper_smooth","lower_smooth")
+df_co_ci <- data.frame(louisiana_df$n_months, smooth_state_est_alpha, smooth_state_est_beta, 
+                       upper_smooth_alpha, lower_smooth_alpha, upper_smooth_beta, lower_smooth_beta)
+colnames(df_co_ci) = c("n_months", "smooth_state_est_alpha", "smooth_state_est_beta",
+                       "upper_smooth_alpha","lower_smooth_alpha", "upper_smooth_beta","lower_smooth_beta")
 
 # Plot the smoothing estimates with their credible intervals
-ggplot(df_co_ci, aes(x=n_months)) +
-  geom_line(aes(y=smooth_state_est), size=0.4) +
-  geom_line(aes(y=upper_smooth), color="red", linetype="dashed", size=0.2) +
-  geom_line(aes(y=lower_smooth), color="red", linetype="dashed", size=0.2) +
-  geom_ribbon(aes(ymin=lower_smooth, ymax=upper_smooth), alpha=.1, fill="red") +
+smooth_alpha <- ggplot(df_co_ci, aes(x=n_months)) +
+  geom_line(aes(y=smooth_state_est_alpha), size=0.4) +
+  geom_line(aes(y=upper_smooth_alpha), color="red", linetype="dashed", size=0.2) +
+  geom_line(aes(y=lower_smooth_alpha), color="red", linetype="dashed", size=0.2) +
+  geom_ribbon(aes(ymin=lower_smooth_alpha, ymax=upper_smooth_alpha), alpha=.1, fill="red") +
+  theme_bw(base_size=9) +
+  labs(x="Year", y="Alpha", color="black") +
+  scale_y_continuous() +
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),
+        plot.margin=unit(c(0,0,0,0.8), "cm"))
+
+smooth_beta <- ggplot(df_co_ci, aes(x=n_months)) +
+  geom_line(aes(y=smooth_state_est_beta), size=0.4) +
+  geom_line(aes(y=upper_smooth_beta), color="red", linetype="dashed", size=0.2) +
+  geom_line(aes(y=lower_smooth_beta), color="red", linetype="dashed", size=0.2) +
+  geom_ribbon(aes(ymin=lower_smooth_beta, ymax=upper_smooth_beta), alpha=.1, fill="red") +
   theme_bw(base_size=9) +
   labs(x="Year", y="Beta", color="black") +
   scale_y_continuous() +
   scale_x_continuous(breaks=seq(0,186,24),
                      labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
-  theme(axis.text.x=element_text(family="Times", margin=margin(t=2)),
-        axis.text.y=element_text(family="Times", margin=margin(r=2)),
-        axis.title.x=element_text(size=8, family="Times", margin=margin(t=2)),
-        axis.title.y=element_text(size=8, family="Times", margin=margin(r=2)),
+  theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
-        panel.grid.minor=element_blank())
+        panel.grid.minor=element_blank(),
+        plot.margin=unit(c(0,0,0,0.8), "cm"))
+
+ggarrange(smooth_alpha, smooth_beta, ncol=2, nrow=1, labels=c("(a)", "(b)"),
+          font.label=list(size=20, family="Times"))
 ```
 
 ```{r}
@@ -838,6 +852,7 @@ source("DR_model_checking.R")
 \subsection{2.4. Performance comparison}
 
 We treat the data under study as streaming data, periodically updated by EPA. Therefore, our main interest is forecasting, which is also a useful way to check the performance of the different specifications considered so far. Therefore, we plot the one-step-ahead obtained with the models fitted in the previous sections (Figure \ref{fig:one-step-forecast_est})\footnote{for sake of clarity we decided to report only the temporal window around the breakpoint.}.
+
 ```{r, fig.width=7, fig.height=2, out.width='75%', fig.cap="\\label{fig:one-step-forecast_est} One-step-ahead forecast estimates"}
 # Build df
 df_forecast <- data.frame(louisiana_df$n_months, y, y_filt_LG, y_filt_LG_v, y_filt_LG_v_seas, y_filt_DR) # + struct_fit,
@@ -875,7 +890,7 @@ ggplot(df_forecast[61:109,], aes(x=n_months)) +
 #              legend.spacing.x=unit(1, "cm"))
 ```
 
-It is possible to see the effect that the signal-to-noise ratio has on the one-step-ahead forecast . For example, the time invariant linear growth model reports a relative magnitude of $W$ on $V$ higher than the time variant one and, consequently, its point forecasts tend to follow more closely the data. AGGIUNGERE TABELLA MAE,MAPE,MSE
+It is possible to see the effect that the signal-to-noise ratio has on the one-step-ahead forecast . For example, the time invariant linear growth model reports a relative magnitude of $W$ on $V$ higher than the time variant one and, consequently, its point forecasts tend to follow more closely the data. \textcolor{red}{AGGIUNGERE TABELLA MAE,MAPE,MSE}
 
 \section{Section 3. Multivariate DLMs}
 
