@@ -601,13 +601,10 @@ f_additional <- ggarrange(b,c, nrow = 2,labels = c("(b)", "(c)"))
 ggarrange(f_main,f_additional, widths=c(4,2), align="h",labels = "(a)")
 ```
 
-Concerning figure (a), as expected the forecast function is linear (particularly, we recall $f_{t} (k) = \hat{\mu}_{t} + k \hat{beta}_{t}$) and the variance increases with $k$ due to the more uncertainty.  Concerning figures (b) and (c) even if we report evidence of departure from normality assumptions, as previously clarify, this was also expected given the behavior of the process under analysis\footnote{Notice that together with the k-step-ahead point forecasts we plotted 3 samples from the forecast distribution. We present the k step ahead forecast only for this model, since the R package \textit{dlm} for the moment does not allow to compute it for non-constant models. In any case, a one-step in-sample forecast comparison will be provided in Section 2.4.  We decided to formally report the model checking only for the first model we are considering, however, we checked also all the subsequent specifications, available in the provided code.}.
+Concerning figure (a), as expected the forecast function is linear (particularly, we recall $f_{t} (k) = \hat{\mu}_{t} + k \; \hat{\beta}_{t}$) and the variance increases with $k$ due to the more uncertainty.  Figure (c) report evidence of departure from normality, specifically due to the presence of fat tails in the empirical distribution. Hence, it suggests that a better specification should rely on leptokurtic distributions, such as the \textit{student's t} or the \textit{Generalized Pareto Distribution}. However, we do not conduct deeper analysis in this respect being beyond the purpose of this work.\footnote{Notice that together with the k-step-ahead point forecasts we plotted 3 samples from the forecast distribution. We present the k step ahead forecast only for this model, since the R package \textit{dlm} for the moment does not allow to compute it for non-constant models. Also, a one-step in-sample forecast comparison will be provided in Section 2.4.  We decided to formally report the model checking only once, however, we checked also all the subsequent specifications, as one can find in the provided code.}. \textcolor{red}{BISOGNA SCRIVERE QUALCOSA SU FIG b?}
 
 \subsection{2.2. Seasonal Dynamic Linear Model}
 
-We now fit a seasonal DLM, suitable to capture the seasonal behavior of the process. As explained above, there are evidences that the frequency is 12 months. Indeed, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors. Therefore, in our representation we use an 11-dimensional state vector}. \textcolor{red}{The DLM is specified as in @Petris2008}.
-
-\textcolor{red}{WHICH ASSUMPTIONS?} Notice that the state vector $\theta_{t}$ contains 11 seasonal factors properly permutated through the matrix $G$. Once again, we estimate the unkown variances by MLE, obtaining in Table \ref{tab:MLE_seasonal}.
 
 ```{r}
 # Seasonal DLM 
@@ -622,6 +619,10 @@ estVarLog_seas <- solve(fit_seas$hessian)
 estVar_seas <- diag(exp(fit_seas$par)) %*% estVarLog_seas %*% + diag(exp(fit_seas$par))
 SE_seas <- sqrt(diag(estVar_seas))
 ```
+
+We now fit a seasonal DLM, suitable to capture the seasonal behavior of the process. As explained above, there are evidences that the frequency is 12 months. Indeed, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors free to vary.}. The model is specified in a standard way as reported by [@Petris2008].
+Once again, we estimate the unkown variances by MLE, reported in Table \ref{tab:MLE_seasonal}.
+
 
 ```{r}
 # MLE
@@ -646,7 +647,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
   footnote(general="Standard errors in parentheses.",
            general_title="Note:",
            footnote_as_chunk=T, escape=F) %>%
-  kable_styling(latex_options="hold_position")
+  kable_styling(latex_options="HOLD_position")
 ```
 
 In order to evaluate the improvement that a seasonal component has in our analysis, we combined it with the time variant linear growth model previously specified and plot in Figure \ref{Fig: Innovation_process_combined} the innovation process series. Comparing this plot with the previously reported one, it is possible to see that we are now able to capture a month-specific effects. The series looks like a random walk plus noise and shows only a marginal noise, that we try to capture in the following sections.    
@@ -778,7 +779,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
 
 Let's now compute the smoothing estimates of $\theta_t=[\alpha_t \; \beta_t]'$, for $t=0,\ldots,T$. The smoothing estimates of $\beta_t$ are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:smooth_est}.
 
-```{r, fig.width=20, fig.height=4, out.width='100%', fig.cap="\\label{fig:smooth_est} Smoothing estimates of alpha (Panel a) and beta (Panel b) with credible intervals"}
+```{r}
 # Smoothing estimates
 cO_Smooth <- dlmSmooth(y, DR)
 smooth_state_est_alpha <- dropFirst(cO_Smooth$s[,1])
@@ -799,7 +800,10 @@ upper_smooth_alpha <- smooth_state_est_alpha + 1.64*smooth_sd_est_alpha # upper 
 lower_smooth_alpha <- smooth_state_est_alpha - 1.64*smooth_sd_est_alpha # lower bound of 90% C.I.
 upper_smooth_beta <- smooth_state_est_beta + 1.64*smooth_sd_est_beta # upper bound of 90% C.I.
 lower_smooth_beta <- smooth_state_est_beta - 1.64*smooth_sd_est_beta # lower bound of 90% C.I.
+```
 
+
+```{r, fig.width=20, fig.height=4, out.width='100%', fig.cap="\\label{fig:smooth_est} Smoothing estimates of alpha (Panel a) and beta (Panel b) with credible intervals"}
 # Create df
 df_co_ci <- data.frame(louisiana_df$n_months, smooth_state_est_alpha, smooth_state_est_beta, 
                        upper_smooth_alpha, lower_smooth_alpha, upper_smooth_beta, lower_smooth_beta)
@@ -861,11 +865,10 @@ df_forecast <- data.frame(louisiana_df$n_months, y, y_filt_LG, y_filt_LG_v, y_fi
 colnames(df_forecast) <- c("n_months", "y", "y_filt_LG", "y_filt_LG_v", "y_filt_LG_v_seas", "y_filt_DR") # + "struct_fit",
 
 # Plot
-colors <- c("Observed data" = "black", "Time-invariant linear growth" = "springgreen4", 
-            "Time-variant linear growth"="blue", "Time-variant linear growth + Seasonality"="orange",
-            "Dynamic regression"="red")
+colors <- c("Observed data (dashed)" = "black", "Time-invariant linear growth" = "springgreen4", 
+            "Time-variant linear growth"="blue", "Time-variant linear growth + Seasonality"="firebrick","Dynamic regression"="darkorange")
 ggplot(df_forecast[61:109,], aes(x=n_months)) +
-  geom_line(aes(y=y, color="Observed data"), size=0.4) +
+  geom_line(aes(y=y, color="Observed data (dashed)"), size=0.4, linetype="longdash") +
   geom_line(aes(y=y_filt_LG, color = "Time-invariant linear growth"), size=0.4) +
   geom_line(aes(y=y_filt_LG_v, color = "Time-variant linear growth"), size=0.4) +
   geom_line(aes(y=y_filt_LG_v_seas, color = "Time-variant linear growth + Seasonality"), size=0.4) +
