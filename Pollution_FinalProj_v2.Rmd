@@ -122,7 +122,7 @@ Provided that the correlation between pollutants shows significant differences i
 
 We plot in Figure \ref{fig:louisiana_plots} the time series for the four pollutants under study to give a first qualitative description of the phenomenon.
 
-```{r, fig.width=20, fig.height=6, out.width='100%', fig.cap="\\label{fig:louisiana_plots}Air pollution in the state of Louisiana"}
+```{r, fig.width=20, fig.height=3.5, out.width='100%', fig.cap="\\label{fig:louisiana_plots}Air pollution in the state of Louisiana"}
 
 # Time series plots
 O3 <- ggplot(louisiana_df, aes(x=n_months, y=m_O3_mean)) +
@@ -181,7 +181,7 @@ SO2 <- ggplot(louisiana_df, aes(x=n_months, y=m_SO2_mean)) +
         panel.grid.minor=element_blank(),        
         plot.margin=unit(c(0.5,0,0,0.5), "cm"))
 
-ggarrange(O3, NO2, CO, SO2, ncol=2, nrow=2, align="v")
+ggarrange(CO, SO2, ncol=2, nrow=1, align="v")
 ```
 
 The time series, each with its specific features, do not in general look stationary. Hence, they cannot be analized with the common models based on the assumption of covariance-stationarity, such as the well-known ARMA models.
@@ -190,7 +190,7 @@ The time series, each with its specific features, do not in general look station
 
 $\text{CO}$ is perhaps, among the pollutants, the most tightly linked with the economic and industrial network of a country. Consequently, we select this as the series of main interest for our analysis, being the purpose of this work tracking the evolution of air pollution relative to an underlying economic process.
 
-As an exploratory step, we decompose the time series in its structural components using an additive model\footnote{For sake of brevity we do not report the plots of the decomposed components.}. The decomposition confirms the presence of a quarterly seasonal component and shows a negative trend up to a clear breakpoint between 2007 and 2009. The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
+As an exploratory step, we decompose the time series in its structural components using an additive model\footnote{For sake of brevity we do not report the plots of the decomposed components.}. The decomposition confirms the presence of a quarterly seasonal component and shows a negative trend up to a clear breakpoint between 2007 and 2008. The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
 
 \section{Section 1. HMM}
 
@@ -209,7 +209,7 @@ where there are three state-dependent parameters, namely the level, $\mu_i$, the
 source("HMM_2states.R")
 ```
 
-However, we noticed that two states are not sufficient to capture the actual behavior of the process\footnote{Again, results are not reported here but can be easily replicated using the provided R code.}. Indeed, a better fit can be obtained using a model with three hidden states that capture periods with negative trend and high volatility, periods with no trend and low volatility and periods with no trend and high volatility. The model is specified as above with an additional equation for $S=3$ and ideally $\mu_1 > \mu_2 > \mu_3$, $\beta_1<0$, $\beta_2=\beta_3=0$ and $\sigma_2^2<\sigma_3^2<\sigma_1^2$.
+However, we noticed that two states are not sufficient to capture the actual behavior of the process\footnote{Again, results are not reported here but can be easily replicated using the provided R code.}. Indeed, a better fit can be obtained using a model with three hidden states that capture periods with negative trend and high volatility, periods with no trend and low volatility and periods with no trend and high volatility. The model is specified as above with an additional equation for $S=3$ and ideally $\mu_1 > \mu_2 \approx \mu_3$, $\beta_1<0$, $\beta_2=\beta_3=0$ and $\sigma_2^2<\sigma_3^2<\sigma_1^2$.
 
 ```{r echo=F, include=F}
 # Model specification with 3 states
@@ -348,7 +348,7 @@ Explanations of these results, which confirm a stable change in the evolution pr
 
 \section{Section 2. Univariate DLMs}
 
-We now try to model the series of interest through \textit{dynamic linear model} (DLM) specifications. Indeed, DLMs are very attractive, since they allow a natural interpretation of the process as the combination of several components, such as trend, seasonal or regressive ones. As a consequence, we consider different specifications which, simply combined, are able to explain all the features previously described\footnote{Therefore we are aware (and we expect) that by construction each model will miss some process characteristics. For example, residuals checking for a linear growth model may shows a seasonal behaviour but this is fully in conformity with the additive structure we consider.}. 
+We try to model the series of interest through \textit{dynamic linear model} (DLM) specifications. Indeed, DLMs are very attractive, since they allow a natural interpretation of the process as the combination of several components, such as trend, seasonal and regressive ones. As a consequence, we consider different specifications which, simply combined, are able to explain all the features previously described\footnote{Therefore we are aware (and we expect) that by construction each model will miss some process' characteristics. For example, residuals for a linear growth model may shows a seasonal behaviour but this is fully alligned with the additive structure we consider.}. 
 
 \subsection{2.1. Linear growth model}
 
@@ -427,7 +427,7 @@ S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 
 As expected, a first graphical inspection of the standardized one-step-ahead forecast error series (reported in Figure \ref{Fig:innovation process plot}(a)) shows both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{v}^{2}$ to be time dependent.
 
-For this purpose, we estimated a linear growth model specified as above but considering  $\sigma_{vt}^{2} = \sigma_{v1}^{2}$ for observations before 2008 and $\sigma_{vt}^{2} = \sigma_{v2}^{2}$ for observations after 2008.
+For this purpose, we estimated a linear growth model specified as above but considering  $\sigma_{v_t}^{2} = \sigma_{v_1}^{2}$ for observations before 2008 and $\sigma_{v_t}^{2} = \sigma_{v_2}^{2}$ for observations after 2008.
 
 ```{r echo=F, warning=F}
 # Time variant linear growth model
@@ -499,7 +499,7 @@ vol_C_LG_v <- sqrt(unlist(list_c_LG_v))
 y_filt_LG_v <- LG_v_Filt$f
 ```
 
-In Figure \ref{Fig:innovation process plot} we compare the standardized innovation process of the two specifications.The second specification reports an improvement, as the innovation process does not report anymore a clear change in variance and looks more close to a random walk\footnote{Note that there is still a not captured seasonal behaviour and some other noises that we will try to capture through a regression component}. 
+In Figure \ref{Fig:innovation process plot} we compare the standardized innovation process of the two specifications.The second specification reports an improvement, as the innovation process does not report anymore a clear change in variance and looks more close to random noise\footnote{Note that there is still a not captured seasonal behaviour and some other effects that we will try to capture through a regression component}. 
 
 ```{r, fig.width=20, fig.height=3.5, out.width='100%', fig.cap="\\label{Fig:innovation process plot}Standardized one-step-ahead forecast errors. (a) Time invariant model; (b) Time variant model."}
 
@@ -546,9 +546,9 @@ ggarrange(A, B, ncol=2, nrow=1, labels=c("(a)", "(b)"),
           font.label=list(size=20, family="Times"))
 ```
 
-Finally, once the model is specified, it is possible to do perform the analysis of interest, such as filtering and k-step ahead forecasting. Furthermore, it is possible to check the model assumptions testing the properties of the innovation process e.g. through a correlogram and a qq-plot. We report in Figure \ref{Fig: summary} a summary related to the time-invariant linear growth model. 
+Finally, once the model is specified, it is possible to proceed with filtering, smoothing and forecasting k-step ahead. Furthermore, it is possible to check model assumptions testing the properties of the innovation process e.g. through a correlogram and a qq-plot. We report in Figure \ref{Fig: summary} a summary related to the time-invariant linear growth model. 
 
-```{r, fig.width=20, fig.height=3.5, out.width='100%', fig.cap="\\label{Fig: summary}Time-invariant linear growth model: (a) 10-step-ahead forecast; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors."}
+```{r, fig.width=20, fig.height=6, out.width='100%', fig.cap="\\label{Fig: summary}Time-invariant linear growth model: (a) 10-step-ahead forecast; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors."}
 
 # 10-steps-ahead forecast
 fore <- dlmForecast(LG_Filt, nAhead=10, sampleNew=3)
@@ -571,14 +571,14 @@ df_forecast <- data.frame(obs, f_values, pl, pu, new_sample)
 
 # Plot
 colors <- c("Observed data" = "black", "Forecasts" = "red", "Forecast sample"="steelblue")
-f <- ggplot(df_forecast, aes(x=c(1:40))) +
-  geom_line(aes(y=obs, color="Observed data"), size=0.4) +
-  geom_line(aes(y=f_values, color = "Forecasts"), size=0.4) +
-  geom_line(aes(y=pl, color = "Forecasts"), linetype ="dashed", size=0.4) +
-  geom_line(aes(y=pu, color = "Forecasts"),  linetype ="dashed", size=0.4) +
-  geom_line(aes(y=new_sample[,1], color = "Forecast sample"), size=0.3) +
-  geom_line(aes(y=new_sample[,2], color = "Forecast sample"), size=0.3) +
-  geom_line(aes(y=new_sample[,3], color = "Forecast sample"), size=0.3) +
+f_main <- ggplot(df_forecast, aes(x=c(1:40))) +
+  geom_line(aes(y=obs, color="Observed data"), size=0.8) +
+  geom_line(aes(y=f_values, color = "Forecasts"), size=0.8) +
+  geom_line(aes(y=pl, color = "Forecasts"), linetype ="dotted", size=0.8) +
+  geom_line(aes(y=pu, color = "Forecasts"),  linetype ="dotted", size=0.8) +
+  geom_line(aes(y=new_sample[,1], color = "Forecast sample"), size=1.2, linetype = "longdash") +
+  geom_line(aes(y=new_sample[,2], color = "Forecast sample"), size=1.2, linetype = "dashed") +
+  geom_line(aes(y=new_sample[,3], color = "Forecast sample"), size=1.2, linetype = "dotdash") +
   theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
   scale_y_continuous(breaks=seq(0,0.5,0.2)) +
@@ -596,7 +596,9 @@ f <- ggplot(df_forecast, aes(x=c(1:40))) +
 
 source("LG_model_checking.R")
 
-ggarrange(f, b, c, ncol = 3, labels = c("(a)","(b)", "(c)"))
+f_additional <- ggarrange(b,c, nrow = 2,labels = c("(b)", "(c)"))
+
+ggarrange(f_main,f_additional, widths=c(4,2), align="h",labels = "(a)")
 ```
 
 Concerning figure (a), as expected the forecast function is linear (particularly, we recall $f_{t} (k) = \hat{\mu}_{t} + k \hat{beta}_{t}$) and the variance increases with $k$ due to the more uncertainty.  Concerning figures (b) and (c) even if we report evidence of departure from normality assumptions, as previously clarify, this was also expected given the behavior of the process under analysis\footnote{Notice that together with the k-step-ahead point forecasts we plotted 3 samples from the forecast distribution. We present the k step ahead forecast only for this model, since the R package \textit{dlm} for the moment does not allow to compute it for non-constant models. In any case, a one-step in-sample forecast comparison will be provided in Section 2.4.  We decided to formally report the model checking only for the first model we are considering, however, we checked also all the subsequent specifications, available in the provided code.}.
@@ -893,207 +895,6 @@ ggplot(df_forecast[61:109,], aes(x=n_months)) +
 It is possible to see the effect that the signal-to-noise ratio has on the one-step-ahead forecast . For example, the time invariant linear growth model reports a relative magnitude of $W$ on $V$ higher than the time variant one and, consequently, its point forecasts tend to follow more closely the data. \textcolor{red}{AGGIUNGERE TABELLA MAE,MAPE,MSE}
 
 \section{Section 3. Multivariate DLMs}
-
-\subsection{3.1. Seemingly unrelated regression (SUR)}
-
-As a last step, we build a multivariate dynamic regression model. In addition to the $\text{CO}$ series, we consider now also the $\text{SO}_2$ monthly data. Assuming that the intercepts and the slopes are correlated across the two pollutants, we can define a \textit{seemingly unrelated regression model} (SUR) as follows:
-\begin{eqnarray*}
-  & Y_t = (F_t \otimes I_2) \; \theta_t + v_t, & v_t \overset{iid}\sim \mathcal{N}_{2}(0,V) \\
-  & \theta_t = (G \otimes I_2) \; \theta_{t-1} + w_t, & w_t \overset{iid}\sim \mathcal{N}_{4}(0,W)
-\end{eqnarray*}
-with
-\begin{equation*}
-  \underset{2 \times 1}{Y_t} = \begin{bmatrix} Y_{CO,t} \\ Y_{SO_2,t} \end{bmatrix}, \quad
-  \underset{4 \times 1}{\theta_t} = \begin{bmatrix} \alpha_{CO,t} \\ \alpha_{SO_2,t}, \\ \beta_{CO,t} \\
-  \beta_{SO_2,t} \end{bmatrix}, \quad
-  \underset{1 \times 2}{F_t} = \begin{bmatrix} 1 & x_t \end{bmatrix}, \quad
-  \underset{2 \times 2}{G} = I_2 \quad \text{ and } \quad
-  \underset{4 \times 4}{W} = \text{blockdiag}(W_{\alpha}, W_{\beta}).
-\end{equation*}
-Note that, since both pollutants are by-products of incomplete fuel combustion, we consider $x_{i,t}=x_t$, that is we take the same explanatory variable for the two series.
-
-```{r, include=F}
-# Build df
-y_m <- data.frame(louisiana_df$m_CO_mean, louisiana_df$m_SO2_mean)
-y_m <- rename(y_m, c("CO"="louisiana_df.m_CO_mean", "SO2"="louisiana_df.m_SO2_mean"))
-y_m <- data.matrix(y_m)
-m <- ncol(y_m)
-
-# Build SUR model
-build_SUR <- function(param){
-  mod <- dlmModReg(x)
-  mod$FF <- mod$FF %x% diag(m)
-  mod$JFF <- mod$JFF %x% diag(m)
-  mod$GG <- mod$GG %x% diag(m)
-  mod$V <- mod$V %x% matrix(0, m, m)
-  mod$V <- c(exp(param[1]), 0,
-             0, exp(param[2]))
-  ## Old version:
-  #mod$V <- diag(c(exp(param[1]), exp(param[2])))
-  mod$W <- mod$W %x% matrix(0, m, m)
-    Wa <- matrix(c(exp(param[3]), 0, 0, exp(param[4])), 2, 2)
-    Wb <- matrix(c(exp(param[5]), exp(param[6]), exp(param[7]), exp(param[8])), 2, 2)
-    W <- bdiag(Wa, Wb)
-  mod$W <- W
-  ## Alternative version (why doesn't it work?):
-  #mod$W <- c(exp(param[3]), 0, 0, 0,
-  #           0, exp(param[4]), 0, 0,
-  #           0, 0, exp(param[5]), exp(param[6]),
-  #           0, 0, exp(param[7]), exp(param[8]))
-  mod$m0 <- c(y_m[1,1], y_m[1,2], 0, 0)
-  return(mod)
-}
-
-# Estimate MLE of parameters
-fit_SUR <- dlmMLE(y_m, parm=rep(0.5, 8), build_SUR, hessian=TRUE)
-unlist(build_SUR(fit_SUR$par)[c("V","W")])
-
-# Calculate SE of the MLE using delta method
-estVarLog_SUR <- solve(fit_SUR$hessian)
-estVar_SUR <- diag(exp(fit_SUR$par)) %*% estVarLog_SUR %*% + diag(exp(fit_SUR$par))
-SE_SUR <- sqrt(diag(estVar_SUR))
-
-# Put MLE in the model
-SUR <- build_SUR(fit_SUR$par)
-
-# Kalman filter
-SUR_Filt <- dlmFilter(y_m, SUR)
-SUR_sd <- residuals(SUR_Filt)$sd
-
-# Kalman smoother
-SUR_Smooth <- dlmSmooth(y_m, SUR)
-```
-
-\subsection{3.2. Seemingly unrelated time series equations (SUTSE)}
-
-Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. From visual inspection of Figure \ref{fig:louisiana_plots} it appears that the two series display a similar type of qualitative behavior, that can be modeled by a linear growth DLM. To set up a multivariate model for the two series, we combine the two linear growth models in a comprehensive \textit{seemingly unrelated time series equations model} (SUTSE). This is written as:
-\begin{eqnarray*}
-  & Y_t = (F \otimes I_2) \; \theta_t + v_t, & v_t \sim \mathcal{N}_{2}(0,V) \\
-  & \theta_t = (G \otimes I_2) \; \theta_{t-1} + w_t, & w_t \sim \mathcal{N}_{4}(0,W)
-\end{eqnarray*}
-with
-\begin{equation*}
-  \underset{2 \times 1}{Y_t} = \begin{bmatrix} Y_{CO,t} \\ Y_{SO_2,t} \end{bmatrix}, \quad
-  \underset{4 \times 1}{\theta_t} = \begin{bmatrix} \mu_{CO,t} \\ \mu_{SO_2,t}, \\ \beta_{CO,t} \\
-  \beta_{SO_2,t} \end{bmatrix}, \quad
-  \underset{1 \times 2}{F} = \begin{bmatrix} 1 & 0 \end{bmatrix}, \quad
-  \underset{2 \times 2}{G} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} \quad \text{ and } \quad \underset{4
-  \times 4}{W} = \text{blockdiag}(W_{\mu}, W_{\beta}).
-\end{equation*}
-We assume that growth $\beta_{i,t}$ is correlated among pollutants. Moreover, to simplify the model in order to reduce the overall number of parameters, we also assume that the two linear growth models are integrated random walks, that is $W_{\mu}=0$.
-
-```{r, include=F}
-# Build SUTSE model
-build_SUTSE <- function(param){
-  mod <- dlmModPoly(2)
-  mod$FF <- mod$FF %x% diag(m)
-  mod$GG <- mod$GG %x% diag(m)
-  mod$V <- mod$V %x% matrix(0, m, m)
-  mod$V <- c(exp(param[1]), exp(param[2]),
-             exp(param[3]), exp(param[4]))
-  ## Old version:
-  #mod$V <- matrix(c(exp(param[1]), param[2], exp(param[3]), param[4]), m, m)
-  mod$W <- mod$W %x% matrix(0, m, m)
-  mod$W <- c(0, 0, 0, 0,
-             0, 0, 0, 0,
-             0, 0, exp(param[5]), exp(param[6]),
-             0, 0, exp(param[7]), exp(param[8]))  
-  ## Old version:  
-    #Wu <- matrix(0, m, m)
-    #Wb <- matrix(c(exp(param[5]), param[5], exp(param[7]), param[8]), m, m)
-    #W <- bdiag(Wu, Wb)
-  #mod$W <- W
-  mod$m0 <- c(y_m[1,1], y_m[1,2], 0, 0)
-  return(mod)
-}
-  
-# Estimate MLE of parameters
-fit_SUTSE <- dlmMLE(y_m, parm=rep(0.5, 8), build_SUTSE, hessian=TRUE)
-unlist(build_SUTSE(fit_SUTSE$par)[c("V","W")])
-
-# Calculate SE of the MLE using delta method
-estVarLog_SUTSE <- solve(fit_SUTSE$hessian)
-estVar_SUTSE <- diag(exp(fit_SUTSE$par)) %*% estVarLog_SUTSE %*% + diag(exp(fit_SUTSE$par))
-SE_SUTSE <- sqrt(diag(estVar_SUTSE))
-
-# Put MLE in the model
-SUTSE <- build_SUTSE(fit_SUTSE$par)
-
-# Kalman filter
-SUTSE_Filt <- dlmFilter(y_m, SUTSE)
-SUTSE_sd <- residuals(SUTSE_Filt)$sd
-```
-
-\section{Conclusion}
-
-In conclusion, \dots
-
-```{r, include=F}
-source("forecasting_accuracy.R")
-```
-
-```{r, include=T}
-# Forecasting accuracy: Summary table (v1)
-for_accuracy <- data.frame(measure   = c("MSE",          "MAE",          "MAPE"),
-                           #HMM      = c(MSE_HMM,        MAE_HMM,        MAPE_HMM),
-                           LG        = c(MSE_LG,         MAE_LG,         MAPE_LG),
-                           #LG_2     = c(MSE_LG_2,       MAE_LG_2,       MAPE_LG_2),
-                           #LG_3     = c(MSE_LG_3,       MAE_LG_3,       MAPE_LG_3),
-                           LG_v      = c(MSE_LG_v,       MAE_LG_v,       MAPE_LG_v),
-                           LG_v_seas = c(MSE_LG_v_seas,  MAE_LG_v_seas,  MAPE_LG_v_seas),
-                           DR        = c(MSE_DR,         MAE_DR,         MAPE_DR),
-                           SUR       = c(MSE_SUR,        MAE_SUR,        MAPE_SUR),
-                           SUTSE     = c(MSE_SUTSE,      MAE_SUTSE,      MAPE_SUTSE))
-
-knitr::kable(for_accuracy, "latex", booktabs=T, align="c",
-             col.names=c('', 'Time-invar LG', 'Time-var LG', 'Time-var LG + Seas', 'DR', 'SUR', 'SUTSE'),
-             #col.names=c('Measure', 'HMM', 'Time-invar LG', 'Time-var LG', 'Time-var LG + Seas',
-             #            'DR', 'SUR', 'SUTSE'),
-             escape=F, caption="Measures of predictive accuracy") %>%
-  column_spec(1:9, width="5em") %>%
-  kable_styling(latex_options="hold_position")
-
-########################## old version of the table below here ##########################
-
-# Forecasting accuracy: Summary table (v2)
-#tabf <- matrix(nrow=3, ncol=8)
-#rownames(tabf) <- c('MSE','MAE','MAPE')
-#colnames(tabf) <- c('HMM', 'Lin. growth', 'Const. speed', 'Int. RW', 'BSM','Dyn. regr.', 'SUR', 'SUTSE')
-
-#tabf[1,1] <- MSE_HMM
-#tabf[2,1] <- MAE_HMM
-#tabf[3,1] <- MAPE_HMM
-
-#tabf[1,2] <- MSE_LG
-#tabf[2,2] <- MAE_LG
-#tabf[3,2] <- MAPE_LG
-
-#tabf[1,3] <- MSE_LG_2
-#tabf[2,3] <- MAE_LG_2
-#tabf[3,3] <- MAPE_LG_2
-
-#tabf[1,4] <- MSE_LG_3
-#tabf[2,4] <- MAE_LG_3
-#tabf[3,4] <- MAPE_LG_3
-
-#tabf[1,5] <- MSE_BSM
-#tabf[2,5] <- MAE_BSM
-#tabf[3,5] <- MAPE_BSM
-
-#tabf[1,6] <- MSE_DR
-#tabf[2,6] <- MAE_DR
-#tabf[3,6] <- MAPE_DR
-
-#tabf[1,7] <- MSE_SUR
-#tabf[2,7] <- MAE_SUR
-#tabf[3,7] <- MAPE_SUR
-
-#tabf[1,8] <- MSE_SUTSE
-#tabf[2,8] <- MAE_SUTSE
-#tabf[3,8] <- MAPE_SUTSE
-
-#kable(tabf, caption="Measures of predictive accuracy")
-```
 
 \newpage
 \section{References}
