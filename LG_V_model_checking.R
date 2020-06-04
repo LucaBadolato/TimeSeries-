@@ -19,7 +19,7 @@ ggplot(res_LG_v, aes(x=time)) +
   scale_y_continuous(breaks=seq(-5,5,1), limits = c(-3,4)) +
   theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
         axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
-        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.x=element_blank(),
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
@@ -54,17 +54,17 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
       geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
       geom_col(fill = "#4373B6", width = 0.7) +
       theme_bw(base_size=9) +
-      scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
+      scale_x_continuous(breaks = seq(0,max(df1$lag),1)) +
       scale_y_continuous(name = element_blank(), 
                          limits = c(min(df1$acf,df2$pacf),1)) +
       theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
             axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
-            axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+            axis.title.x=element_blank(),
             axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
             panel.grid.major=element_line(size=0.5),
             panel.grid.minor=element_blank(),
             plot.margin=unit(c(0,0,0,1), "cm"))
-        
+    
     plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
       geom_area(aes(x = lag, y = qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
       geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
@@ -76,7 +76,7 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
       ggtitle("PACF") +
       theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
             axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
-            axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+            axis.title.x=element_blank(),
             axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
             panel.grid.major=element_line(size=0.5),
             panel.grid.minor=element_blank(),
@@ -93,12 +93,12 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
                  colour = "sandybrown",
                  linetype = "dashed") + 
       theme_bw(base_size=9)+
-      scale_x_continuous(breaks = seq(0,max(df1$lag),6)) +
+      scale_x_continuous(breaks = seq(0,max(df1$lag),1)) +
       scale_y_continuous(name = element_blank(), 
                          limits = c(min(df1$acf,df2$pacf),1)) +
       theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
             axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
-            axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+            axis.title.x=element_blank(),
             axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
             panel.grid.major=element_line(size=0.5),
             panel.grid.minor=element_blank(),
@@ -113,13 +113,13 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
                  colour = "sandybrown",
                  linetype = "dashed") + 
       theme_bw(base_size=9)+
-      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm=TRUE),6)) +
+      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm=TRUE),1)) +
       scale_y_continuous(name = element_blank(),
                          limits = c(min(df1$acf,df2$pacf),1)) +
       ggtitle("PACF") +
       theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
             axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
-            axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+            axis.title.x=element_blank(),
             axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
             panel.grid.major=element_line(size=0.5),
             panel.grid.minor=element_blank(),
