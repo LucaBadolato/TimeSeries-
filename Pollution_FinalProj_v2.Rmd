@@ -1086,6 +1086,7 @@ SUTSE_lb_SO2 <- SUTSE_Filt$f[,2] - 1.64 * SUTSE_sd[,2]
 SUTSE_ub_SO2 <- SUTSE_Filt$f[,2] + 1.64 * SUTSE_sd[,2]
 ```
 
+In Table \ref{tab:MLE_SUTSE} are presented the MLEs of the unknown coefficients and the associated standard errors.
 ```{r}
 # MLE
 MLE_sigmaV11_1  <- paste0(round(exp(fit_SUTSE$par[1]),4))
