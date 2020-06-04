@@ -1037,21 +1037,24 @@ build_SUTSE <- function(param){
   mod <- dlmModPoly(2)
   mod$FF <- mod$FF %x% diag(m)
   mod$GG <- mod$GG %x% diag(m)
-  mod$V <- diag(c(param[1],param[2]),2)
-  W_mu <- matrix(0, m, m)
-  W_beta <- matrix(c(param[3], param[4],param[5], param[6]), m, m)
+  mod$V <- diag(c(1,1),2)
+  mod$JV <- diag(c(1,2),2)
+  mod$X <-  matrix(c(rep(c(exp(param[1]), exp(param[2]), exp(param[3]), exp(param[4])), c(84, 102, 84, 102))), ncol=2)
+  W_mu <- matrix(c(exp(param[8]), exp(param[6]), exp(param[6]), exp(param[9])), m, m)
+  W_beta <- matrix(c(exp(param[5]), 0, 0, exp(param[7])), m, m)
   mod$W <- bdiag(W_mu, W_beta)
   mod$m0 <- c(y_m[1,1], y_m[1,2], 0, 0)
+  mod$C0 <- diag(4)*0.001
   return(mod)
 }
-  
-# Estimate MLE of parameters
-fit_SUTSE <- dlmMLE(y_m, parm=rep(0.5, 6), method="L-BFGS-B", lower=c(0.0001,0.0001,0,0,0,0), build_SUTSE, hessian=TRUE)
-param_SUTSE <- unlist(build_SUTSE(fit_SUTSE$par)[c("V","W")])
-#fit_SUTSE$convergence
 
-# Calculate SE of the MLE using delta method
-estVar_SUTSE <- solve(fit_SUTSE$hessian)
+# Estimate MLE of parameters
+fit_SUTSE <- dlmMLE(y_m, parm=c(0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5), build_SUTSE, hessian=TRUE)
+param_SUTSE <- unlist(build_SUTSE(fit_SUTSE$par)[c("V","W")])
+fit_SUTSE$convergence
+
+estVarLog_SUTSE <- solve(fit_SUTSE$hessian)
+estVar_SUTSE <- diag(exp(fit_SUTSE$par)) %*% estVarLog_SUTSE %*%  diag(exp(fit_SUTSE$par))
 SE_SUTSE <- sqrt(diag(estVar_SUTSE))
 
 # Put MLE in the model
@@ -1060,16 +1063,71 @@ SUTSE <- build_SUTSE(fit_SUTSE$par)
 # Kalman filter
 SUTSE_Filt <- dlmFilter(y_m, SUTSE)
 
-# One-step-ahead forecast
+#one step ahead forecast
 y_filt_SUTSE <- SUTSE_Filt$f
 
-# Credible intervals of the one-step-ahead forecast
+## Credible intrvals of the one-step ahead forecast
 SUTSE_sd <- residuals(SUTSE_Filt)$sd
 SUTSE_sd[1,] <- c(SUTSE_sd[2,1],SUTSE_sd[2,2]) 
 SUTSE_lb_CO <- SUTSE_Filt$f[,1] - 1.64 * SUTSE_sd[,1]
 SUTSE_ub_CO <- SUTSE_Filt$f[,1] + 1.64 * SUTSE_sd[,1]
 SUTSE_lb_SO2 <- SUTSE_Filt$f[,2] - 1.64 * SUTSE_sd[,2]
 SUTSE_ub_SO2 <- SUTSE_Filt$f[,2] + 1.64 * SUTSE_sd[,2]
+```
+
+```{r}
+# MLE
+MLE_sigmaV11_1  <- paste0(round(exp(fit_SUTSE$par[1]),4))
+MLE_sigmaV22_1  <- paste0(round(exp(fit_SUTSE$par[3]),4))
+MLE_sigmaV11_2  <- paste0(round(exp(fit_SUTSE$par[2]),4))
+MLE_sigmaV22_2  <- paste0(round(exp(fit_SUTSE$par[4]),4))
+MLE_sigmaWmu11  <- paste0(round(exp(fit_SUTSE$par[8]),4))
+MLE_sigmaWmu12  <- paste0(round(exp(fit_SUTSE$par[6]),4))
+MLE_sigmaWmu22  <- paste0(round(exp(fit_SUTSE$par[9]),4))
+MLE_sigmaWbeta11  <- paste0(round(exp(fit_SUTSE$par[5]),4))
+MLE_sigmaWbeta22  <- paste0(round(exp(fit_SUTSE$par[7]),4))
+
+# se(MLE)
+se_sigmaV11_1  <- paste0('(', round(SE_SUTSE[1],4), ')')
+se_sigmaV22_1  <- paste0('(', round(SE_SUTSE[3],4), ')')
+se_sigmaV11_2  <- paste0('(', round(SE_SUTSE[2],4), ')')
+se_sigmaV22_2  <- paste0('(', round(SE_SUTSE[4],4), ')')
+se_sigmaWmu11  <- paste0('(', round(SE_SUTSE[8],4), ')')
+se_sigmaWmu12  <- paste0('(', round(SE_SUTSE[6],4), ')')
+se_sigmaWmu22  <- paste0('(', round(SE_SUTSE[9],4), ')')
+se_sigmaWbeta11  <- paste0('(', round(SE_SUTSE[5],4), ')')
+se_sigmaWbeta22  <- paste0('(', round(SE_SUTSE[7],4), ')')
+
+# Summary table
+MLEsum <- data.frame(sigmaV11_1=c(MLE_sigmaV11_1, se_sigmaV11_1),
+                     sigmaV22_1=c(MLE_sigmaV22_1, se_sigmaV22_1),
+                     sigmaV11_2=c(MLE_sigmaV11_2, se_sigmaV11_2),
+                     sigmaV22_2=c(MLE_sigmaV22_2, se_sigmaV22_2),
+                     sigmaWmu11=c(MLE_sigmaWmu11, se_sigmaWmu11),
+                     sigmaWmu12=c(MLE_sigmaWmu12, se_sigmaWmu12),
+                     sigmaWmu22=c(MLE_sigmaWmu22, se_sigmaWmu22),
+                     sigmaWbeta11=c(MLE_sigmaWbeta11, se_sigmaWbeta11),
+                     sigmaWbeta22=c(MLE_sigmaWbeta22, se_sigmaWbeta22))
+
+MLEsum_table <- knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+             col.names = c("$\\hat{V}_{11}$",
+                           "$\\hat{V}_{22}$",
+                           "$\\hat{V}_{11}$",
+                           "$\\hat{V}_{22}$",
+                           "$\\hat{W}_{\\mu}_{11}$",
+                           "$\\hat{W}_{\\mu}_{12}$",
+                           "$\\hat{W}_{\\mu}_{22}$",
+                           "$\\hat{W}_{\\beta}_{11}$",
+                           "$\\hat{W}_{\\beta}_{22}$" ),
+             escape=F, caption="Maximum Likelihood estimates of the unknown
+             parameters\\label{tab:MLE_SUTSE}") %>%
+  column_spec(1:9, width="5em") %>%
+  collapse_rows(columns=1, latex_hline="none") %>%
+  footnote(general="Standard errors in parentheses.",
+           general_title="Note:",
+           footnote_as_chunk=T, escape=F) %>%
+  kable_styling(latex_options="hold_position")
+add_header_above(MLEsum_table, c("Period 1 to 84" = 2, "Period 85 to 186" = 2,"" = 5))  
 ```
 
 ```{r, fig.width=18, fig.height=4, out.width='100%', fig.cap="\\label{fig:SUTSE_forecast}One-step-ahead forecast with credible intervals: (a) CO; (b) SO2."}
