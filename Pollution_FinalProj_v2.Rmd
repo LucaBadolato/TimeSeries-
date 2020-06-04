@@ -389,12 +389,8 @@ where
 \end{equation*}
 Particularly, we decided to impose as starting condition $m_0 = [ y_{1} \;\; 0 ]'$ and $C_0 = \text{diag}(0.001,0.001)$, a relatively large variance to take into account our uncertainty.
 
-A first visual inspection of  series of standardized one-step-ahead forecast errors (Panel (a), Figure \ref{fig:innovation_process}) shows both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{v}^{2}$ to be time dependent.
-For this purpose, we estimated a linear growth model specified as above but considering  $\sigma_{v_t}^{2} = \sigma_{v_1}^{2}$ for observations before 2008 and $\sigma_{v_t}^{2} = \sigma_{v_2}^{2}$ for observations after 2008.
-
 In Table \ref{tab:MLE_LG} the MLE's of the unknown coefficients are presented for both the time-varying and the time-invariant models and the associated standard errors\footnote{We treat $\psi = (\sigma_{v}^{2}, \; \sigma_{w_1}^{2}, \;\sigma_{w_2}^{2})$ as unknown parameters and we estimate them by maximum likelihood. Then, we perform the analysis of interest plugging them in the model as if they were known costants. We proceed in this way also in the following sections.}.
 
-In Figure \ref{fig:innovation_process}, Panle (b), we plot the standardized innovation process of the time-varying specification. A certain improvement can be observed, as the change in the variance is milder and the process looks closer to random noise, still  some \textit{strucure} can be detected in standardized residuals such as a seasonal behaviour. Hence, we will try to capture it through a seasonal model.
 
 ```{r, echo=F, warning=F}
 # Time invariant linear growth model
@@ -526,6 +522,12 @@ y_filt_LG_v_lb <- y_filt_LG_v - 1.64 * y_filt_LG_v_sd
 y_filt_LG_v_ub <- y_filt_LG_v + 1.64 * y_filt_LG_v_sd
 ```
 
+
+A first visual inspection to the series of standardized one-step-ahead forecast errors (Panel (a), Figure \ref{fig:innovation_process}) reveals the presence of both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{v}^{2}$ to be time dependent.
+To this purpose, we estimated a linear growth model specified as above but considering  $\sigma_{v_t}^{2} = \sigma_{v_1}^{2}$ for observations before 2008 and $\sigma_{v_t}^{2} = \sigma_{v_2}^{2}$ for observations after 2008.
+
+In Figure \ref{fig:innovation_process}, Panel (b), we plot the standardized innovation process of the time-varying specification. A certain improvement can be observed, as the change in the variance is milder and the process looks closer to random noise, still  some \textit{strucure} can be detected in standardized residuals such as a seasonal behaviour. Hence, we will try to capture it through a seasonal model.
+
 ```{r, fig.width=18, fig.height=3.5, out.width='100%',fig.cap="\\label{fig:innovation_process}Standardized one-step-ahead forecast errors: (a) Time-invariant model; (b) Time-variant model."}
 
 res_LG <- residuals(LG_Filt, sd=FALSE)
@@ -571,11 +573,6 @@ ggarrange(A, B, ncol=2, nrow=1, labels=c("(a)", "(b)"),
           font.label=list(size=20, family="Times"))
 ```
 
-Furthermore, it is possible to check model assumptions testing the properties of the innovation process e.g. through a correlogram (left panels) and a qq-plot (right panels).
-
-The left panels  of Figure \ref{fig: summary} report evidence of departure from independence. Indeed, in all the three of them the autocorrelation function is significantly different from zero at some lags. This proves the presence of persistency (especially in the short run), which is not fully captured by our relatively simple models.
-
-The right panels of Figure \ref{fig: summary} report evidence of departure from normality. While residuals for the time-invariant linear growth model (Panel (b)) prove the presence of fat tails in the empirical distribution, residuals of the time-varying model (Panel (d)) seem to be closer to a Gaussian distribution in terms of kurtosis. Still, fat tails are present and some positive skewness appears. Very similar results are also obtained for the seasonal model (Panel (f)). These considerations suggest that a better specification should rely on leptokurtic distributions, such as the \textit{student's t} or the \textit{Generalized Pareto Distribution}. However, we do not conduct a deeper analysis, being it beyond the purpose of the present work.
 
 \subsection{Seasonal dynamic linear model}
 
@@ -593,8 +590,8 @@ estVar_seas <- diag(exp(fit_seas$par)) %*% estVarLog_seas %*% diag(exp(fit_seas$
 SE_seas <- sqrt(diag(estVar_seas))
 ```
 
-We now fit a seasonal DLM, suitable to capture the seasonal behavior of the process. As explained above, there are evidences that the frequency is 12 months. Indeed, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors free to vary.}. The model is specified in a standard way as reported by [@Petris2008].
-Once again, we estimate the unkown variances by MLE, reported in Table \ref{tab:MLE_seasonal}.
+In this section we fit a seasonal DLM given the seasonal behavior documented above.In particular, we have a seasonal factor with monthly periodicity. In fact, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors free to vary.}. The model is specified in a standard way as reported by [@Petris2008]. Importantly, we model the seasonal effect as a time-varying one letting the variance of the seasonal fatctor being different from zero. In this als the seasonal component is liable to be affected by the structural break.  
+Once again, we estimate the unkown variances by MLE, which are reported in Table \ref{tab:MLE_seasonal}.
 
 ```{r}
 # MLE
@@ -622,7 +619,6 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
   kable_styling(latex_options="HOLD_position")
 ```
 
-In order to evaluate the improvement that a seasonal component has in our analysis, we combined it with the time variant linear growth model previously specified and plot in Figure \ref{fig: innovation_process_combined} the innovation process series. Comparing this plot with the previously reported one, it is possible to see that we are now able to capture a month-specific effects. The series looks like a random walk plus noise and shows only a marginal noise, that we try to capture in the following sections.    
 
 ```{r, warning=F}
 # Put MLE in the model + Add DLMs
@@ -653,6 +649,8 @@ y_filt_LG_v_seas_lb <- y_filt_LG_v_seas - 1.64 * y_filt_LG_v_seas_sd
 y_filt_LG_v_seas_ub <- y_filt_LG_v_seas + 1.64 * y_filt_LG_v_seas_sd
 ```
 
+In order to evaluate the improvement that a seasonal component has in our analysis, we combined it with the time varying linear growth model previously specified. Figure \ref{fig:innovation_process_combined} plots the series of innovation process obtained from such a specification. Comparing this plot with the ones reported in Figure \ref{fig:innovation_process}, it is easy to see that the seasonal component is no more present in standardazed residuals. In fact, the series looks like a true noise with almost no structure.
+
 ```{r, fig.width=9, fig.height=3.5, out.width='50%',fig.cap="\\label{fig:innovation_process_combined}Standardized one-step-ahead forecast errors: Time-variant linear growth model + seasonal DLM."}
 
 res_LG_v_seas <- residuals(LG_v_seas_Filt, sd=FALSE)
@@ -676,9 +674,11 @@ ggplot(res_LG_v_seas, aes(x=time)) +
         plot.margin=unit(c(0,0,0,0.8), "cm"))
 ```
 
+In the next section we will follow a different approach, that may potentialy allow for a causal interpretation of results.
+
 \subsection{Dynamic linear regression}
 
-We take as explanatory variable $x_t$ Louisiana's $\text{SO}_2$. The model we consider is the following:
+We take as explanatory variable, $x_t$, Louisiana's $\text{SO}_2$. The model we consider is the following:
 \begin{eqnarray*} 
   & y_t = \alpha_t + \beta_t x_t + v_t, & v_t \overset{iid}\sim \mathcal{N}(0, \sigma_{v}^{2}) \\
   & \theta_t = G \; \theta_{t-1} + w_t, & w_t \overset{iid}\sim \mathcal{N}(0, W)
@@ -840,6 +840,9 @@ ggarrange(filt_alpha, filt_beta, ncol=2, nrow=1, labels=c("(a)", "(b)"),
           font.label=list(size=20, family="Times"))
 ```
 
+
+\subsection{Model checking}
+
 ```{r, fig.width=18, fig.height=12, out.width='80%', fig.cap="\\label{fig: summary}ACF of one-step-ahead forecast errors and Normal probability plot of standardized one-step-ahead forecast errors: (a) Time-invariant LG model; (b) Time-varying LG model; (c) Time-varying seas LG model."}
 
 source("LG_model_checking.R")
@@ -853,6 +856,12 @@ mod3 <- ggarrange(b,c, ncol=2, labels = c("(c)"),font.label=list(size=20, family
 
 ggarrange(mod1,mod2,mod3, ncol=1, nrow=3, align="h")
 ```
+
+In this section we are going to check the assumptions made in our model specifications by testing the properties of the innovation process. Specifically we report here the correlogram (left panels) and the qq-plot of standardazed residuals (right panels).
+
+The left panels  of Figure \ref{fig: summary} report evidence of departure from independence. Indeed, in all the three of them the autocorrelation function is significantly different from zero at some lags. This proves the presence of persistency (especially in the short run), which is not fully captured by our relatively simple models.
+
+The right panels of Figure \ref{fig: summary} report evidence of departure from normality. While residuals for the time-invariant linear growth model (Panel (b)) prove the presence of fat tails in the empirical distribution, residuals of the time-varying model (Panel (d)) seem to be closer to a Gaussian distribution in terms of kurtosis. Still, fat tails are present and some positive skewness appears. Very similar results are also obtained for the seasonal model (Panel (f)).\footnote{For sake of brevity we do not report the model checking for the Dynamic regression. It would not be of significant added value being it very similar to results for the Time-varying seasonal linear growth model. However this exercise can be replicated using the provided R code.} These considerations suggest that a better specification should rely on leptokurtic distributions, such as the \textit{student's t} or the \textit{Generalized Pareto Distribution}. However, we do not conduct a deeper analysis, being it beyond the purpose of the present work.
 
 \subsection{Performance evaluation}
 
