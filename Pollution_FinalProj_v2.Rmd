@@ -77,7 +77,7 @@ knitr::opts_chunk$set(message = FALSE,
 
 Pollution is one of the most debated social issues of our times. It has been attracting more and more attention given its serious implications on the health of both the Earth and human beings. The economic activity under the model of production and consumption that has been characterizing the last century is, with no doubt, at the very basis of such complex phenomenon. Only in the last fifteen years some consciousness about the importance of pollution in the long-run has evolved and serious interventions have been made. Moreover, among the numerous component which pollution can be split into, air pollution is certainly one of the most important and tightly linked to strict economic activity.
 
-Therefore, the purpose of the present work is to model through common statistical techniques the evolution of air pollution during this last crucial fifteen years in a developed economy, i.e. the United States, trying to grasp some intuition about this fundamental phenomenon. Hence, after some preliminary descriptive steps, we present the models we think are more appropriate to analyze such complex phenomenon. Finally, we conclude with a comparison to underline pros and cons of each specification. 
+Therefore, the purpose of the present work is to model through common statistical techniques the evolution of air pollution during this last crucial fifteen years in a developed economy, i.e. the United States, trying to grasp some intuition about this fundamental phenomenon. Hence, after some preliminary descriptive steps, we present the models we think are more appropriate to analyze such complex phenomenon. Finally, we conclude with a comparison of the predictive performances of each specification. 
 
 \section{Data}
 
@@ -86,7 +86,7 @@ The dataset \texttt{US\_pollution} contains monthly and daily data about air pol
 \item \textbf{Carbon monoxide ($\text{CO}$)}:  It forms from incomplete combustions mainly from vehicle exhausts (roughly 75\% of all carbon monoxide emissions nationwide and up to 95\% in cities), fuel combustion in industrial processes and natural sources. Cold temperatures make combustion less complete, therefore we expect also in this case a seasonal behavior. 
 \item \textbf{Sulfur dioxide ($\text{SO}_{2}$)}: It is produced when sulfur-containing fuels are burned. It is common mainly in large industrial complexes. 
 \end{itemize}
-Very intuitively, the four variables of interest are interconnected and are the building blocks of a more general phenomenon, that is air pollution. Furthermore, they are related by a common latent process that can be summarized by several components such as industrialization, car traffic and regulation.
+Very intuitively, the two variables of interest are interconnected and are the building blocks of a more general phenomenon, that is air pollution. Furthermore, they are related by a common latent process that can be summarized by several components such as industrialization, car traffic and regulation.
 
 ```{r, echo=F}
 # Import the dataset
@@ -389,11 +389,12 @@ where
 \end{equation*}
 Particularly, we decided to impose as starting condition $m_0 = [ y_{1} \;\; 0 ]'$ and $C_0 = \text{diag}(0.001,0.001)$, a relatively large variance to take into account our uncertainty.
 
-A first visual inspection of the standardized one-step-ahead forecast error series (see Panel (a) in Figure \ref{fig:innovation_process}) shows both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{v}^{2}$ to be time dependent.
+A first visual inspection of  series of standardized one-step-ahead forecast errors (Panel (a), Figure \ref{fig:innovation_process}) shows both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{v}^{2}$ to be time dependent.
 For this purpose, we estimated a linear growth model specified as above but considering  $\sigma_{v_t}^{2} = \sigma_{v_1}^{2}$ for observations before 2008 and $\sigma_{v_t}^{2} = \sigma_{v_2}^{2}$ for observations after 2008.
 
-In Table \ref{tab:MLE_LG} are presented the MLEs of the unknown coefficients for both the time-variant and the time-invariant models and the associated standard errors\footnote{We treat $\psi = (\sigma_{v}^{2}, \; \sigma_{w_1}^{2}, \;\sigma_{w_2}^{2})$ as unknown parameters and we estimate them by maximum likelihood. Then, we perform the analysis of interest plugging them in the model as if they were known costants. We proceed in this way also in the following sections.}.
-In Figure \ref{fig:innovation_process}, instead, we compare the standardized innovation process of the two specifications. The second specification clearly represents an improvement, as the innovation process does not show a clear change in variance anymore and looks closer to a random noise\footnote{Note that there is still an uncaptured seasonal behaviour and some other effects: we will try to capture them through a regression component.}. 
+In Table \ref{tab:MLE_LG} the MLE's of the unknown coefficients are presented for both the time-varying and the time-invariant models and the associated standard errors\footnote{We treat $\psi = (\sigma_{v}^{2}, \; \sigma_{w_1}^{2}, \;\sigma_{w_2}^{2})$ as unknown parameters and we estimate them by maximum likelihood. Then, we perform the analysis of interest plugging them in the model as if they were known costants. We proceed in this way also in the following sections.}.
+
+In Figure \ref{fig:innovation_process}, Panle (b), we plot the standardized innovation process of the time-varying specification. A certain improvement can be observed, as the change in the variance is milder and the process looks closer to random noise, still  some \textit{strucure} can be detected in standardized residuals such as a seasonal behaviour. Hence, we will try to capture it through a seasonal model.
 
 ```{r, echo=F, warning=F}
 # Time invariant linear growth model
@@ -570,11 +571,11 @@ ggarrange(A, B, ncol=2, nrow=1, labels=c("(a)", "(b)"),
           font.label=list(size=20, family="Times"))
 ```
 
-Finally, once the model is specified, it is possible to proceed with filtering, smoothing and forecasting k-step ahead. Furthermore, it is possible to check model assumptions testing the properties of the innovation process e.g. through a correlogram and a qq-plot. We report in Figure \ref{fig: summary} a summary related to the time-invariant linear growth model. 
+Furthermore, it is possible to check model assumptions testing the properties of the innovation process e.g. through a correlogram (left panels) and a qq-plot (right panels).
 
-\textcolor{red}{ELIMINARE 10-STEP-AHEAD FORECAST. POTREMMO RIEMPIRE METTENDO MODEL CHECKING DI UN PAIO DI MODELLI E CONFRONTARE OPPURE LASCIARE SEMPLICEMENTE QQPLOT E ACF}
+The left panels  of Figure \ref{fig: summary} report evidence of departure from independence. Indeed, in all the three of them the autocorrelation function is significantly different from zero at some lags. This proves the presence of persistency (especially in the short run), which is not fully captured by our relatively simple models.
 
-Concerning Figure (a), as expected the forecast function is linear (particularly, we recall $f_{t} (k) = \hat{\mu}_{t} + k \; \hat{\beta}_{t}$) and the variance increases with $k$ due to the more uncertainty.  Figure (c) report evidence of departure from normality, specifically due to the presence of fat tails in the empirical distribution. Hence, it suggests that a better specification should rely on leptokurtic distributions, such as the \textit{student's t} or the \textit{Generalized Pareto Distribution}. However, we do not conduct deeper analysis in this respect being beyond the purpose of this work.\footnote{Notice that together with the k-step-ahead point forecasts we plotted 3 samples from the forecast distribution. We present the k step ahead forecast only for this model, since the R package \textit{dlm} for the moment does not allow to compute it for non-constant models. Also, a one-step in-sample forecast comparison will be provided in Section 2.4.  We decided to formally report the model checking only once, however, we checked also all the subsequent specifications, as one can find in the provided code.}. \textcolor{red}{BISOGNA SCRIVERE QUALCOSA SU FIG b?}
+The right panels of Figure \ref{fig: summary} report evidence of departure from normality. While residuals for the time-invariant linear growth model (Panel (b)) prove the presence of fat tails in the empirical distribution, residuals of the time-varying model (Panel (d)) seem to be closer to a Gaussian distribution in terms of kurtosis. Still, fat tails are present and some positive skewness appears. Very similar results are also obtained for the seasonal model (Panel (f)). These considerations suggest that a better specification should rely on leptokurtic distributions, such as the \textit{student's t} or the \textit{Generalized Pareto Distribution}. However, we do not conduct a deeper analysis, being it beyond the purpose of the present work.
 
 \subsection{Seasonal dynamic linear model}
 
@@ -689,7 +690,7 @@ where
   \theta_0 \indep (v_t) \indep (w_t), \quad
   G=I_2 \quad \text{ and } \quad W=\text{diag}(\sigma_{w_1}^{2}, \sigma_{w_2}^{2})
 \end{equation*}
-that is, the two time varying coefficients $\alpha_t$ and $\beta_t$ are modeled as independent random walks \textcolor{red}{(we consider both the system variances unknown)}.
+that is, the two time varying coefficients $\alpha_t$ and $\beta_t$ are modeled as independent random walks and we consider both the system variances unknown.
 
 ```{r}
 # Define regressor
@@ -747,7 +748,8 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
   kable_styling(latex_options="hold_position")
 ```
 
-Let's now compute the filtering estimates of $\theta_t=[\alpha_t \; \beta_t]'$, for $t=0,\ldots,T$. The filtering estimates of $\beta_t$ are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:filt_est}. \textcolor{red}{SPIEGARE IL PERCHè PLOTTIAMO I FILTERING ESTIMATES QUANDO IN GENERALE SIAMO INTERESSATI A MODELLARE CHANGE POINTS E 1 STEP AHEAD PREDICTION}
+The filtering estimates of $\theta_t=[\alpha_t \; \beta_t]'$, for $t=0,\ldots,T$, are also computed. The filtering estimates of the state variables are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:filt_est}.
+These graphs show the relevance of the brake point also in the relationship between $\text{CO}$ and the covariate. First, the intercepts obtained from the filtering procedure, confirming findings in the HMM section, are decreasing though becoming roughtly constant exactly around the break, namely around 2008. On the other hand, he interpretation of the filtered $\beta$'s in light of the break point is more difficult. However, we observe a mild and unstable relationship between the two variables in the pre-break period (i.e. the coefficient oscillates around zero). It becomes stronger and negative immediatly before the break, whereas becoming positive and increasing during the post-brake period. Explanation of this behavior are of a technical kind, being related to the chemical relation betwen the two pollutant, hence we are not going to dive deeper into a causal explanation. It will suffice to us to show that the model is able to track this dynamic relation even in presence of structural instability.
 
 ```{r}
 # Kalman filter
