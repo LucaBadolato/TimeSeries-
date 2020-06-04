@@ -144,4 +144,4 @@ c <- ggplot(res_LG, aes(sample=res)) +
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,1), "cm"))
+        plot.margin=unit(c(0,0,1,1), "cm"))
