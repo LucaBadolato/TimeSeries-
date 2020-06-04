@@ -430,6 +430,11 @@ vol_C_LG <- sqrt(unlist(list_c_LG))
 # One step ahead forecast
 y_filt_LG <- LG_Filt$f
 
+# Credible intrvals of the one-step ahead forecast
+y_filt_LG_sd <- residuals(LG_Filt)$sd
+y_filt_LG_lb <- y_filt_LG - 1.64 * y_filt_LG_sd
+y_filt_LG_ub <- y_filt_LG + 1.64 * y_filt_LG_sd
+
 # Signal-to-noise ratio
 S_to_N <- matrix(NA,2,1)
 S_to_N[1] <- exp(fit_LG$par[2]) * exp(-fit_LG$par[1])
@@ -508,6 +513,12 @@ vol_C_LG_v <- sqrt(unlist(list_c_LG_v))
 
 # One step ahead forecast
 y_filt_LG_v <- LG_v_Filt$f
+
+# Credible intrvals of the one-step ahead forecast
+y_filt_LG_v_sd <- residuals(LG_v_Filt)$sd
+y_filt_LG_v_lb <- y_filt_LG_v - 1.64 * y_filt_LG_v_sd
+y_filt_LG_v_ub <- y_filt_LG_v + 1.64 * y_filt_LG_v_sd
+
 ```
 
 In Figure \ref{Fig:innovation process plot} we compare the standardized innovation process of the two specifications.The second specification reports an improvement, as the innovation process does not report anymore a clear change in variance and looks more close to random noise\footnote{Note that there is still a not captured seasonal behaviour and some other effects that we will try to capture through a regression component}. 
@@ -689,6 +700,12 @@ vol_C_LG_v_seas <- sqrt(my_C)
 
 # One step ahead forecast
 y_filt_LG_v_seas <- LG_v_seas_Filt$f
+
+# Credible intrvals of the one-step ahead forecast
+y_filt_LG_v_seas_sd <- residuals(LG_v_seas_Filt)$sd
+y_filt_LG_v_seas_lb <- y_filt_LG_v_seas - 1.64 * y_filt_LG_v_seas_sd
+y_filt_LG_v_seas_ub <- y_filt_LG_v_seas + 1.64 * y_filt_LG_v_seas_sd
+
 ```
 
 ```{r, fig.width=10, fig.height=3.5, out.width='50%', fig.cap="\\label{Fig: Innovation_process_combined}Innovation process plot: time variant linear growth model + seasonal DLM."}
@@ -808,6 +825,11 @@ vol_C_DR <- sqrt(my_C)
 # One step ahead forecast
 y_filt_DR <- DR_Filt$f
 
+# Credible intrvals of the one-step ahead forecast
+y_filt_DR_sd <- residuals(DR_Filt)$sd
+y_filt_DR_lb <- y_filt_DR - 1.64 * y_filt_DR_sd
+y_filt_DR_ub <- y_filt_DR + 1.64 * y_filt_DR_sd
+
 # Estimated coefficients
 filt_state_est_alpha <- filt_est_DR[,1]
 filt_state_est_beta  <- filt_est_DR[,2]
@@ -881,8 +903,8 @@ We treat the data under study as streaming data, periodically updated by EPA. Th
 
 ```{r, fig.width=16, fig.height=4, out.width='100%',fig.cap="\\label{fig:one-step-forecast_est} One-step-ahead forecast estimates"}
 # Build df
-df_forecast <- data.frame(louisiana_df$n_months, y, HMM_forecast, y_filt_LG, y_filt_LG_v, y_filt_LG_v_seas, y_filt_DR) 
-colnames(df_forecast) <- c("n_months", "y", "HMM_forecast", "y_filt_LG", "y_filt_LG_v", "y_filt_LG_v_seas", "y_filt_DR") 
+df_forecast <- data.frame(louisiana_df$n_months, y, HMM_forecast, y_filt_LG, y_filt_LG_lb, y_filt_LG_ub, y_filt_LG_v, y_filt_LG_v_lb, y_filt_LG_v_ub, y_filt_LG_v_seas, y_filt_LG_v_seas_lb, y_filt_LG_v_seas_ub, y_filt_DR, y_filt_DR_lb, y_filt_DR_ub) 
+colnames(df_forecast) <- c("n_months", "y", "HMM_forecast", "y_filt_LG", "y_filt_LG_lb", "y_filt_LG_ub", "y_filt_LG_v", "y_filt_LG_v_lb", "y_filt_LG_v_ub", "y_filt_LG_v_seas", "y_filt_LG_v_seas_lb", "y_filt_LG_v_seas_ub", "y_filt_DR", "y_filt_DR_lb", "y_filt_DR_ub") 
 
 # Plot
 colors <- c("Observed data" = "black", "Homogeneous HMM" = "red",  "Time-invariant lin.growth" = "springgreen4", 
@@ -913,6 +935,9 @@ plot_HMM <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
 plot_LG <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
   geom_line(aes(y=y_filt_LG, color = "Time-invariant lin.growth")) +
+  geom_line(aes(y=y_filt_LG_lb), color="springgreen4", linetype="dashed", size=0.2) +
+  geom_line(aes(y=y_filt_LG_ub), color="springgreen4", linetype="dashed", size=0.2) +
+  geom_ribbon(aes(ymin=y_filt_LG_lb, ymax=y_filt_LG_ub), alpha=.1, fill="springgreen4") +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
   theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
@@ -935,6 +960,9 @@ plot_LG <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
 plot_LG_V <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
   geom_line(aes(y=y_filt_LG_v, color = "Time-varying lin.growth")) +
+  geom_line(aes(y=y_filt_LG_v_lb), color="blue", linetype="dashed", size=0.2) +
+  geom_line(aes(y=y_filt_LG_v_ub), color="blue", linetype="dashed", size=0.2) +
+  geom_ribbon(aes(ymin=y_filt_LG_v_lb, ymax=y_filt_LG_v_ub), alpha=.1, fill="blue") +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
   theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
@@ -955,6 +983,9 @@ plot_LG_V <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
 plot_LG_V_seas <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
   geom_line(aes(y=y_filt_LG_v_seas, color = "Time-varying seasonal lin.growth")) +
+  geom_line(aes(y=y_filt_LG_v_seas_lb), color="firebrick", linetype="dashed", size=0.2) +
+  geom_line(aes(y=y_filt_LG_v_seas_ub), color="firebrick", linetype="dashed", size=0.2) +
+  geom_ribbon(aes(ymin=y_filt_LG_v_seas_lb, ymax=y_filt_LG_v_seas_ub), alpha=.1, fill="firebrick") +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
   theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
@@ -975,6 +1006,9 @@ plot_LG_V_seas <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
 plot_DR <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +  
   geom_line(aes(y=y_filt_DR, color="Dynamic regression")) +
+  geom_line(aes(y=y_filt_DR_lb), color="darkorange", linetype="dashed", size=0.2) +
+  geom_line(aes(y=y_filt_DR_ub), color="darkorange", linetype="dashed", size=0.2) +
+  geom_ribbon(aes(ymin=y_filt_DR_lb, ymax=y_filt_DR_ub), alpha=.1, fill="darkorange") +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
   theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
