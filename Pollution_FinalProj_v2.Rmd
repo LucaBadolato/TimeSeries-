@@ -559,6 +559,8 @@ ggarrange(A, B, ncol=2, nrow=1, labels=c("(a)", "(b)"),
 
 Finally, once the model is specified, it is possible to proceed with filtering, smoothing and forecasting k-step ahead. Furthermore, it is possible to check model assumptions testing the properties of the innovation process e.g. through a correlogram and a qq-plot. We report in Figure \ref{Fig: summary} a summary related to the time-invariant linear growth model. 
 
+\textcolor{red}{ELIMINARE 10-STEP-AHEAD FORECAST. POTREMMO RIEMPIRE METTENDO MODEL CHECKING DI UN PAIO DI MODELLI E CONFRONTARE OPPURE LASCIARE SEMPLICEMENTE QQPLOT E ACF}
+
 ```{r, fig.width=20, fig.height=6, out.width='100%', fig.cap="\\label{Fig: summary}Time-invariant linear growth model: (a) 10-step-ahead forecast; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors."}
 
 # 10-steps-ahead forecast
@@ -783,7 +785,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
   kable_styling(latex_options="hold_position")
 ```
 
-Let's now compute the filtering estimates of $\theta_t=[\alpha_t \; \beta_t]'$, for $t=0,\ldots,T$. The filtering estimates of $\beta_t$ are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:filt_est}.
+Let's now compute the filtering estimates of $\theta_t=[\alpha_t \; \beta_t]'$, for $t=0,\ldots,T$. The filtering estimates of $\beta_t$ are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:filt_est}. \textcolor{red}{SPIEGARE IL PERCHè PLOTTIAMO I FILTERING ESTIMATES QUANDO IN GENERALE SIAMO INTERESSATI A MODELLARE CHANGE POINTS E 1 STEP AHEAD PREDICTION}
 
 ```{r}
 # Kalman filter
@@ -821,7 +823,7 @@ lower_filt_beta  <- filt_state_est_beta - 1.64*filt_sd_est_beta # lower bound of
 ```
 
 
-```{r, fig.width=20, fig.height=3.5, out.width='100%', fig.cap="\\label{fig:filt_est} Filtering estimates of alpha (Panel a) and beta (Panel b) with credible intervals"}
+```{r, fig.width=20, fig.height=3.5, fig.cap="\\label{fig:filt_est} Filtering estimates of alpha (Panel a) and beta (Panel b) with credible intervals"}
 #Create df
 df_co_ci <- data.frame(louisiana_df$n_months, filt_state_est_alpha, filt_state_est_beta, 
                        upper_filt_alpha, lower_filt_alpha, upper_filt_beta, lower_filt_beta)
@@ -1041,12 +1043,12 @@ build_SUTSE <- function(param){
 }
   
 # Estimate MLE of parameters
-fit_SUTSE <- dlmMLE(y_m, parm=rep(0.8, 6), lower=c(0.0001, 0.0001,0,0,0,0), build_SUTSE, hessian=TRUE)
+fit_SUTSE <- dlmMLE(y_m, parm=rep(0.5, 6), method = "L-BFGS-B", lower=c(0.0001, 0.0001,0,0,0,0), build_SUTSE, hessian=TRUE)
 param_SUTSE <- unlist(build_SUTSE(fit_SUTSE$par)[c("V","W")])
+#fit_SUTSE$convergence
 
 # Calculate SE of the MLE using delta method
-estVarLog_SUTSE <- solve(fit_SUTSE$hessian)
-estVar_SUTSE <- diag(exp(fit_SUTSE$par)) %*% estVarLog_SUTSE %*%  diag(exp(fit_SUTSE$par))
+estVar_SUTSE <- solve(fit_SUTSE$hessian)
 SE_SUTSE <- sqrt(diag(estVar_SUTSE))
 
 # Put MLE in the model
@@ -1060,14 +1062,15 @@ y_filt_SUTSE <- SUTSE_Filt$f
 
 ## Credible intrvals of the one-step ahead forecast
 SUTSE_sd <- residuals(SUTSE_Filt)$sd
+SUTSE_sd[1,] <- c(SUTSE_sd[2,1],SUTSE_sd[2,2]) 
 SUTSE_lb_CO <- SUTSE_Filt$f[,1] - 1.64 * SUTSE_sd[,1]
 SUTSE_ub_CO <- SUTSE_Filt$f[,1] + 1.64 * SUTSE_sd[,1]
 SUTSE_lb_SO2 <- SUTSE_Filt$f[,2] - 1.64 * SUTSE_sd[,2]
 SUTSE_ub_SO2 <- SUTSE_Filt$f[,2] + 1.64 * SUTSE_sd[,2]
-
 ```
 
-```{r}
+```{r, fig.width=20, fig.height=3.5, fig.cap="\\label{fig:SUTSE_forecast} One-step-ahead forecast of CO (Panel a) and SO2 (Panel b) with credible intervals at 90% level"}
+
 df_SUTSE <- data.frame(y_m,louisiana_df$n_months,y_filt_SUTSE,SUTSE_lb_CO,SUTSE_lb_SO2,SUTSE_ub_CO,SUTSE_ub_SO2)
 
 CO_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
@@ -1095,7 +1098,7 @@ SO2_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
   geom_line(aes(y=y_filt_SUTSE[,2]), size=0.8, color="red") +
   geom_line(aes(y=SUTSE_ub_SO2), color="red", linetype="dotted", size=0.2) +
   geom_line(aes(y=SUTSE_lb_SO2), color="red", linetype="dotted", size=0.2) +
-  geom_ribbon(aes(ymin=SUTSE_lb_CO, ymax=SUTSE_ub_CO), alpha=.1, fill="red") +
+  geom_ribbon(aes(ymin=SUTSE_lb_SO2, ymax=SUTSE_ub_SO2), alpha=.1, fill="red") +
   theme_bw(base_size=9) +
   labs(x="Year", y="Predicted SO2", color="black") +
   scale_y_continuous() +
