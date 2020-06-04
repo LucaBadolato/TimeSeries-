@@ -227,18 +227,30 @@ mu2hat <- paste0(round(HMM_fit@response[[2]][[1]]@parameters[["coefficients"]][[
 mu3hat <- paste0(round(HMM_fit@response[[3]][[1]]@parameters[["coefficients"]][["(Intercept)"]],3))
 beta1hat <- paste0(round(HMM_fit@response[[1]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
 beta2hat <- paste0(round(HMM_fit@response[[2]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
-beta3hat <- paste0(round(HMM_fit@response[[3]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3))
-sd1hat <- paste0(round(HMM_fit@response[[1]][[1]]@parameters$sd,3))
-sd2hat <- paste0(round(HMM_fit@response[[2]][[1]]@parameters$sd,3))
-sd3hat <- paste0(round(HMM_fit@response[[3]][[1]]@parameters$sd,3))
+beta3hat <- paste0(round(HMM_fit@response[[3]][[1]]@parameters[["coefficients"]][["louisiana_df$n_months"]],3)) 
+
+sd1hat_n <- round(HMM_fit@response[[1]][[1]]@parameters$sd,3)
+sd1hat <- paste0(sd1hat_n)
+sd2hat_n <- round(HMM_fit@response[[2]][[1]]@parameters$sd,3)
+sd2hat <- paste0(sd2hat_n)
+sd3hat_n <- round(HMM_fit@response[[3]][[1]]@parameters$sd,3)
+sd3hat <- paste0(sd3hat_n)
 
 # se(MLE)
 MLE_SE=depmixS4::standardError(HMM_fit)
-SE_mu1hat <- paste0('(', round(MLE_SE$se[13],3), ')')
-SE_mu2hat <- paste0('(', round(MLE_SE$se[16],3), ')')
-SE_mu3hat <- paste0('(', round(MLE_SE$se[19],3), ')')
-SE_beta1hat <- paste0('(', round(MLE_SE$se[14],3), ')')
-SE_beta2hat <- paste0('(', round(MLE_SE$se[17],3), ')')
+
+SE_mu1hat_n <- round(MLE_SE$se[13],3)
+SE_mu1hat <- paste0('(', SE_mu1hat_n, ')')
+SE_mu2hat_n <- round(MLE_SE$se[16],3)
+SE_mu2hat <- paste0('(', SE_mu2hat_n, ')')
+SE_mu3hat_n <- round(MLE_SE$se[19],3)
+SE_mu3hat <- paste0('(', SE_mu3hat_n, ')')
+
+SE_beta1hat_n <- round(MLE_SE$se[14],3)
+SE_beta1hat <- paste0('(', SE_beta1hat_n, ')')
+SE_beta2hat_n <- round(MLE_SE$se[17],3)
+SE_beta2hat <- paste0('(', SE_beta2hat_n , ')')
+SE_beta3hat_n <- round(MLE_SE$se[20],3)
 SE_beta3hat <- paste0('(', round(MLE_SE$se[20],3), ')')
 SE_sd1hat <- paste0('(', round(MLE_SE$se[15],3), ')')
 SE_sd2hat <- paste0('(', round(MLE_SE$se[18],3), ')')
@@ -351,10 +363,17 @@ In addition to explaining such a shifts, we may want predict them using this hom
 trans_mat <- HMM_fit@trDens[1,,] %>% t()
 trans_mat <- matrix(t(trans_mat), ncol = 3)
 HMM_forecast <- matrix(NA, nrow=length(y), ncol=1)
+HMM_forecast_sd <- matrix(NA, nrow=length(y), ncol=1)
+mu_var <- c((SE_mu1hat_n)^2, (SE_mu2hat_n)^2, (SE_mu3hat_n)^2 )
+beta_var <- c((SE_beta1hat_n)^2, (SE_beta2hat_n)^2, (SE_beta3hat_n)^2 )
+sigma_2 <- c((sd1hat_n)^2, (sd2hat_n)^2, (sd3hat_n)^2 )
 for (t in 1:length(y)){
   v <- estStates_HMM[t,1]  
-  HMM_forecast[t] <- (trans_mat[v,]%*%HMM_summary[,1]) + (trans_mat[v,]%*%HMM_summary[,2])*t
+  HMM_forecast[t] <- (trans_mat[v,]%*%HMM_summary[,1]) + (trans_mat[v,]%*%HMM_summary[,2])*(t)
+  HMM_forecast_sd[t] <- sqrt((trans_mat[v,]%*%mu_var) + (trans_mat[v,]%*%beta_var)*(t^2) + (trans_mat[v,]%*%sigma_2))
 }
+HMM_forecast_lb <- HMM_forecast - 1.64 * HMM_forecast_sd
+HMM_forecast_ub <- HMM_forecast + 1.64 * HMM_forecast_sd
 ```
 
 \section{Section 2. Univariate DLMs}
@@ -903,16 +922,20 @@ We treat the data under study as streaming data, periodically updated by EPA. Th
 
 ```{r, fig.width=16, fig.height=4, out.width='100%',fig.cap="\\label{fig:one-step-forecast_est} One-step-ahead forecast estimates"}
 # Build df
-df_forecast <- data.frame(louisiana_df$n_months, y, HMM_forecast, y_filt_LG, y_filt_LG_lb, y_filt_LG_ub, y_filt_LG_v, y_filt_LG_v_lb, y_filt_LG_v_ub, y_filt_LG_v_seas, y_filt_LG_v_seas_lb, y_filt_LG_v_seas_ub, y_filt_DR, y_filt_DR_lb, y_filt_DR_ub) 
-colnames(df_forecast) <- c("n_months", "y", "HMM_forecast", "y_filt_LG", "y_filt_LG_lb", "y_filt_LG_ub", "y_filt_LG_v", "y_filt_LG_v_lb", "y_filt_LG_v_ub", "y_filt_LG_v_seas", "y_filt_LG_v_seas_lb", "y_filt_LG_v_seas_ub", "y_filt_DR", "y_filt_DR_lb", "y_filt_DR_ub") 
+df_forecast <- data.frame(louisiana_df$n_months, y, HMM_forecast, HMM_forecast_lb, HMM_forecast_ub, y_filt_LG, y_filt_LG_lb, y_filt_LG_ub, y_filt_LG_v, y_filt_LG_v_lb, y_filt_LG_v_ub, y_filt_LG_v_seas, y_filt_LG_v_seas_lb, y_filt_LG_v_seas_ub, y_filt_DR, y_filt_DR_lb, y_filt_DR_ub) 
+colnames(df_forecast) <- c("n_months", "y", "HMM_forecast", "HMM_forecast_lb", "HMM_forecast_ub", "y_filt_LG", "y_filt_LG_lb", "y_filt_LG_ub", "y_filt_LG_v", "y_filt_LG_v_lb", "y_filt_LG_v_ub", "y_filt_LG_v_seas", "y_filt_LG_v_seas_lb", "y_filt_LG_v_seas_ub", "y_filt_DR", "y_filt_DR_lb", "y_filt_DR_ub") 
 
 # Plot
 colors <- c("Observed data" = "black", "Homogeneous HMM" = "red",  "Time-invariant lin.growth" = "springgreen4", 
             "Time-varying lin.growth"="blue", "Time-varying seasonal lin.growth"="firebrick","Dynamic regression"="darkorange")
 
+
 plot_HMM <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
   geom_line(aes(y=HMM_forecast, color = "Homogeneous HMM")) +
+  geom_line(aes(y=HMM_forecast_lb), color="red", linetype="dashed", size=0.2) +
+  geom_line(aes(y=HMM_forecast_ub), color="red", linetype="dashed", size=0.2) +
+  geom_ribbon(aes(ymin=HMM_forecast_lb, ymax=HMM_forecast_ub), alpha=.1, fill="red") +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
   theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
