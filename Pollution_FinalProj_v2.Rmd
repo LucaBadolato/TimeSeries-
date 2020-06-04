@@ -574,8 +574,6 @@ Finally, once the model is specified, it is possible to proceed with filtering, 
 
 \textcolor{red}{ELIMINARE 10-STEP-AHEAD FORECAST. POTREMMO RIEMPIRE METTENDO MODEL CHECKING DI UN PAIO DI MODELLI E CONFRONTARE OPPURE LASCIARE SEMPLICEMENTE QQPLOT E ACF}
 
-
-
 Concerning Figure (a), as expected the forecast function is linear (particularly, we recall $f_{t} (k) = \hat{\mu}_{t} + k \; \hat{\beta}_{t}$) and the variance increases with $k$ due to the more uncertainty.  Figure (c) report evidence of departure from normality, specifically due to the presence of fat tails in the empirical distribution. Hence, it suggests that a better specification should rely on leptokurtic distributions, such as the \textit{student's t} or the \textit{Generalized Pareto Distribution}. However, we do not conduct deeper analysis in this respect being beyond the purpose of this work.\footnote{Notice that together with the k-step-ahead point forecasts we plotted 3 samples from the forecast distribution. We present the k step ahead forecast only for this model, since the R package \textit{dlm} for the moment does not allow to compute it for non-constant models. Also, a one-step in-sample forecast comparison will be provided in Section 2.4.  We decided to formally report the model checking only once, however, we checked also all the subsequent specifications, as one can find in the provided code.}. \textcolor{red}{BISOGNA SCRIVERE QUALCOSA SU FIG b?}
 
 \subsection{Seasonal dynamic linear model}
@@ -791,7 +789,7 @@ upper_filt_beta  <- filt_state_est_beta + 1.64*filt_sd_est_beta # upper bound of
 lower_filt_beta  <- filt_state_est_beta - 1.64*filt_sd_est_beta # lower bound of 90% C.I.
 ```
 
-```{r, fig.width=18, fig.height=3.5, fig.cap="\\label{fig:filt_est} Filtering estimates of alpha (Panel a) and beta (Panel b) with credible intervals"}
+```{r, fig.width=18, fig.height=3.5, fig.cap="\\label{fig:filt_est} Filtering estimates with credible intervals: (a) alpha; (b) beta."}
 
 # Create df
 df_co_ci <- data.frame(louisiana_df$n_months, filt_state_est_alpha, filt_state_est_beta, 
@@ -1109,25 +1107,25 @@ MLEsum <- data.frame(sigmaV11_1=c(MLE_sigmaV11_1, se_sigmaV11_1),
                      sigmaWbeta11=c(MLE_sigmaWbeta11, se_sigmaWbeta11),
                      sigmaWbeta22=c(MLE_sigmaWbeta22, se_sigmaWbeta22))
 
-MLEsum_table <- knitr::kable(MLEsum, "latex", booktabs=T, align="c",
+MLEsum_table_2 <- knitr::kable(MLEsum, "latex", booktabs=T, align="c",
              col.names = c("$\\hat{V}_{11}$",
                            "$\\hat{V}_{22}$",
                            "$\\hat{V}_{11}$",
                            "$\\hat{V}_{22}$",
-                           "$\\hat{W}_{\\mu}_{11}$",
-                           "$\\hat{W}_{\\mu}_{12}$",
-                           "$\\hat{W}_{\\mu}_{22}$",
-                           "$\\hat{W}_{\\beta}_{11}$",
-                           "$\\hat{W}_{\\beta}_{22}$" ),
+                           "$\\hat{W}_{\\mu11}$",
+                           "$\\hat{W}_{\\mu12}$",
+                           "$\\hat{W}_{\\mu22}$",
+                           "$\\hat{W}_{\\beta11}$",
+                           "$\\hat{W}_{\\beta22}$"),
              escape=F, caption="Maximum Likelihood estimates of the unknown
              parameters\\label{tab:MLE_SUTSE}") %>%
-  column_spec(1:9, width="5em") %>%
+  column_spec(1:9, width="4em") %>%
   collapse_rows(columns=1, latex_hline="none") %>%
   footnote(general="Standard errors in parentheses.",
            general_title="Note:",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
-add_header_above(MLEsum_table, c("Period 1 to 84" = 2, "Period 85 to 186" = 2,"" = 5))  
+add_header_above(MLEsum_table_2, c("Period 1 to 84"=2, "Period 85 to 186"=2, " "=5))
 ```
 
 ```{r, fig.width=18, fig.height=4, out.width='100%', fig.cap="\\label{fig:SUTSE_forecast}One-step-ahead forecast with credible intervals: (a) CO; (b) SO2."}
