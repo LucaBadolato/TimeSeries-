@@ -650,7 +650,7 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
 
 In order to evaluate the improvement that a seasonal component has in our analysis, we combined it with the time variant linear growth model previously specified and plot in Figure \ref{Fig: Innovation_process_combined} the innovation process series. Comparing this plot with the previously reported one, it is possible to see that we are now able to capture a month-specific effects. The series looks like a random walk plus noise and shows only a marginal noise, that we try to capture in the following sections.    
 
-```{r}
+```{r warning=FALSE}
 # Put MLE in the model + Add DLMs
 Seas <- build_seas(fit_seas$par)
 LG_v_seas <- LG_v + Seas
@@ -808,8 +808,8 @@ lower_filt_beta  <- filt_state_est_beta - 1.64*filt_sd_est_beta # lower bound of
 ```
 
 
-```{r, fig.width=20, fig.height=4, out.width='100%', fig.cap="\\label{fig:filt_est} Filtering estimates of alpha (Panel a) and beta (Panel b) with credible intervals"}
-# Create df
+```{r, fig.width=20, fig.height=3.5, out.width='100%', fig.cap="\\label{fig:filt_est} Filtering estimates of alpha (Panel a) and beta (Panel b) with credible intervals"}
+#Create df
 df_co_ci <- data.frame(louisiana_df$n_months, filt_state_est_alpha, filt_state_est_beta, 
                        upper_filt_alpha, lower_filt_alpha, upper_filt_beta, lower_filt_beta)
 colnames(df_co_ci) = c("n_months", "filt_state_est_alpha", "filt_state_est_beta",
@@ -864,22 +864,19 @@ source("DR_model_checking.R")
 
 We treat the data under study as streaming data, periodically updated by EPA. Therefore, our main interest is forecasting, which is also a useful way to check the performance of the different specifications considered so far. Therefore, we plot the one-step-ahead obtained with the models fitted in the previous sections (Figure \ref{fig:one-step-forecast_est})\footnote{for sake of clarity we decided to report only the temporal window around the breakpoint.}.
 
-```{r, fig.width=7, fig.height=2, out.width='75%', fig.cap="\\label{fig:one-step-forecast_est} One-step-ahead forecast estimates"}
+```{r, fig.width=12, fig.height=3.5, fig.cap="\\label{fig:one-step-forecast_est} One-step-ahead forecast estimates"}
 # Build df
-df_forecast <- data.frame(louisiana_df$n_months, y, y_filt_LG, y_filt_LG_v, y_filt_LG_v_seas, y_filt_DR) # + struct_fit,
-colnames(df_forecast) <- c("n_months", "y", "y_filt_LG", "y_filt_LG_v", "y_filt_LG_v_seas", "y_filt_DR") # + "struct_fit",
+df_forecast <- data.frame(louisiana_df$n_months, y, y_filt_LG, y_filt_LG_v, y_filt_LG_v_seas, y_filt_DR) 
+colnames(df_forecast) <- c("n_months", "y", "y_filt_LG", "y_filt_LG_v", "y_filt_LG_v_seas", "y_filt_DR") 
 
 # Plot
-colors <- c("Observed data (dashed)" = "black", "Time-invariant linear growth" = "springgreen4", 
-            "Time-variant linear growth"="blue", "Time-variant linear growth + Seasonality"="firebrick","Dynamic regression"="darkorange")
-ggplot(df_forecast[61:109,], aes(x=n_months)) +
-  geom_line(aes(y=y, color="Observed data (dashed)"), size=0.4, linetype="longdash") +
-  geom_line(aes(y=y_filt_LG, color = "Time-invariant linear growth"), size=0.4) +
-  geom_line(aes(y=y_filt_LG_v, color = "Time-variant linear growth"), size=0.4) +
-  geom_line(aes(y=y_filt_LG_v_seas, color = "Time-variant linear growth + Seasonality"), size=0.4) +
-  geom_line(aes(y=y_filt_DR, color="Dynamic regression"), size=0.4) +
-  #geom_line(aes(y=struct_fit, color="Basic structural model"), size=0.4) +
-  #geom_vline(xintercept = as.Date("2008/1/1"), color= "black", size=0.3) +
+colors <- c("Observed data" = "black", "Time-invariant lin.growth" = "springgreen4", 
+            "Time-varying lin.growth"="blue", "Time-varying seasonal lin.growth"="firebrick","Dynamic regression"="darkorange")
+
+plot_LG <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
+  geom_line(aes(y=y, color="Observed data")) +
+  geom_line(aes(y=y_filt_LG, color = "Time-invariant lin.growth")) +
+  geom_vline(xintercept = 85, color= "black", size=0.3) +
   theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
   scale_y_continuous(breaks=seq(0,1,0.2)) +
@@ -892,8 +889,75 @@ ggplot(df_forecast[61:109,], aes(x=n_months)) +
         panel.grid.major=element_line(size=0.02),
         panel.grid.minor=element_blank(),) +
         scale_color_manual(values=colors) +
-        theme(legend.justification=c("left", "top"), legend.text=element_text(family="Times"),
-              legend.box.just="bottom", legend.margin=margin(2,0,2,2))
+  theme(legend.position = c(.8, .85), legend.background = element_blank(), 
+        legend.key = element_blank(),
+        legend.text=element_text(size=10, family="Times"),
+        legend.spacing.x=unit(.2, "cm"))
+  
+
+plot_LG_V <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
+  geom_line(aes(y=y, color="Observed data")) +
+  geom_line(aes(y=y_filt_LG_v, color = "Time-varying lin.growth")) +
+  geom_vline(xintercept = 85, color= "black", size=0.3) +
+  theme_bw(base_size=9) +
+  labs(x="Year", y=expression(CO~(ppm)), color = "") +
+  scale_y_continuous(breaks=seq(0,1,0.2)) +
+  scale_x_continuous(breaks=seq(61,109,24),
+                     labels=format(seq(as.Date("2006/1/1"),as.Date("2011/12/31"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(family="Times", margin=margin(t=2)),
+        axis.text.y=element_text(family="Times", margin=margin(r=2)),
+        axis.title.x=element_text(size=8, family="Times", margin=margin(t=2)),
+        axis.title.y=element_text(size=8, family="Times", margin=margin(r=2)),
+        panel.grid.major=element_line(size=0.02),
+        panel.grid.minor=element_blank(),) +
+        scale_color_manual(values=colors) +
+  theme(legend.position = c(.8, .85), legend.background = element_blank(),
+        legend.key = element_blank(),legend.text=element_text(size=10, family="Times"),
+        legend.spacing.x=unit(.2, "cm"))
+  
+plot_LG_V_seas <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
+  geom_line(aes(y=y, color="Observed data")) +
+  geom_line(aes(y=y_filt_LG_v_seas, color = "Time-varying seasonal lin.growth")) +
+  geom_vline(xintercept = 85, color= "black", size=0.3) +
+  theme_bw(base_size=9) +
+  labs(x="Year", y=expression(CO~(ppm)), color = "") +
+  scale_y_continuous(breaks=seq(0,1,0.2)) +
+  scale_x_continuous(breaks=seq(61,109,24),
+                     labels=format(seq(as.Date("2006/1/1"),as.Date("2011/12/31"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(family="Times", margin=margin(t=2)),
+        axis.text.y=element_text(family="Times", margin=margin(r=2)),
+        axis.title.x=element_text(size=8, family="Times", margin=margin(t=2)),
+        axis.title.y=element_text(size=8, family="Times", margin=margin(r=2)),
+        panel.grid.major=element_line(size=0.02),
+        panel.grid.minor=element_blank(),) +
+        scale_color_manual(values=colors) +
+  theme(legend.position = c(.75, .85), legend.background = element_blank(),
+        legend.key = element_blank(),legend.text=element_text(size=10, family="Times"),
+        legend.spacing.x=unit(.2, "cm"))
+  
+plot_DR <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
+  geom_line(aes(y=y, color="Observed data")) +  
+  geom_line(aes(y=y_filt_DR, color="Dynamic regression")) +
+  geom_vline(xintercept = 85, color= "black", size=0.3) +
+  theme_bw(base_size=9) +
+  labs(x="Year", y=expression(CO~(ppm)), color = "") +
+  scale_y_continuous(breaks=seq(0,1,0.2)) +
+  scale_x_continuous(breaks=seq(61,109,24),
+                     labels=format(seq(as.Date("2006/1/1"),as.Date("2011/12/31"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(family="Times", margin=margin(t=2)),
+        axis.text.y=element_text(family="Times", margin=margin(r=2)),
+        axis.title.x=element_text(size=8, family="Times", margin=margin(t=2)),
+        axis.title.y=element_text(size=8, family="Times", margin=margin(r=2)),
+        panel.grid.major=element_line(size=0.02),
+        panel.grid.minor=element_blank(),) +
+        scale_color_manual(values=colors) +
+  theme(legend.position = c(.8, .85), legend.background = element_blank(),
+        legend.key = element_blank(),legend.text=element_text(size=10, family="Times"),
+        legend.spacing.x=unit(.2, "cm"))
+
+
+ggarrange(plot_LG, plot_LG_V, plot_LG_V_seas, plot_DR, ncol=2, nrow=2, 
+          labels=c("(a)", "(b)","(c)","(d)"),font.label=list(size=10, family="Times"))
 
 # Alternative legend position
 #        theme(legend.position="bottom", legend.text=element_text(size=12, family="Times"),
@@ -946,7 +1010,7 @@ build_SUTSE <- function(param){
 }
   
 # Estimate MLE of parameters
-fit_SUTSE <- dlmMLE(y_m, parm=rep(1, 6), lower=c(0.0001, 0.0001,0,0,0,0), build_SUTSE, hessian=TRUE)
+fit_SUTSE <- dlmMLE(y_m, parm=rep(0.8, 6), lower=c(0.0001, 0.0001,0,0,0,0), build_SUTSE, hessian=TRUE)
 param_SUTSE <- unlist(build_SUTSE(fit_SUTSE$par)[c("V","W")])
 
 # Calculate SE of the MLE using delta method
@@ -973,9 +1037,10 @@ SUTSE_ub_SO2 <- SUTSE_Filt$f[,2] + 1.64 * SUTSE_sd[,2]
 ```
 
 ```{r}
-df_SUTSE <- data.frame(y_m, louisiana_df$n_months,y_filt_SUTSE,SUTSE_lb_CO,SUTSE_lb_SO2,SUTSE_ub_CO,SUTSE_ub_SO2)
+df_SUTSE <- data.frame(y_m,louisiana_df$n_months,y_filt_SUTSE,SUTSE_lb_CO,SUTSE_lb_SO2,SUTSE_ub_CO,SUTSE_ub_SO2)
+rename(df_SUTSE, n_months = louisiana_df.n_months)
 
-CO_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df$n_months)) +
+CO_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
   geom_line(aes(y=y_m[,1]), size=0.4) +
   geom_line(aes(y=y_filt_SUTSE[,1]), size=0.8, color="red") +
   geom_line(aes(y=SUTSE_ub_CO), color="red", linetype="dotted", size=0.2) +
@@ -995,14 +1060,60 @@ CO_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df$n_months)) +
         plot.margin=unit(c(0,0,0,0.8), "cm"))
 
 
-SO2_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df$n_months)) +
+SO2_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
   geom_line(aes(y=y_m[,2]), size=0.4) +
   geom_line(aes(y=y_filt_SUTSE[,2]), size=0.8, color="red") +
   geom_line(aes(y=SUTSE_ub_SO2), color="red", linetype="dotted", size=0.2) +
   geom_line(aes(y=SUTSE_lb_SO2), color="red", linetype="dotted", size=0.2) +
   geom_ribbon(aes(ymin=SUTSE_lb_CO, ymax=SUTSE_ub_CO), alpha=.1, fill="red") +
   theme_bw(base_size=9) +
+  labs(x="Year", y="Predicted SO2", color="black") +
+  scale_y_continuous() +
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),
+        plot.margin=unit(c(0,0,0,0.8), "cm"))
+
+ggarrange(CO_forecast, SO2_forecast, ncol=2, nrow=1, labels=c("(a)", "(b)"),
+          font.label=list(size=20, family="Times"))
+
+```
+
+
+```{r}
+ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
+  geom_line(aes(y=y_m[,1]), size=0.4) +
+  geom_line(aes(y=y_filt_SUTSE[,1]), size=0.8, color="red") +
+  geom_line(aes(y=SUTSE_ub_CO), color="red", linetype="dotted", size=0.2) +
+  geom_line(aes(y=SUTSE_lb_CO), color="red", linetype="dotted", size=0.2) +
+  geom_ribbon(aes(ymin=SUTSE_lb_CO, ymax=SUTSE_ub_CO), alpha=.1, fill="red") +
+  theme_bw(base_size=9) +
   labs(x="Year", y="Predicted CO", color="black") +
+  scale_y_continuous() +
+  scale_x_continuous(breaks=seq(0,186,24),
+                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        panel.grid.major=element_line(size=0.5),
+        panel.grid.minor=element_blank(),
+        plot.margin=unit(c(0,0,0,0.8), "cm"))
+
+
+ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
+  geom_line(aes(y=y_m[,2]), size=0.4) +
+  geom_line(aes(y=y_filt_SUTSE[,2]), size=0.8, color="red") +
+  geom_line(aes(y=SUTSE_ub_SO2), color="red", linetype="dotted", size=0.2) +
+  geom_line(aes(y=SUTSE_lb_SO2), color="red", linetype="dotted", size=0.2) +
+  geom_ribbon(aes(ymin=SUTSE_lb_CO, ymax=SUTSE_ub_CO), alpha=.1, fill="red") +
+  theme_bw(base_size=9) +
+  labs(x="Year", y="Predicted SO2", color="black") +
   scale_y_continuous() +
   scale_x_continuous(breaks=seq(0,186,24),
                      labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
