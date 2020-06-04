@@ -113,7 +113,7 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
                  colour = "sandybrown",
                  linetype = "dashed") + 
       theme_bw(base_size=9) +
-      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm=TRUE),6)) +
+      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm=TRUE),1)) +
       scale_y_continuous(name = element_blank(),
                          limits = c(min(df1$acf,df2$pacf),1)) +
       ggtitle("PACF") +

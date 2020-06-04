@@ -114,7 +114,7 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
                  colour = "sandybrown",
                  linetype = "dashed") + 
       theme_bw(base_size=9) +
-      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm=TRUE),6)) +
+      scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm=TRUE),1)) +
       scale_y_continuous(name = element_blank(),
                          limits = c(min(df1$acf,df2$pacf),1)) +
       ggtitle("PACF") +
@@ -140,7 +140,7 @@ c <- ggplot(res_LG, aes(sample=res)) +
   labs(x="Theoretical", y="Observed") +
   theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
         axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
-        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.x=element_blank(),
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
