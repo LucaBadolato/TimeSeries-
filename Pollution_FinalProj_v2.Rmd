@@ -590,7 +590,7 @@ estVar_seas <- diag(exp(fit_seas$par)) %*% estVarLog_seas %*% diag(exp(fit_seas$
 SE_seas <- sqrt(diag(estVar_seas))
 ```
 
-In this section we fit a seasonal DLM given the seasonal behavior documented above.In particular, we have a seasonal factor with monthly periodicity. In fact, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors free to vary.}. The model is specified in a standard way as reported by [@Petris2008]. Importantly, we model the seasonal effect as a time-varying one letting the variance of the seasonal fatctor being different from zero. In this als the seasonal component is liable to be affected by the structural break.  
+In this section we fit a seasonal DLM given the seasonal behavior documented above.In particular, we have a seasonal factor with monthly periodicity. In fact, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors free to vary.}. The model is specified in a standard way, with $W = diag(\sigma_{w}^{2}, 0, \ldots, 0)$. Importantly, we model the seasonal effect as a time-varying one letting the variance of the seasonal fatctor being different from zero. In this als the seasonal component is liable to be affected by the structural break.  
 Once again, we estimate the unkown variances by MLE, which are reported in Table \ref{tab:MLE_seasonal}.
 
 ```{r}
@@ -674,7 +674,7 @@ ggplot(res_LG_v_seas, aes(x=time)) +
         plot.margin=unit(c(0,0,0,0.8), "cm"))
 ```
 
-In the next section we will follow a different approach, that may potentialy allow for a causal interpretation of results.
+In the next section we will follow a different approach that may, appropriately specified, allow for a causal interpretation of results.
 
 \subsection{Dynamic linear regression}
 
@@ -1020,7 +1020,7 @@ It is possible to see the effect that the signal-to-noise ratio has on the one-s
 
 Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. From visual inspection of Figure \ref{fig:louisiana_plots} it appears that the two series display a similar type of qualitative behavior, that can be modeled by a linear growth DLM. To set up a multivariate model for the two series, we combine the two linear growth models in a comprehensive \textit{seemingly unrelated time series equations model} (SUTSE). This is written as:
 \begin{eqnarray*}
-  & Y_t = (F \otimes I_2) \; \theta_t + v_t, & v_t \sim \mathcal{N}_{2}(0,V) \\
+  & Y_t = (F \otimes I_2) \; \theta_t + v_t, & v_t \sim \mathcal{N}_{2}(0,V_{t}) \\
   & \theta_t = (G \otimes I_2) \; \theta_{t-1} + w_t, & w_t \sim \mathcal{N}_{4}(0,W)
 \end{eqnarray*}
 with
@@ -1032,8 +1032,7 @@ with
   \underset{2 \times 2}{G} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} \quad \text{ and } \quad \underset{4
   \times 4}{W} = \text{blockdiag}(W_{\mu}, W_{\beta}).
 \end{equation*}
-We assume that growth $\beta_{i,t}$ is correlated among pollutants. Moreover, to simplify the model in order to reduce the overall number of parameters, we also assume that the two linear growth models are integrated random walks, that is $W_{\mu}=0$.
-
+We also assume $V_{t}$ to be a time-variant diagonal matrix, similarly as we did above, considering January 2008 as change point. Moreover, to simplify the general model in order to reduce the overall number of parameters, we assume that only the level $\mu_{i,t}$ is correlated among pollutants, which we think it is a reasonable assumption in this context.  
 ```{r, include=F, warning=F}
 # Build df multivariate
 y_m <- data.frame(louisiana_df$m_CO_mean, louisiana_df$m_SO2_mean)
@@ -1194,9 +1193,8 @@ ggarrange(CO_forecast, SO2_forecast, ncol=2, nrow=1, labels=c("(a)","(b)"),
 ```
 
 \section{Conclusion}
-
-In conclusion, \dots
-
+ 
+ 
 ```{r, include=F}
 source("forecasting_accuracy.R")
 ```
@@ -1220,5 +1218,6 @@ knitr::kable(for_accuracy, "latex", booktabs=T, align="c",
   kable_styling(latex_options="hold_position")
 ```
 
-\newpage
+We have presented several models that can be used to examine the series CO, underlying for each of them advantages and disadvantages. Even if, given the complexity of the phenomenon presented, our specifications may be too basic to have accurate predictions, we are satisfied with the results we obtained. We have not only learned how to implement the models seen throughout the course, but also studied a debated topic we are interested it, better understanding the evolution of the series across past years. Further research that we are considering are focused on applying the same analysis to other States and pollutants. 
+
 \section{References}
