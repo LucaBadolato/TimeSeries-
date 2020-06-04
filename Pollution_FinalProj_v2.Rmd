@@ -881,12 +881,12 @@ df_forecast <- data.frame(louisiana_df$n_months, y, y_filt_LG, y_filt_LG_v, y_fi
 colnames(df_forecast) <- c("n_months", "y", "y_filt_LG", "y_filt_LG_v", "y_filt_LG_v_seas", "y_filt_DR") 
 
 # Plot
-colors <- c("Observed data" = "black", "Time-invariant lin. growth" = "springgreen4", 
-            "Time-varying lin. growth"="blue", "Time-varying lin. growth + Season"="firebrick","Dynamic regression"="darkorange")
+colors <- c("Observed data" = "black", "Time-invariant lin.growth" = "springgreen4", 
+            "Time-varying lin.growth"="blue", "Time-varying seasonal lin.growth"="firebrick","Dynamic regression"="darkorange")
 
 plot_LG <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
-  geom_line(aes(y=y_filt_LG, color = "Time-invariant lin. growth")) +
+  geom_line(aes(y=y_filt_LG, color = "Time-invariant lin.growth")) +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
   theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
@@ -901,13 +901,14 @@ plot_LG <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
         panel.grid.minor=element_blank(),) +
         scale_color_manual(values=colors) +
   theme(legend.position = c(.8, .85), legend.background = element_blank(), 
-        legend.key = element_blank(),legend.text=element_text(size=10, family="Times"),
-        legend.spacing.x=unit(1, "cm"))
+        legend.key = element_blank(),
+        legend.text=element_text(size=10, family="Times"),
+        legend.spacing.x=unit(.2, "cm"))
   
 
 plot_LG_V <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
-  geom_line(aes(y=y_filt_LG_v, color = "Time-varying lin. growth")) +
+  geom_line(aes(y=y_filt_LG_v, color = "Time-varying lin.growth")) +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
   theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
@@ -923,11 +924,11 @@ plot_LG_V <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
         scale_color_manual(values=colors) +
   theme(legend.position = c(.8, .85), legend.background = element_blank(),
         legend.key = element_blank(),legend.text=element_text(size=10, family="Times"),
-        legend.spacing.x=unit(1, "cm"))
+        legend.spacing.x=unit(.2, "cm"))
   
 plot_LG_V_seas <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
-  geom_line(aes(y=y_filt_LG_v_seas, color = "Time-varying lin. growth + Season")) +
+  geom_line(aes(y=y_filt_LG_v_seas, color = "Time-varying seasonal lin.growth")) +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
   theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
@@ -941,9 +942,9 @@ plot_LG_V_seas <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
         panel.grid.major=element_line(size=0.02),
         panel.grid.minor=element_blank(),) +
         scale_color_manual(values=colors) +
-  theme(legend.position = c(.8, .85), legend.background = element_blank(),
+  theme(legend.position = c(.75, .85), legend.background = element_blank(),
         legend.key = element_blank(),legend.text=element_text(size=10, family="Times"),
-        legend.spacing.x=unit(1, "cm"))
+        legend.spacing.x=unit(.2, "cm"))
   
 plot_DR <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +  
@@ -963,7 +964,7 @@ plot_DR <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
         scale_color_manual(values=colors) +
   theme(legend.position = c(.8, .85), legend.background = element_blank(),
         legend.key = element_blank(),legend.text=element_text(size=10, family="Times"),
-        legend.spacing.x=unit(1, "cm"))
+        legend.spacing.x=unit(.2, "cm"))
 
 
 ggarrange(plot_LG, plot_LG_V, plot_LG_V_seas, plot_DR, ncol=2, nrow=2, 
