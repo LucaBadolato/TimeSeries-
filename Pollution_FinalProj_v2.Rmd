@@ -1065,7 +1065,10 @@ SUTSE_Filt <- dlmFilter(y_m, SUTSE)
 
 #one step ahead forecast
 y_filt_SUTSE <- SUTSE_Filt$f
+```
 
+
+```{r, include=F, warning=F}
 ## Credible intrvals of the one-step ahead forecast
 SUTSE_sd <- residuals(SUTSE_Filt)$sd
 SUTSE_sd[1,] <- c(SUTSE_sd[2,1],SUTSE_sd[2,2]) 
@@ -1130,14 +1133,17 @@ MLEsum_table_2 <- knitr::kable(MLEsum, "latex", booktabs=T, align="c",
 add_header_above(MLEsum_table_2, c("Period 1 to 84"=2, "Period 85 to 186"=2, " "=5))
 ```
 
+
+
 ```{r, fig.width=18, fig.height=4, out.width='100%', fig.cap="\\label{fig:SUTSE_forecast}One-step-ahead forecast with credible intervals: (a) CO; (b) SO2."}
 
 df_SUTSE <- data.frame(y_m, louisiana_df$n_months,
                        y_filt_SUTSE, SUTSE_lb_CO, SUTSE_lb_SO2, SUTSE_ub_CO, SUTSE_ub_SO2)
+colnames(df_SUTSE)[3] <- "n_months" 
 
-CO_forecast <- ggplot(df_SUTSE[61:109,], aes(x=louisiana_df.n_months)) +
-  geom_line(aes(y=y_m[,1]), size=0.4) +
-  geom_line(aes(y=y_filt_SUTSE[,1]), size=0.8, color="red") +
+CO_forecast <- ggplot(df_SUTSE[61:109,], aes(x=n_months)) +
+  geom_line(aes(y=CO), size=0.4) +
+  geom_line(aes(y=CO.1), size=0.8, color="red") +
   geom_line(aes(y=SUTSE_ub_CO), color="red", linetype="dotted", size=0.2) +
   geom_line(aes(y=SUTSE_lb_CO), color="red", linetype="dotted", size=0.2) +
   geom_ribbon(aes(ymin=SUTSE_lb_CO, ymax=SUTSE_ub_CO), alpha=.1, fill="red") +
@@ -1154,9 +1160,10 @@ CO_forecast <- ggplot(df_SUTSE[61:109,], aes(x=louisiana_df.n_months)) +
         panel.grid.minor=element_blank(),
         plot.margin=unit(c(0,1,0,1), "cm"))
 
-SO2_forecast <- ggplot(df_SUTSE[61:109,], aes(x=louisiana_df.n_months)) +
-  geom_line(aes(y=y_m[,2]), size=0.4) +
-  geom_line(aes(y=y_filt_SUTSE[,2]), size=0.8, color="red") +
+
+SO2_forecast <- ggplot(df_SUTSE[61:109,], aes(x=n_months)) +
+  geom_line(aes(y=SO2), size=0.4) +
+  geom_line(aes(y=SO2.1), size=0.8, color="red") +
   geom_line(aes(y=SUTSE_ub_SO2), color="red", linetype="dotted", size=0.2) +
   geom_line(aes(y=SUTSE_lb_SO2), color="red", linetype="dotted", size=0.2) +
   geom_ribbon(aes(ymin=SUTSE_lb_SO2, ymax=SUTSE_ub_SO2), alpha=.1, fill="red") +
