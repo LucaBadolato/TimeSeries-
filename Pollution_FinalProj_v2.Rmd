@@ -342,7 +342,20 @@ HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
 ggarrange(HMM_main, HMM_additional, widths=c(4,2), align="h")
 ```
 
-Explanations of these results, which confirm a stable change in the evolution process of $\text{CO}$ in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in U.S. electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Wien agreement)\footnote{A deeper analysis on the factors explaining this shift can be found in Feng et al. (2015), in which they analyse the series of $\text{CO}_2$.}. 
+Explanations of these results, which confirm a stable change in the evolution process of $\text{CO}$ in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in U.S. electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Wien agreement)\footnote{A deeper analysis on the factors explaining this shift can be found in Feng et al. (2015), in which they analyse the series of $\text{CO}_2$.}.
+
+In addition to explaining such a shifts, we may want predict them using this homogeneous HMM. For this reason, we produce the one-step-ahead forecast treating the data as streaming ones. Further details on this are reported in section \ref{Performance evaluation}.
+
+```{r}
+#One-step-ahead forecast
+trans_mat <- HMM_fit@trDens[1,,] %>% t()
+trans_mat <- matrix(t(trans_mat), ncol = 3)
+HMM_forecast <- matrix(NA, nrow=length(y), ncol=1)
+for (t in 1:length(y)){
+  v <- estStates_HMM[t,1]  
+  HMM_forecast[t] <- (trans_mat[v,]%*%HMM_summary[,1]) + (trans_mat[v,]%*%HMM_summary[,2])*t
+}
+```
 
 \section{Section 2. Univariate DLMs}
 
@@ -860,18 +873,40 @@ ggarrange(filt_alpha, filt_beta, ncol=2, nrow=1, labels=c("(a)", "(b)"),
 source("DR_model_checking.R")
 ```
 
-\subsection{Performance comparison}
+\subsection{Performance evaluation}
 
 We treat the data under study as streaming data, periodically updated by EPA. Therefore, our main interest is forecasting, which is also a useful way to check the performance of the different specifications considered so far. Therefore, we plot the one-step-ahead obtained with the models fitted in the previous sections (Figure \ref{fig:one-step-forecast_est})\footnote{for sake of clarity we decided to report only the temporal window around the breakpoint.}.
 
-```{r, fig.width=12, fig.height=3.5, fig.cap="\\label{fig:one-step-forecast_est} One-step-ahead forecast estimates"}
+```{r, fig.width=16, fig.height=4, out.width='100%',fig.cap="\\label{fig:one-step-forecast_est} One-step-ahead forecast estimates"}
 # Build df
-df_forecast <- data.frame(louisiana_df$n_months, y, y_filt_LG, y_filt_LG_v, y_filt_LG_v_seas, y_filt_DR) 
-colnames(df_forecast) <- c("n_months", "y", "y_filt_LG", "y_filt_LG_v", "y_filt_LG_v_seas", "y_filt_DR") 
+df_forecast <- data.frame(louisiana_df$n_months, y, HMM_forecast, y_filt_LG, y_filt_LG_v, y_filt_LG_v_seas, y_filt_DR) 
+colnames(df_forecast) <- c("n_months", "y", "HMM_forecast", "y_filt_LG", "y_filt_LG_v", "y_filt_LG_v_seas", "y_filt_DR") 
 
 # Plot
-colors <- c("Observed data" = "black", "Time-invariant lin.growth" = "springgreen4", 
+colors <- c("Observed data" = "black", "Homogeneous HMM" = "red",  "Time-invariant lin.growth" = "springgreen4", 
             "Time-varying lin.growth"="blue", "Time-varying seasonal lin.growth"="firebrick","Dynamic regression"="darkorange")
+
+plot_HMM <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
+  geom_line(aes(y=y, color="Observed data")) +
+  geom_line(aes(y=HMM_forecast, color = "Homogeneous HMM")) +
+  geom_vline(xintercept = 85, color= "black", size=0.3) +
+  theme_bw(base_size=9) +
+  labs(x="Year", y=expression(CO~(ppm)), color = "") +
+  scale_y_continuous(breaks=seq(0,1,0.2)) +
+  scale_x_continuous(breaks=seq(61,109,24),
+                     labels=format(seq(as.Date("2006/1/1"),as.Date("2011/12/31"), "2 years"), "%Y")) +
+  theme(axis.text.x=element_text(family="Times", margin=margin(t=2)),
+        axis.text.y=element_text(family="Times", margin=margin(r=2)),
+        axis.title.x=element_text(size=8, family="Times", margin=margin(t=2)),
+        axis.title.y=element_text(size=8, family="Times", margin=margin(r=2)),
+        panel.grid.major=element_line(size=0.02),
+        panel.grid.minor=element_blank(),) +
+  scale_color_manual(values=colors) +
+  theme(legend.position = c(.8, .85), legend.background = element_blank(), 
+        legend.key = element_blank(),
+        legend.text=element_text(size=10, family="Times"),
+        legend.spacing.x=unit(.2, "cm"))
+
 
 plot_LG <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
@@ -956,12 +991,8 @@ plot_DR <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
         legend.spacing.x=unit(.2, "cm"))
 
 
-ggarrange(plot_LG, plot_LG_V, plot_LG_V_seas, plot_DR, ncol=2, nrow=2, 
-          labels=c("(a)", "(b)","(c)","(d)"),font.label=list(size=10, family="Times"))
-
-# Alternative legend position
-#        theme(legend.position="bottom", legend.text=element_text(size=12, family="Times"),
-#              legend.spacing.x=unit(1, "cm"))
+ggarrange(plot_HMM, plot_LG, plot_LG_V, plot_LG_V_seas, plot_DR, ncol=3, nrow=2, 
+          labels=c("(a)", "(b)","(c)","(d)","(e)"),font.label=list(size=9, family="Times"))
 ```
 
 It is possible to see the effect that the signal-to-noise ratio has on the one-step-ahead forecast . For example, the time invariant linear growth model reports a relative magnitude of $W$ on $V$ higher than the time variant one and, consequently, its point forecasts tend to follow more closely the data. \textcolor{red}{AGGIUNGERE TABELLA MAE,MAPE,MSE}
@@ -1038,7 +1069,6 @@ SUTSE_ub_SO2 <- SUTSE_Filt$f[,2] + 1.64 * SUTSE_sd[,2]
 
 ```{r}
 df_SUTSE <- data.frame(y_m,louisiana_df$n_months,y_filt_SUTSE,SUTSE_lb_CO,SUTSE_lb_SO2,SUTSE_ub_CO,SUTSE_ub_SO2)
-rename(df_SUTSE, n_months = louisiana_df.n_months)
 
 CO_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
   geom_line(aes(y=y_m[,1]), size=0.4) +
@@ -1061,52 +1091,6 @@ CO_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
 
 
 SO2_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
-  geom_line(aes(y=y_m[,2]), size=0.4) +
-  geom_line(aes(y=y_filt_SUTSE[,2]), size=0.8, color="red") +
-  geom_line(aes(y=SUTSE_ub_SO2), color="red", linetype="dotted", size=0.2) +
-  geom_line(aes(y=SUTSE_lb_SO2), color="red", linetype="dotted", size=0.2) +
-  geom_ribbon(aes(ymin=SUTSE_lb_CO, ymax=SUTSE_ub_CO), alpha=.1, fill="red") +
-  theme_bw(base_size=9) +
-  labs(x="Year", y="Predicted SO2", color="black") +
-  scale_y_continuous() +
-  scale_x_continuous(breaks=seq(0,186,24),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
-  theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
-        axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
-        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
-        panel.grid.major=element_line(size=0.5),
-        panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,0.8), "cm"))
-
-ggarrange(CO_forecast, SO2_forecast, ncol=2, nrow=1, labels=c("(a)", "(b)"),
-          font.label=list(size=20, family="Times"))
-
-```
-
-
-```{r}
-ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
-  geom_line(aes(y=y_m[,1]), size=0.4) +
-  geom_line(aes(y=y_filt_SUTSE[,1]), size=0.8, color="red") +
-  geom_line(aes(y=SUTSE_ub_CO), color="red", linetype="dotted", size=0.2) +
-  geom_line(aes(y=SUTSE_lb_CO), color="red", linetype="dotted", size=0.2) +
-  geom_ribbon(aes(ymin=SUTSE_lb_CO, ymax=SUTSE_ub_CO), alpha=.1, fill="red") +
-  theme_bw(base_size=9) +
-  labs(x="Year", y="Predicted CO", color="black") +
-  scale_y_continuous() +
-  scale_x_continuous(breaks=seq(0,186,24),
-                     labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
-  theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
-        axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
-        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
-        panel.grid.major=element_line(size=0.5),
-        panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,0.8), "cm"))
-
-
-ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
   geom_line(aes(y=y_m[,2]), size=0.4) +
   geom_line(aes(y=y_filt_SUTSE[,2]), size=0.8, color="red") +
   geom_line(aes(y=SUTSE_ub_SO2), color="red", linetype="dotted", size=0.2) +
