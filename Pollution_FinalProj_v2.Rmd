@@ -114,7 +114,7 @@ The data show a positive correlation between $\text{CO}$ and $\text{SO}_2$ (`r c
 
 We plot in Figure \ref{fig:louisiana_plots} the time series for the four pollutants under study to give a first qualitative description of the phenomenon.
 
-```{r, fig.width=20, fig.height=3.5, out.width='100%', fig.cap="\\label{fig:louisiana_plots}Air pollution in the state of Louisiana"}
+```{r, fig.width=18, fig.height=3.5, out.width='100%', fig.cap="\\label{fig:louisiana_plots}Air pollution in the state of Louisiana"}
 
 # Time series plots
 O3 <- ggplot(louisiana_df, aes(x=n_months, y=m_O3_mean)) +
@@ -280,7 +280,7 @@ estStates_HMM <- posterior(HMM_fit)
 HMM_summary <- depmixS4::summary(HMM_fit)
 ```
 
-```{r, fig.width=20, fig.height=6, out.width='100%', fig.cap="\\label{fig:HMM_results}State-dependent means and standard deviations"}
+```{r, fig.width=18, fig.height=5, out.width='100%', fig.cap="\\label{fig:HMM_results}State-dependent means and standard deviations"}
 # Chart with state-dependent mean and standard deviations
 HMM_main_CO <- data.frame(state=1:nstates,
                       mu=HMM_summary[,1],
@@ -525,7 +525,7 @@ y_filt_LG_v_lb <- y_filt_LG_v - 1.64 * y_filt_LG_v_sd
 y_filt_LG_v_ub <- y_filt_LG_v + 1.64 * y_filt_LG_v_sd
 ```
 
-```{r, fig.width=20, fig.height=3.5, out.width='100%',fig.cap="\\label{fig:innovation_process}Standardized one-step-ahead forecast errors: (a) Time-invariant model; (b) Time-variant model."}
+```{r, fig.width=18, fig.height=3.5, out.width='100%',fig.cap="\\label{fig:innovation_process}Standardized one-step-ahead forecast errors: (a) Time-invariant model; (b) Time-variant model."}
 
 res_LG <- residuals(LG_Filt, sd=FALSE)
 res_LG <- data.frame(res_LG,louisiana_df$n_months)
@@ -654,7 +654,7 @@ y_filt_LG_v_seas_lb <- y_filt_LG_v_seas - 1.64 * y_filt_LG_v_seas_sd
 y_filt_LG_v_seas_ub <- y_filt_LG_v_seas + 1.64 * y_filt_LG_v_seas_sd
 ```
 
-```{r, fig.width=10, fig.height=4, out.width='50%',fig.cap="\\label{fig:innovation_process_combined}Standardized one-step-ahead forecast errors: Time-variant linear growth model + seasonal DLM."}
+```{r, fig.width=9, fig.height=3.5, out.width='50%',fig.cap="\\label{fig:innovation_process_combined}Standardized one-step-ahead forecast errors: Time-variant linear growth model + seasonal DLM."}
 
 res_LG_v_seas <- residuals(LG_v_seas_Filt, sd=FALSE)
 res_LG_v_seas = data.frame(res_LG_v_seas,louisiana_df$n_months)
@@ -791,8 +791,9 @@ upper_filt_beta  <- filt_state_est_beta + 1.64*filt_sd_est_beta # upper bound of
 lower_filt_beta  <- filt_state_est_beta - 1.64*filt_sd_est_beta # lower bound of 90% C.I.
 ```
 
-```{r, fig.width=20, fig.height=3.5, fig.cap="\\label{fig:filt_est} Filtering estimates of alpha (Panel a) and beta (Panel b) with credible intervals"}
-#Create df
+```{r, fig.width=18, fig.height=3.5, fig.cap="\\label{fig:filt_est} Filtering estimates of alpha (Panel a) and beta (Panel b) with credible intervals"}
+
+# Create df
 df_co_ci <- data.frame(louisiana_df$n_months, filt_state_est_alpha, filt_state_est_beta, 
                        upper_filt_alpha, lower_filt_alpha, upper_filt_beta, lower_filt_beta)
 colnames(df_co_ci) = c("n_months", "filt_state_est_alpha", "filt_state_est_beta",
@@ -839,28 +840,25 @@ ggarrange(filt_alpha, filt_beta, ncol=2, nrow=1, labels=c("(a)", "(b)"),
           font.label=list(size=20, family="Times"))
 ```
 
-```{r, fig.width=6, fig.height=4, fig.cap="\\label{fig: summary}Time-invariant linear growth model: (a) 10-step-ahead forecast; (b) ACF of one-step-ahead forecast errors; (c) Normal probability plot of standardized one-step-ahead forecast errors."}
+```{r, fig.width=18, fig.height=12, out.width='80%', fig.cap="\\label{fig: summary}ACF of one-step-ahead forecast errors and Normal probability plot of standardized one-step-ahead forecast errors: (a) Time-invariant LG model; (b) Time-varying LG model; (c) Time-varying seas LG model."}
 
 source("LG_model_checking.R")
-
-mod1 <- ggarrange(b,c, ncol = 2,labels = c("(a)", "(b)"),font.label=list(size=10, family="Times"))
+mod1 <- ggarrange(b,c, ncol=2, labels = c("(a)"),font.label=list(size=20, family="Times"))
 
 source("LG_V_model_checking.R")
-
-mod2 <- ggarrange(b,c, ncol = 2,labels = c("(c)", "(d)"),font.label=list(size=10, family="Times"))
+mod2 <- ggarrange(b,c, ncol=2, labels = c("(b)"),font.label=list(size=20, family="Times"))
 
 source("LG_V_seas_mod_checking.R")
+mod3 <- ggarrange(b,c, ncol=2, labels = c("(c)"),font.label=list(size=20, family="Times"))
 
-mod3 <- ggarrange(b,c, ncol = 2,labels = c("(e)", "(f)"),font.label=list(size=10, family="Times"))
-
-ggarrange(mod1,mod2,mod3, ncol = 1, nrow = 3, align="h")
+ggarrange(mod1,mod2,mod3, ncol=1, nrow=3, align="h")
 ```
 
 \subsection{Performance evaluation}
 
 We treat the data under study as streaming data, periodically updated by EPA. Therefore, our main interest is forecasting, which is also a useful way to check the performance of the different specifications considered so far. Therefore, we plot the one-step-ahead obtained with the models fitted in the previous sections (Figure \ref{fig:one-step-forecast_est})\footnote{For sake of clarity we decided to report only the temporal window around the breakpoint.}.
 
-```{r, fig.width=12, fig.height=4, out.width='100%', fig.cap="\\label{fig:one-step-forecast_est}One-step-ahead forecast estimates: (a) Homogeneous HMM; (b) Time-varying linear growth; (c) Time-varying seasonal linear growth; (d) Dynamic regression."}
+```{r, fig.width=18, fig.height=8, out.width='100%', fig.cap="\\label{fig:one-step-forecast_est}One-step-ahead forecast estimates: (a) Homogeneous HMM; (b) Time-varying linear growth; (c) Time-varying seasonal linear growth; (d) Dynamic regression."}
 
 # Build df
 df_forecast <- data.frame(louisiana_df$n_months, y,
@@ -877,9 +875,9 @@ colnames(df_forecast) <- c("n_months", "y",
                            "y_filt_DR", "y_filt_DR_lb", "y_filt_DR_ub") 
 
 # Plot
-colors <- c("Observed data" = "black", "Homogeneous HMM" = "red", "Time-invariant lin.growth" = "firebrick", 
-            "Time-varying lin.growth"="blue", "Time-varying seasonal lin.growth"="springgreen4",
-            "Dynamic regression"="darkorange")
+colors <- c("Observed data" = "black", "Homogeneous HMM" = "red", "Time-invar LG" = "firebrick", 
+            "Time-var LG"="blue", "Time-var seas LG"="springgreen4",
+            "Dynamic regr"="darkorange")
 
 plot_HMM <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
@@ -888,150 +886,124 @@ plot_HMM <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=HMM_forecast_ub), color="red", linetype="dashed", size=0.2) +
   geom_ribbon(aes(ymin=HMM_forecast_lb, ymax=HMM_forecast_ub), alpha=.1, fill="red") +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
-  theme_bw() +
-  labs(x="Year", y=expression(CO~(ppm)), color = "") +
+  theme_bw(base_size=9) +
+  labs(y=expression(CO~(ppm)), color = "") +
   scale_y_continuous(breaks=seq(0,1,0.2)) +
   scale_x_continuous(breaks=seq(61,109,24),
-                     labels=format(seq(as.Date("2006/1/1"),as.Date("2011/12/31"), "2 years"), "%Y")) +
+                     labels=format(seq(as.Date("2006/1/1"),as.Date("2010/12/31"), "2 years"), "%Y")) +
   theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
         axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
-        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.x=element_blank(),
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,0.8), "cm")) +
+        plot.margin=unit(c(0,0.5,0,0.5), "cm")) +
   scale_color_manual(values=colors) +
-  theme(legend.position = c(.8, .85), legend.background = element_blank(), 
-        legend.key = element_blank(),
-        legend.text=element_text(size=10, family="Times"),
+  theme(legend.position = c(.8, .9), legend.background = element_blank(),
+        legend.key = element_blank(), legend.text=element_text(size=15, family="Times"),
         legend.spacing.x=unit(.2, "cm"))
 
 plot_LG <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
-  geom_line(aes(y=y_filt_LG, color = "Time-invariant lin.growth")) +
+  geom_line(aes(y=y_filt_LG, color = "Time-invar LG")) +
   geom_line(aes(y=y_filt_LG_lb), color="firebrick", linetype="dashed", size=0.2) +
   geom_line(aes(y=y_filt_LG_ub), color="firebrick", linetype="dashed", size=0.2) +
   geom_ribbon(aes(ymin=y_filt_LG_lb, ymax=y_filt_LG_ub), alpha=.1, fill="firebrick") +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
-  theme_bw() +
+  theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
   scale_y_continuous(breaks=seq(0,1,0.2)) +
-  scale_x_continuous(breaks=seq(61,109,24),
-                     labels=format(seq(as.Date("2006/1/1"),as.Date("2011/12/31"), "2 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(61,109,12),
+                     labels=format(seq(as.Date("2006/1/1"),as.Date("2010/12/31"), "1 years"), "%Y")) +
   theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
         axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
         axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,0.8), "cm")) +
+        plot.margin=unit(c(0,0,0,0), "cm")) +
   scale_color_manual(values=colors) +
-  theme(legend.position = c(.8, .85), legend.background = element_blank(), 
-        legend.key = element_blank(),
-        legend.text=element_text(size=10, family="Times"),
+  theme(legend.position = c(.8, .9), legend.background = element_blank(),
+        legend.key = element_blank(), legend.text=element_text(size=15, family="Times"),
         legend.spacing.x=unit(.2, "cm"))
 
 plot_LG_V <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
-  geom_line(aes(y=y_filt_LG_v, color = "Time-varying lin.growth")) +
+  geom_line(aes(y=y_filt_LG_v, color = "Time-var LG")) +
   geom_line(aes(y=y_filt_LG_v_lb), color="blue", linetype="dashed", size=0.2) +
   geom_line(aes(y=y_filt_LG_v_ub), color="blue", linetype="dashed", size=0.2) +
   geom_ribbon(aes(ymin=y_filt_LG_v_lb, ymax=y_filt_LG_v_ub), alpha=.1, fill="blue") +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
-  theme_bw() +
-  labs(x="Year", y=expression(CO~(ppm)), color = "") +
+  theme_bw(base_size=9) +
+  labs(y=expression(CO~(ppm)), color = "") +
   scale_y_continuous(breaks=seq(0,1,0.2)) +
-  scale_x_continuous(breaks=seq(61,109,24),
-                     labels=format(seq(as.Date("2006/1/1"),as.Date("2011/12/31"), "2 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(61,109,12),
+                     labels=format(seq(as.Date("2006/1/1"),as.Date("2010/12/31"), "1 years"), "%Y")) +
   theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
         axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
-        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.x=element_blank(),
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,0.8), "cm")) +
+        plot.margin=unit(c(0,0,0,0.5), "cm")) +
   scale_color_manual(values=colors) +
-  theme(legend.position = c(.8, .85), legend.background = element_blank(),
-        legend.key = element_blank(),legend.text=element_text(size=10, family="Times"),
+  theme(legend.position = c(.8, .9), legend.background = element_blank(),
+        legend.key = element_blank(), legend.text=element_text(size=15, family="Times"),
         legend.spacing.x=unit(.2, "cm"))
-  
+
 plot_LG_V_seas <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
-  geom_line(aes(y=y_filt_LG_v_seas, color = "Time-varying seasonal lin.growth")) +
+  geom_line(aes(y=y_filt_LG_v_seas, color = "Time-var seas LG")) +
   geom_line(aes(y=y_filt_LG_v_seas_lb), color="springgreen4", linetype="dashed", size=0.2) +
   geom_line(aes(y=y_filt_LG_v_seas_ub), color="springgreen4", linetype="dashed", size=0.2) +
   geom_ribbon(aes(ymin=y_filt_LG_v_seas_lb, ymax=y_filt_LG_v_seas_ub), alpha=.1, fill="springgreen4") +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
-  theme_bw() +
+  theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
   scale_y_continuous(breaks=seq(0,1,0.2)) +
-  scale_x_continuous(breaks=seq(61,109,24),
-                     labels=format(seq(as.Date("2006/1/1"),as.Date("2011/12/31"), "2 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(61,109,12),
+                     labels=format(seq(as.Date("2006/1/1"),as.Date("2010/12/31"), "1 years"), "%Y")) +
   theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
         axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
         axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,0.8), "cm")) +
+        plot.margin=unit(c(0,0.5,0,0.5), "cm")) +
   scale_color_manual(values=colors) +
-  theme(legend.position = c(.75, .85), legend.background = element_blank(),
-        legend.key = element_blank(),legend.text=element_text(size=10, family="Times"),
+  theme(legend.position = c(.8, .9), legend.background = element_blank(),
+        legend.key = element_blank(), legend.text=element_text(size=15, family="Times"),
         legend.spacing.x=unit(.2, "cm"))
-  
+
 plot_DR <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +  
-  geom_line(aes(y=y_filt_DR, color="Dynamic regression")) +
+  geom_line(aes(y=y_filt_DR, color="Dynamic regr")) +
   geom_line(aes(y=y_filt_DR_lb), color="darkorange", linetype="dashed", size=0.2) +
   geom_line(aes(y=y_filt_DR_ub), color="darkorange", linetype="dashed", size=0.2) +
   geom_ribbon(aes(ymin=y_filt_DR_lb, ymax=y_filt_DR_ub), alpha=.1, fill="darkorange") +
   geom_vline(xintercept = 85, color= "black", size=0.3) +
-  theme_bw() +
+  theme_bw(base_size=9) +
   labs(x="Year", y=expression(CO~(ppm)), color = "") +
   scale_y_continuous(breaks=seq(0,1,0.2)) +
-  scale_x_continuous(breaks=seq(61,109,24),
-                     labels=format(seq(as.Date("2006/1/1"),as.Date("2011/12/31"), "2 years"), "%Y")) +
+  scale_x_continuous(breaks=seq(61,109,12),
+                     labels=format(seq(as.Date("2006/1/1"),as.Date("2010/12/31"), "1 years"), "%Y")) +
   theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
         axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
         axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,0.8), "cm")) +
+        plot.margin=unit(c(0,0,0,0.5), "cm")) +
   scale_color_manual(values=colors) +
-  theme(legend.position = c(.8, .85), legend.background = element_blank(),
-        legend.key = element_blank(),legend.text=element_text(size=10, family="Times"),
+  theme(legend.position = c(.8, .9), legend.background = element_blank(),
+        legend.key = element_blank(), legend.text=element_text(size=15, family="Times"),
         legend.spacing.x=unit(.2, "cm"))
 
-ggarrange(plot_HMM, plot_LG_V, plot_LG_V_seas, plot_DR, ncol=2, nrow=2, align="v",
-          labels=c("(a)","(b)","(c)","(d)"), font.label=list(size=9, family="Times"))
+ggarrange(plot_HMM, plot_LG_V, plot_LG_V_seas, plot_DR, ncol=2, nrow=2, align="h",
+          labels=c("(a)","(b)","(c)","(d)"), font.label=list(size=20, family="Times"))
 ```
 
 It is possible to see the effect that the signal-to-noise ratio has on the one-step-ahead forecast. For example, the time invariant linear growth model reports a relative magnitude of $W$ on $V$ higher than the time variant one and, consequently, its point forecasts tend to follow more closely the data. \textcolor{red}{AGGIUNGERE TABELLA MAE,MAPE,MSE}
-
-```{r, include=F}
-source("forecasting_accuracy.R")
-```
-
-```{r, include=T}
-# Forecasting accuracy: Summary table (v1)
-for_accuracy <- data.frame(measure   = c("MSE",          "MAE",          "MAPE"),
-                           #HMM      = c(MSE_HMM,        MAE_HMM,        MAPE_HMM),
-                           LG        = c(MSE_LG,         MAE_LG,         MAPE_LG),
-                           #LG_2     = c(MSE_LG_2,       MAE_LG_2,       MAPE_LG_2),
-                           #LG_3     = c(MSE_LG_3,       MAE_LG_3,       MAPE_LG_3),
-                           LG_v      = c(MSE_LG_v,       MAE_LG_v,       MAPE_LG_v),
-                           LG_v_seas = c(MSE_LG_v_seas,  MAE_LG_v_seas,  MAPE_LG_v_seas),
-                           DR        = c(MSE_DR,         MAE_DR,         MAPE_DR))
-
-knitr::kable(for_accuracy, "latex", booktabs=T, align="c",
-             col.names=c('', 'Time-invar LG', 'Time-var LG', 'Time-var LG + Seas', 'DR'),
-             #col.names=c('Measure', 'HMM', 'Time-invar LG', 'Time-var LG', 'Time-var LG + Seas',
-             #            'DR', 'SUR', 'SUTSE'),
-             escape=F, caption="Measures of predictive accuracy") %>%
-  column_spec(1:5, width="5em") %>%
-  kable_styling(latex_options="hold_position")
-```
 
 \section{Section 3. Multivariate DLMs}
 
@@ -1100,7 +1072,7 @@ SUTSE_lb_SO2 <- SUTSE_Filt$f[,2] - 1.64 * SUTSE_sd[,2]
 SUTSE_ub_SO2 <- SUTSE_Filt$f[,2] + 1.64 * SUTSE_sd[,2]
 ```
 
-```{r, fig.height=4, out.width='100%', fig.cap="\\label{fig:SUTSE_forecast}One-step-ahead forecast with credible intervals: (a) CO; (b) SO2."}
+```{r, fig.width=18, fig.height=4, out.width='100%', fig.cap="\\label{fig:SUTSE_forecast}One-step-ahead forecast with credible intervals: (a) CO; (b) SO2."}
 
 df_SUTSE <- data.frame(y_m, louisiana_df$n_months,
                        y_filt_SUTSE, SUTSE_lb_CO, SUTSE_lb_SO2, SUTSE_ub_CO, SUTSE_ub_SO2)
@@ -1122,7 +1094,7 @@ CO_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,0.8), "cm"))
+        plot.margin=unit(c(0,1,0,1), "cm"))
 
 SO2_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
   geom_line(aes(y=y_m[,2]), size=0.4) +
@@ -1141,7 +1113,7 @@ SO2_forecast <- ggplot(df_SUTSE, aes(x=louisiana_df.n_months)) +
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,0.8), "cm"))
+        plot.margin=unit(c(0,0,0,1), "cm"))
 
 ggarrange(CO_forecast, SO2_forecast, ncol=2, nrow=1, labels=c("(a)","(b)"),
           font.label=list(size=20, family="Times"))
@@ -1150,6 +1122,29 @@ ggarrange(CO_forecast, SO2_forecast, ncol=2, nrow=1, labels=c("(a)","(b)"),
 \section{Conclusion}
 
 In conclusion, \dots
+
+```{r, include=F}
+source("forecasting_accuracy.R")
+```
+
+```{r, include=T}
+# Forecasting accuracy: Summary table (v1)
+for_accuracy <- data.frame(measure   = c("MSE",          "MAE",          "MAPE"),
+                           HMM       = c(MSE_HMM,        MAE_HMM,        MAPE_HMM),
+                           LG        = c(MSE_LG,         MAE_LG,         MAPE_LG),
+                           #LG_2     = c(MSE_LG_2,       MAE_LG_2,       MAPE_LG_2),
+                           #LG_3     = c(MSE_LG_3,       MAE_LG_3,       MAPE_LG_3),
+                           LG_v      = c(MSE_LG_v,       MAE_LG_v,       MAPE_LG_v),
+                           LG_v_seas = c(MSE_LG_v_seas,  MAE_LG_v_seas,  MAPE_LG_v_seas),
+                           DR        = c(MSE_DR,         MAE_DR,         MAPE_DR),
+                           SUTSE     = c(MSE_SUTSE,      MAE_SUTSE,      MAPE_SUTSE))
+
+knitr::kable(for_accuracy, "latex", booktabs=T, align="c",
+             col.names=c('', 'HMM', 'Time-invar LG', 'Time-var LG', 'Time-var seas LG', 'DR', 'SUTSE'),
+             escape=F, caption="Measures of predictive accuracy") %>%
+  column_spec(1:7, width="5em") %>%
+  kable_styling(latex_options="hold_position")
+```
 
 \newpage
 \section{References}
