@@ -12,6 +12,7 @@ nocite: '@*'
 bibliography: References.bib
 header-includes:
   \usepackage[utf8]{inputenc}
+  \usepackage[bottom]{footmisc}
   \usepackage{setspace}
   \usepackage{apacite}
   \usepackage{natbib}
@@ -37,6 +38,10 @@ header-includes:
   \DeclareMathOperator*{\E}{\mathbb{E}}
   \DeclareMathOperator*{\Ec}{\mathbb{E}_t}
   \setlength\parindent{0pt}
+  \newcommand{\separate}{\vspace{+1.5mm}}
+  \newcommand{\smallsqueeze}{\vspace{-1mm}}
+  \newcommand{\squeeze}{\vspace{-2.5mm}}
+  \newcommand{\bigsqueeze}{\vspace{-3mm}}
   \newcommand{\indep}{\perp \!\!\! \perp}
 ---
 
@@ -72,30 +77,26 @@ knitr::opts_chunk$set(message = FALSE,
                       fig.align = "center",
                       out.width='80%')
 ```
+\squeeze
 
-\section{Introduction}
-
-Pollution is one of the most debated social issues of our times. It has been attracting more and more attention given its serious implications on the health of both the Earth and human beings. The economic activity under the model of production and consumption that has been characterizing the last century is, with no doubt, at the very basis of such complex phenomenon. Only in the last fifteen years some consciousness about the importance of pollution in the long-run has evolved and serious interventions have been made. Moreover, among the numerous component which pollution can be split into, air pollution is certainly one of the most important and tightly linked to strict economic activity.
-
+\subsection{Introduction}
+\squeeze
+Pollution is one of the most debated social issues of our times. It has been attracting more and more attention given its serious implications on the health of both the Earth and human beings. The economic activity under the model of production and consumption that has been characterizing the last century is, with no doubt, at the very basis of such complex phenomenon. Only in the last fifteen years some consciousness about the importance of pollution in the long-run has evolved and serious interventions have been made. Moreover, among the numerous component which pollution can be split into, air pollution is certainly one of the most important and tightly linked to strict economic activity.\
 Therefore, the purpose of the present work is to model through common statistical techniques the evolution of air pollution during this last crucial fifteen years in a developed economy, i.e. the United States, trying to grasp some intuition about this fundamental phenomenon. Hence, after some preliminary descriptive steps, we present the models we think are more appropriate to analyze such complex phenomenon. Finally, we conclude with a comparison of the predictive performances of each specification. 
+\squeeze
 
-\section{Data}
-
+\subsection{Data}
+\squeeze
 The dataset \texttt{US\_pollution} contains monthly and daily data about air pollution for each state in the United States\footnote{The preliminary analysis that led us from the raw data (with frequency of 4-intra-day observations) to the current dataset is made available in the GitHub repository at \url{https://github.com/SimoneArrigoni/US_pollution}. We relied on a moving average algorithm of order $120$ to smooth the data, assuming months of 30 days and a year of 360 days.}. It is provided by the U.S. Environmental Protection Agency (EPA). Specifically, four key indicators of air pollution are considered: carbon monoxide ($\text{CO}$), sulfur dioxide ($\text{SO}_{2}$), ground level ozone ($\text{O}_{3}$) and nitrogen dioxide ($\text{NO}_{2}$). Particularly suitable for our analysis:
 \begin{itemize}
 \item \textbf{Carbon monoxide ($\text{CO}$)}:  It forms from incomplete combustions mainly from vehicle exhausts (roughly 75\% of all carbon monoxide emissions nationwide and up to 95\% in cities), fuel combustion in industrial processes and natural sources. Cold temperatures make combustion less complete, therefore we expect also in this case a seasonal behavior. 
 \item \textbf{Sulfur dioxide ($\text{SO}_{2}$)}: It is produced when sulfur-containing fuels are burned. It is common mainly in large industrial complexes. 
 \end{itemize}
-Very intuitively, the two variables of interest are interconnected and are the building blocks of a more general phenomenon, that is air pollution. Furthermore, they are related by a common latent process that can be summarized by several components such as industrialization, car traffic and regulation.
 
 ```{r, echo=F}
 # Import the dataset
 louisiana_df <- read.csv(url("https://raw.githubusercontent.com/SimoneArrigoni/US_pollution/master/Louisiana_pollution.csv"), sep = ";", header=T)
-```
 
-We will be focusing on measures for Louisiana, recorded monthly from January 2001 to June 2016, for a total of `r length(louisiana_df$n_months)` observations. The main advantage of studying the evolution of air pollution in the same country over the years is that this allows us to control for fixed effects and to better study the latent process of interest that relates the four pollution components.
-
-```{r}
 # Correlation matrix
 datacor <- subset(louisiana_df, select=c(m_O3_mean, m_NO2_mean, m_CO_mean, m_SO2_mean))
 cor.datacor <- cor(datacor, use="complete.obs")
@@ -110,15 +111,16 @@ row.names(cor_mat) <- c("$\\text{O}_{3}$", "$\\text{NO}_{2}$", "$\\text{CO}$", "
 #kable_styling(latex_options="hold_position")
 ```
 
-The data show a positive correlation between $\text{CO}$ and $\text{SO}_2$ (`r cor_mat[4,3]`). Provided that the correlation between pollutants shows significant differences in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution [@Logan1981], a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field [@Voulgarakis2011]. $\text{CO}$ is also positively correlated with $\text{SO}_2$ which is justified by the fact that they share a main source of production, i.e. coal extraction and combustion\footnote{Other studies report that, in the US, $\text{O}_3$ is on average positively correlated with $\text{NO}_2$, which is opposite to our empirical findings about Louisiana, where they are slightly negatively correlated. A possible explanation can be given by substitution effects: an increase of nitrogen dioxide levels can be associated to the use of more fossil fuels that produce $\text{NO}_2$ instead of others. This might be related to Louisiana's fixed effects, however further research would be beyond the purpose of our study.}.
+Very intuitively, the two variables of interest are interconnected and are the building blocks of a more general phenomenon, that is air pollution. Furthermore, they are related by a common latent process that can be summarized by several components such as industrialization, car traffic and regulation.\
+We will be focusing on measures for Louisiana, recorded monthly from January 2001 to June 2016, for a total of `r length(louisiana_df$n_months)` observations. The main advantage of studying the evolution of air pollution in the same country over the years is that this allows us to control for fixed effects and to better study the latent process of interest that relates the four pollution components.\
+The data show a positive correlation between $\text{CO}$ and $\text{SO}_2$ (`r cor_mat[4,3]`). Provided that the correlation between pollutants shows significant differences in regional patterns and that $\text{CO}$ is a good indicator for industrial and biomass burning pollution [@Logan1981], a positive and strong correlation with $\text{O}_{3}$ indicates that a region has experienced photochemical $\text{O}_{3}$ production from its precursors (including $\text{CO}$) and is aligned with previous studies in the field [@Voulgarakis2011]. $\text{CO}$ is also positively correlated with $\text{SO}_2$ which is justified by the fact that they share a main source of production, i.e. coal extraction and combustion\footnote{Other studies report that, in the US, $\text{O}_3$ is on average positively correlated with $\text{NO}_2$, which is opposite to our empirical findings about Louisiana, where they are slightly negatively correlated. A possible explanation can be given by substitution effects: an increase of nitrogen dioxide levels can be associated to the use of more fossil fuels that produce $\text{NO}_2$ instead of others. This might be related to Louisiana's fixed effects, however further research would be beyond the purpose of our study.}.\
+We plot in Figure \ref{fig:louisiana_plots} the time series of the two pollutants we will consider in the following analysis. One can clearly see that the time series, each with its specific features, do not in general look stationary. Therefore, an analysis which employs HMM and DLMs seems appropriate. \separate
 
-We plot in Figure \ref{fig:louisiana_plots} the time series for the four pollutants under study to give a first qualitative description of the phenomenon.
-
-```{r, fig.width=18, fig.height=3.5, out.width='100%', fig.cap="\\label{fig:louisiana_plots}Air pollution in the state of Louisiana"}
+```{r, fig.width=18, fig.height=4, out.width='100%', fig.cap="\\label{fig:louisiana_plots}Air pollution in the state of Louisiana"}
 
 # Time series plots
 O3 <- ggplot(louisiana_df, aes(x=n_months, y=m_O3_mean)) +
-  geom_line(color="black", size=0.7) +
+  geom_line(color="black", size=0.5) +
   theme_bw(base_size=9) +
   labs(y=expression(O[3]~(ppm)), x="Year") +
   scale_x_continuous(breaks=seq(0,186,24),
@@ -132,7 +134,7 @@ O3 <- ggplot(louisiana_df, aes(x=n_months, y=m_O3_mean)) +
         plot.margin=unit(c(0,0.5,0.5,0), "cm"))
 
 NO2 <- ggplot(louisiana_df, aes(x=n_months, y=m_NO2_mean)) +
-  geom_line(color="black", size=0.7) +
+  geom_line(color="black", size=0.5) +
   theme_bw(base_size=9) +
   labs(y=expression(NO[2]~(ppb)), x="Year") +
   scale_x_continuous(breaks=seq(0,186,24),
@@ -146,7 +148,7 @@ NO2 <- ggplot(louisiana_df, aes(x=n_months, y=m_NO2_mean)) +
         plot.margin=unit(c(0,0,0.5,0.5), "cm"))
 
 CO <- ggplot(louisiana_df, aes(x=n_months, y=m_CO_mean)) +
-  geom_line(color="black", size=0.7) +
+  geom_line(color="black", size=0.5) +
   theme_bw(base_size=9) +
   labs(y=expression(CO~(ppm)), x="Year") +
   scale_x_continuous(breaks=seq(0,186,24),
@@ -160,7 +162,7 @@ CO <- ggplot(louisiana_df, aes(x=n_months, y=m_CO_mean)) +
         plot.margin=unit(c(0.5,0.5,0,0), "cm"))
 
 SO2 <- ggplot(louisiana_df, aes(x=n_months, y=m_SO2_mean)) +
-  geom_line(color="black", size=0.7) +
+  geom_line(color="black", size=0.5) +
   theme_bw(base_size=9) +
   labs(y=expression(SO[2]~(ppb)), x="Year") +
   scale_x_continuous(breaks=seq(0,186,24),
@@ -175,16 +177,15 @@ SO2 <- ggplot(louisiana_df, aes(x=n_months, y=m_SO2_mean)) +
 
 ggarrange(CO, SO2, ncol=2, nrow=1, align="h")
 ```
+\bigsqueeze
 
-The time series, each with its specific features, do not in general look stationary.
+In particular, among the pollutants, $\text{CO}$ is probably the most tightly linked with the economic and industrial network of a country. Therefore, we select this as the series of main interest for our analysis, the purpose of our work being to track the evolution of air pollution relative to an underlying economic process.\
+As an exploratory step, we decompose the time series in its structural components using an additive model\footnote{For sake of brevity we do not report the plots of the decomposed components.}. The decomposition confirms the presence of a quarterly seasonal component and shows a negative trend up to a clear breakpoint around 2008. The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
+\squeeze
 
-$\text{CO}$ is perhaps, among the pollutants, the most tightly linked with the economic and industrial network of a country. Consequently, we select this as the series of main interest for our analysis, being the purpose of this work tracking the evolution of air pollution relative to an underlying economic process.
-
-As an exploratory step, we decompose the time series in its structural components using an additive model\footnote{For sake of brevity we do not report the plots of the decomposed components.}. The decomposition confirms the presence of a quarterly seasonal component and shows a negative trend up to a clear breakpoint between 2007 and 2008. The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
-
-\section{Section 1. HMM}
-
-These features suggest that the process may be described by a homogeneous \textit{hidden Markov model} (HMM) with a trend component. Therefore, we estimate a homogeneous HMM with two states, specified as:
+\subsection{Section 1. HMM}
+\squeeze
+The features we just identified suggest that the process may be well described by a homogeneous \textit{hidden Markov model} (HMM) with a trend component. Therefore, we estimate a homogeneous HMM with two states, specified as:
 \begin{align*}
 \begin{cases}
   Y_{t}=\mu_{1} + \beta_{1}t + \varepsilon_{t}, &
@@ -193,15 +194,15 @@ These features suggest that the process may be described by a homogeneous \texti
   \varepsilon_{t}\overset{iid}{\sim}N(0,\sigma_{2}^2) \qquad \text{if} \; S_{t}=2 \\
 \end{cases}
 \end{align*}
-where there are three state-dependent parameters, namely the level, $\mu_i$, the slope, $\beta_i$, and the variance, $\sigma_i$, for $i=1,2$. If our guess were correct, we would expect $\mu_1 > \mu_2$, $\beta_1<0$, $\beta_2=0$ and $\sigma_1^2>\sigma_2^2$.
-
-```{r, include=F}
-source("HMM_2states.R")
-```
-
-However, we noticed that two states are not sufficient to capture the actual behavior of the process\footnote{Again, results are not reported here but can be easily replicated using the provided R code.}. Indeed, a better fit can be obtained using a model with three hidden states that capture periods with negative trend and high volatility, periods with no trend and low volatility and periods with no trend and high volatility. The model is specified as above with an additional equation for $S=3$ and ideally $\mu_1 > \mu_2 \approx \mu_3$, $\beta_1<0$, $\beta_2=\beta_3=0$ and $\sigma_2^2<\sigma_3^2<\sigma_1^2$.
+where there are three state-dependent parameters, namely the level $\mu_i$, the slope $\beta_i$, and the variance $\sigma_i$, for $i=1,2$. If our initial guess were correct, we would expect $\mu_1 > \mu_2$, $\beta_1<0$, $\beta_2=0$ and $\sigma_1^2>\sigma_2^2$.\
+However, a homogeneous HMM with two states proves unable to capture the actual behavior of the process\footnote{Again, results are not reported here but can be easily replicated using the provided R code.}. A better fit can be obtained using a model with three hidden states that capture periods with negative trend and high volatility, periods with no trend and low volatility and periods with no trend and high volatility. The model is specified as above with an additional equation for $S=3$ and ideally $\mu_1 > \mu_2 \approx \mu_3$, $\beta_1<0$, $\beta_2=\beta_3=0$ and $\sigma_2^2<\sigma_3^2<\sigma_1^2$.\
+Table \ref{tab:HMM_MLE} confirms our guess. Indeed, the slope estimate in the first state, $\hat{\beta_1}_{MLE}$, is negative and significant, whereas in the other states is null. Notice that, although apparently low, this coefficient implies a relatively high percentage change after comparing it with our data, which, roughly speaking, range in $(0,1)$. In fact, relating this estimate with a sample mean of $0.39$, we obtain an estimated monthly decline around $-0.015$ corresponding to around $18.3\%$ on an annual basis. Moreover, the model is able to capture shifts in the intecept as well as those in the variance as described before.\
+The series with HMM estimated state-dependent means and state-dependent standard deviations are shown in Figure \ref{fig:HMM_results} (left panel) along with the Viterbi states obtained through \textit{global decoding} and with the posterior probabilities (right panel).
 
 ```{r echo=F, include=F}
+# Model specification with 2 states
+source("HMM_2states.R")
+
 # Model specification with 3 states
 y <- as.numeric(louisiana_df$m_CO_mean)
 nstates <- 3
@@ -268,19 +269,15 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
 ```
-
-Table \ref{tab:HMM_MLE} confirms our guess. Indeed, the slope estimate in the first state, $\hat{\beta_1}_{MLE}$, is negative and significant, whereas in the other states is null. Notice that, although apparently low, this coefficient implies a relatively high percentage change after comparing it with our data, which, roughly speaking, range in $(0,1)$. In fact, relating this estimate with a sample mean of $0.39$, we obtain an estimated monthly decline around $-0.015$ corresponding to around $18.3\%$ on an annual basis. Moreover, the model is able to capture shifts in the intecept as well as those in the variance as described before.
-
-The series with HMM estimated state-dependent means and state-dependent standard deviations are shown in Figure \ref{fig:HMM_results} (left panel) along with the Viterbi states obtained through \textit{global decoding} and with the posterior probabilities (right panel).
-
+\squeeze
 ```{r, include=F}
 # Decoding
 # Get the estimated state for each timestep 
 estStates_HMM <- posterior(HMM_fit)
 HMM_summary <- depmixS4::summary(HMM_fit)
 ```
-
-```{r, fig.width=18, fig.height=5, out.width='100%', fig.cap="\\label{fig:HMM_results}State-dependent means and standard deviations"}
+\squeeze
+```{r, fig.width=18, fig.height=5.5, out.width='100%', fig.cap="\\label{fig:HMM_results}State-dependent means and standard deviations"}
 # Chart with state-dependent mean and standard deviations
 HMM_main_CO <- data.frame(state=1:nstates,
                       mu=HMM_summary[,1],
@@ -292,7 +289,7 @@ df_to_plot %<>%
   mutate(xtime=louisiana_df$n_months, yvalue=louisiana_df$m_CO_mean)
 
 HMM_main <- ggplot(df_to_plot, aes(x=xtime, y=yvalue)) +
-  geom_line(size=0.7) +
+  geom_line(size=0.5) +
   geom_point(aes(x=xtime, y=mu+beta*xtime), col="blue", size=.8) +
   geom_ribbon(aes(ymin=mu+beta*xtime-2*sigma, ymax=mu+beta*xtime+2*sigma), alpha=.1) +
   theme_bw() +
@@ -319,7 +316,7 @@ my_breaks <- function(x) { if (max(x)<4) seq(0,3,1) else seq(0,1,1) }
 lab_names <- c('S1'="Post. S=1",'S2'="Post. S=2",'state'="Vit. states")
 
 HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
-  geom_line(color="black", size=0.7) +
+  geom_line(color="black", size=0.5) +
   facet_wrap(variable~., scales="free_y", ncol=1,
              strip.position="left",
              labeller = as_labeller(lab_names)) +
@@ -335,7 +332,7 @@ HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
         axis.title.y=element_blank(),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        strip.text=element_text(size=20, family="Times", face="bold"),
+        strip.text=element_text(size=18, family="Times"),
         strip.background=element_rect(colour="black", fill=NA),
         strip.placement="outside")
 
@@ -345,10 +342,10 @@ HMM_additional <- ggplot(HMM_additional_CO, aes(time_index, value)) +
 # Option 2
 ggarrange(HMM_main, HMM_additional, widths=c(4,2), align="h")
 ```
+\bigsqueeze
 
-Explanations of these results, which confirm a stable change in the evolution process of $\text{CO}$ in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in U.S. electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Wien agreement)\footnote{A deeper analysis on the factors explaining this shift can be found in Feng et al. (2015), in which they analyse the series of $\text{CO}_2$.}.
-
-In addition to explaining such a shifts, we may want predict them using this homogeneous HMM. For this reason, we produce the one-step-ahead forecast treating the data as streaming ones. Further details on this are reported in the \textbf{Performance evaluation} section.
+Explanations of these results, which confirm a stable change in the evolution process of $\text{CO}$ in Louisiana, are several. First, the decline of carbon particles has been widely attributed to a shift from the use of coal to natural gas in U.S. electricity production which dates back exactly to 2007. This is also supported by a marked decline in US coal mines activity which started in that same year. Second, a high and positive correlation between economic growth is well documented, thus highlighting some relationship with the outbreak of the Great Recession. Moreover, 2007 was a crucial year when negotiations on greenhouse gas emission were made at international level (such as at the G8 summit and the Wien agreement)\footnote{A deeper analysis on the factors explaining this shift can be found in Feng et al. (2015), in which they analyse the series of $\text{CO}_2$.}.\
+In addition to explaining such a shifts, we may want predict them using this homogeneous HMM. For this reason, we produce the one-step-ahead forecast treating the data as streaming ones. Further details on this are reported in the \textbf{Performance evaluation} section below.
 
 ```{r}
 # One-step-ahead forecast
@@ -367,14 +364,16 @@ for (t in 1:length(y)){
 HMM_forecast_lb <- HMM_forecast - 1.64 * HMM_forecast_sd
 HMM_forecast_ub <- HMM_forecast + 1.64 * HMM_forecast_sd
 ```
+\squeeze
 
-\section{Section 2. Univariate DLMs}
-
-We try to model the series of interest through \textit{dynamic linear model} (DLM) specifications. Indeed, DLMs are very attractive, since they allow a natural interpretation of the process as the combination of several components, such as trend, seasonal and regressive ones. As a consequence, we consider different specifications which, simply combined, are able to explain all the features previously described\footnote{Therefore we are aware (and we expect) that by construction each model will miss some process' characteristics. For example, residuals for a linear growth model may shows a seasonal behaviour but this is fully alligned with the additive structure we consider.}. 
+\subsection{Section 2. Univariate DLMs}
+\squeeze
+We try to model the series of interest through \textit{dynamic linear model} (DLM) specifications. Indeed, DLMs are very attractive, since they allow a natural interpretation of the process as the combination of several components, such as trend, seasonal and regressive ones. Therefore, we consider different specifications which, simply combined, are able to explain all the features previously described\footnote{Therefore we are aware (and we expect) that by construction each model will miss some features of the process. For example, residuals for a linear growth model may shows a seasonal behavior but this is fully consistent with the additive structure we consider.}. 
+\squeeze
 
 \subsection{Linear growth model}
-
-The first DLM specification we consider to examine $\text{CO}$ is a time invariant linear growth model, which is suitable to capture both a latent level, $\mu_{t}$, and a time varying splope in its dynamics, $\beta_{t}$. As usual, it is defined as following: 
+\squeeze
+The first DLM specification we consider to examine $\text{CO}$ is a time-invariant linear growth model, which is suitable to capture both a latent level $\mu_{t}$ and a time-varying slope in its dynamics $\beta_{t}$. As usual, it is defined as follows:
 \begin{eqnarray*}
   & Y_t = F \theta_t + v_t, \quad & v_t \overset{iid}\sim \mathcal{N}(0, \sigma_v^2) \\
   & \theta_t =  G \theta_{t-1} + w_t, \quad & w_t \overset{iid}\sim \mathcal{N}_{2}(0, W)
@@ -387,10 +386,10 @@ where
   W = \begin{bmatrix} \sigma_{w_1}^{2} & 0 \\ 0 & \sigma_{w_2}^{2} \end{bmatrix}, \quad
   \theta_0 \sim \mathcal{N}_{2}(m_0, C_0) \quad \text{ and } \quad \theta_{0} \indep (v_t) \indep (w_t).
 \end{equation*}
-Particularly, we decided to impose as starting condition $m_0 = [ y_{1} \;\; 0 ]'$ and $C_0 = \text{diag}(0.001,0.001)$, a relatively large variance to take into account our uncertainty.
-
-In Table \ref{tab:MLE_LG} the MLE's of the unknown coefficients are presented for both the time-varying and the time-invariant models and the associated standard errors\footnote{We treat $\psi = (\sigma_{v}^{2}, \; \sigma_{w_1}^{2}, \;\sigma_{w_2}^{2})$ as unknown parameters and we estimate them by maximum likelihood. Then, we perform the analysis of interest plugging them in the model as if they were known costants. We proceed in this way also in the following sections.}.
-
+In particular, we impose as starting condition $m_0=[ y_{1} \;\; 0 ]'$ and $C_0=diag(0.001,0.001)$ -- that is a relatively large variance, which reflects our uncertainty. The MLEs of the unknown coefficients are reported on the left in Table \ref{tab:MLE_LG}\footnote{We treated $\psi = (\sigma_{v}^{2}, \; \sigma_{w_1}^{2}, \;\sigma_{w_2}^{2})$ as unknown parameters and estimated them by ML. Then, we performed the analysis of interest plugging them in the model as if they were known constants. We proceeded in this way also in the following sections.}.\
+A first visual inspection of the series of standardized one-step-ahead forecast errors (Figure \ref{fig:innovation_process}(a)), however, reveals the presence of both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{v}^{2}$ to be time dependent.\
+To this purpose, we estimate a linear growth model specified as above but considering $\sigma_{v_t}^{2} = \sigma_{v_1}^{2}$ for observations before 2008 and $\sigma_{v_t}^{2} = \sigma_{v_2}^{2}$ for observations after 2008. The MLEs of the time-varying model are reported alongside those of the time-invariant one in Table \ref{tab:MLE_LG}.\
+The standardized innovation process of the time-varying specification are plotted in Figure \ref{fig:innovation_process}(b). The improvement with respect to the time-invariant model is clear, as the change in the variance is milder and the process looks closer to a random noise. Still, some \textit{structure} --more precisely, a seasonal behavior-- can be detected in standardized residuals. Hence, we will try to capture it through a seasonal model.
 
 ```{r, echo=F, warning=F}
 # Time invariant linear growth model
@@ -522,13 +521,7 @@ y_filt_LG_v_lb <- y_filt_LG_v - 1.64 * y_filt_LG_v_sd
 y_filt_LG_v_ub <- y_filt_LG_v + 1.64 * y_filt_LG_v_sd
 ```
 
-
-A first visual inspection to the series of standardized one-step-ahead forecast errors (Panel (a), Figure \ref{fig:innovation_process}) reveals the presence of both a seasonal behavior and a clear change in variance around 2008. We can take into account this second evidence allowing $\sigma_{v}^{2}$ to be time dependent.
-To this purpose, we estimated a linear growth model specified as above but considering  $\sigma_{v_t}^{2} = \sigma_{v_1}^{2}$ for observations before 2008 and $\sigma_{v_t}^{2} = \sigma_{v_2}^{2}$ for observations after 2008.
-
-In Figure \ref{fig:innovation_process}, Panel (b), we plot the standardized innovation process of the time-varying specification. A certain improvement can be observed, as the change in the variance is milder and the process looks closer to random noise, still  some \textit{strucure} can be detected in standardized residuals such as a seasonal behaviour. Hence, we will try to capture it through a seasonal model.
-
-```{r, fig.width=18, fig.height=3.5, out.width='100%',fig.cap="\\label{fig:innovation_process}Standardized one-step-ahead forecast errors: (a) Time-invariant model; (b) Time-variant model."}
+```{r, fig.width=18, fig.height=3.5, out.width='100%',fig.cap="\\label{fig:innovation_process}Standardized one-step-ahead forecast errors: (a) Time-invariant LG model; (b) Time-variant LG model."}
 
 res_LG <- residuals(LG_Filt, sd=FALSE)
 res_LG <- data.frame(res_LG,louisiana_df$n_months)
@@ -546,10 +539,10 @@ A <- ggplot(res_LG, aes(x=time)) +
   scale_x_continuous(breaks=seq(0,186,24),
                      labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
   scale_y_continuous(breaks=seq(-5,5,1), limits = c(-3,4)) +
-  theme(axis.text.x=element_text(size=18, family="Times", margin=margin(t=5)),
-        axis.text.y=element_text(size=18, family="Times", margin=margin(r=5)),
-        axis.title.x=element_text(size=18, family="Times", margin=margin(t=5)),
-        axis.title.y=element_text(size=18, family="Times", margin=margin(r=5)),
+  theme(axis.text.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.text.y=element_text(size=20, family="Times", margin=margin(r=5)),
+        axis.title.x=element_text(size=20, family="Times", margin=margin(t=5)),
+        axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
         plot.margin=unit(c(0,0.5,0,0.8), "cm"))
@@ -569,12 +562,15 @@ B <- ggplot(res_LG_v, aes(x=time)) +
         panel.grid.minor=element_blank(),
         plot.margin=unit(c(0,0,0,0.8), "cm"))
 
-ggarrange(A, B, ncol=2, nrow=1, labels=c("(a)", "(b)"),
-          font.label=list(size=20, family="Times"))
+ggarrange(A, B, ncol=2, nrow=1, align="h",
+          labels=c("(a)","(b)"), font.label=list(size=20, family="Times"))
 ```
-
+\bigsqueeze \bigsqueeze
 
 \subsection{Seasonal dynamic linear model}
+\squeeze
+In this section we fit a seasonal DLM given the seasonal behavior documented above. In particular, we have a seasonal factor with monthly periodicity. In fact, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors free to vary.}. The model is specified in a standard way, with $W = diag(\sigma_{w}^{2}, 0, \ldots, 0)$. Importantly, we model the seasonal effect as a time-varying one letting the variance of the seasonal fatctor being different from zero. \textcolor{red}{In this als} the seasonal component is liable to be affected by the structural break.\
+Once again, we estimate the unknown variances by MLE, which are reported in Table \ref{tab:MLE_seasonal}.
 
 ```{r}
 # Seasonal DLM 
@@ -588,12 +584,7 @@ fit_seas <- dlmMLE(y, rep(1,2), build_seas, hessian=TRUE)
 estVarLog_seas <- solve(fit_seas$hessian)
 estVar_seas <- diag(exp(fit_seas$par)) %*% estVarLog_seas %*% diag(exp(fit_seas$par))
 SE_seas <- sqrt(diag(estVar_seas))
-```
 
-In this section we fit a seasonal DLM given the seasonal behavior documented above.In particular, we have a seasonal factor with monthly periodicity. In fact, monthly-specific factors influence the series, such as temperature, precipitations and economic activity. Hence, we consider 12 seasonal factors $\alpha_{1},\dots,\alpha_{12}$ imposing the usual restriction $\sum_{i=1}^{12} \alpha_{i} = 0$\footnote{This linear constraint implies that there are effectively only 11 free seasonal factors free to vary.}. The model is specified in a standard way, with $W = diag(\sigma_{w}^{2}, 0, \ldots, 0)$. Importantly, we model the seasonal effect as a time-varying one letting the variance of the seasonal fatctor being different from zero. In this als the seasonal component is liable to be affected by the structural break.  
-Once again, we estimate the unkown variances by MLE, which are reported in Table \ref{tab:MLE_seasonal}.
-
-```{r}
 # MLE
 MLE_sigmaV  <- paste0(round(exp(fit_seas$par[1]),4))
 MLE_sigmaW <- paste0(round(exp(fit_seas$par[2]),9))
@@ -618,7 +609,6 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="HOLD_position")
 ```
-
 
 ```{r, warning=F}
 # Put MLE in the model + Add DLMs
@@ -648,10 +638,11 @@ y_filt_LG_v_seas_sd <- residuals(LG_v_seas_Filt)$sd
 y_filt_LG_v_seas_lb <- y_filt_LG_v_seas - 1.64 * y_filt_LG_v_seas_sd
 y_filt_LG_v_seas_ub <- y_filt_LG_v_seas + 1.64 * y_filt_LG_v_seas_sd
 ```
+\bigsqueeze
 
-In order to evaluate the improvement that a seasonal component has in our analysis, we combined it with the time varying linear growth model previously specified. Figure \ref{fig:innovation_process_combined} plots the series of innovation process obtained from such a specification. Comparing this plot with the ones reported in Figure \ref{fig:innovation_process}, it is easy to see that the seasonal component is no more present in standardazed residuals. In fact, the series looks like a true noise with almost no structure.
+In order to evaluate the improvement that a seasonal component represents in our analysis, we combine it with the time-varying linear growth model previously specified. Figure \ref{fig:innovation_process_combined} plots the series of innovation process obtained from such a specification. Comparing this plot with the ones reported in Figure \ref{fig:innovation_process}, it is easy to see that the seasonal component is no more present in standardazed residuals. In fact, the series looks like a true noise with almost no structure.
 
-```{r, fig.width=9, fig.height=3.5, out.width='50%',fig.cap="\\label{fig:innovation_process_combined}Standardized one-step-ahead forecast errors: Time-variant linear growth model + seasonal DLM."}
+```{r, fig.width=9, fig.height=3.5, out.width='50%', fig.cap="\\label{fig:innovation_process_combined} Standardized one-step-ahead forecast errors: Time-variant seasonal LG model."}
 
 res_LG_v_seas <- residuals(LG_v_seas_Filt, sd=FALSE)
 res_LG_v_seas = data.frame(res_LG_v_seas,louisiana_df$n_months)
@@ -673,24 +664,29 @@ ggplot(res_LG_v_seas, aes(x=time)) +
         panel.grid.minor=element_blank(),
         plot.margin=unit(c(0,0,0,0.8), "cm"))
 ```
+\bigsqueeze
 
-In the next section we will follow a different approach that may, appropriately specified, allow for a causal interpretation of results.
+\textcolor{red}{In the next section we will follow a different approach that may, appropriately specified, allow for a causal interpretation of results. --> TOGLIEREI CONCETTO DI CAUSALITA', ANCHE SE "APPR. SPECIFIED". SERVE QUESTA FRASE? COSA VOGLIAMO DIRE?}
+\squeeze
 
 \subsection{Dynamic linear regression}
-
-We take as explanatory variable, $x_t$, Louisiana's $\text{SO}_2$. The model we consider is the following:
+\squeeze
+In light of what we said in the introduction, we may want to consider $\text{SO}_2$ as an explanatory variable for $\text{CO}$. A \textit{dynamic linear regression} model is specified as follows:
 \begin{eqnarray*} 
   & y_t = \alpha_t + \beta_t x_t + v_t, & v_t \overset{iid}\sim \mathcal{N}(0, \sigma_{v}^{2}) \\
-  & \theta_t = G \; \theta_{t-1} + w_t, & w_t \overset{iid}\sim \mathcal{N}(0, W)
+  & \theta_t = G \theta_{t-1} + w_t, & w_t \overset{iid}\sim \mathcal{N}(0, W)
 \end{eqnarray*}
+\smallsqueeze
 where
+\smallsqueeze
 \begin{equation*}
   \theta_t = \begin{bmatrix} \alpha_t & \beta_t \end{bmatrix}', \quad 
   \theta_0 \sim \mathcal{N}_2(m_0, C_0), \quad
   \theta_0 \indep (v_t) \indep (w_t), \quad
   G=I_2 \quad \text{ and } \quad W=\text{diag}(\sigma_{w_1}^{2}, \sigma_{w_2}^{2})
 \end{equation*}
-that is, the two time varying coefficients $\alpha_t$ and $\beta_t$ are modeled as independent random walks and we consider both the system variances unknown.
+that is, the two time-varying coefficients $\alpha_t$ and $\beta_t$ are modeled as independent random walks, with unknown system variances.
+The MLEs of the unknown coefficients and the associated standard errors are presented in Table \ref{tab:MLE_dr}.
 
 ```{r}
 # Define regressor
@@ -713,10 +709,7 @@ SE_DR <- sqrt(diag(estVar_DR))
 
 # Put MLE in the model
 DR <- build_DR(fit_DR$par)
-
 ```
-
-In Table \ref{tab:MLE_dr} are presented the MLEs of the unknown coefficients and the associated standard errors.
 
 ```{r}
 # MLE
@@ -747,9 +740,10 @@ knitr::kable(MLEsum, "latex", booktabs=T, align="c",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
 ```
+\smallsqueeze
 
-The filtering estimates of $\theta_t=[\alpha_t \; \beta_t]'$, for $t=0,\ldots,T$, are also computed. The filtering estimates of the state variables are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:filt_est}.
-These graphs show the relevance of the brake point also in the relationship between $\text{CO}$ and the covariate. First, the intercepts obtained from the filtering procedure, confirming findings in the HMM section, are decreasing though becoming roughtly constant exactly around the break, namely around 2008. On the other hand, he interpretation of the filtered $\beta$'s in light of the break point is more difficult. However, we observe a mild and unstable relationship between the two variables in the pre-break period (i.e. the coefficient oscillates around zero). It becomes stronger and negative immediatly before the break, whereas becoming positive and increasing during the post-brake period. Explanation of this behavior are of a technical kind, being related to the chemical relation betwen the two pollutant, hence we are not going to dive deeper into a causal explanation. It will suffice to us to show that the model is able to track this dynamic relation even in presence of structural instability.
+The filtering estimates of $\theta_t=[\alpha_t \; \beta_t]'$, for $t=0,\ldots,T$, are also computed. The filtering estimates of the state variables are plotted over time together with their $90\%$ credible intervals in Figure \ref{fig:filt_est}.\
+These graphs show the relevance of the break point also in the relationship between $\text{CO}$ and the covariate $\text{SO}_2$. On the one hand, the $\alpha$'s obtained from the filtering procedure, confirming the findings of the HMM section, are decreasing though becoming roughtly constant exactly around the break, namely around 2008. On the other hand, the interpretation of the filtered $\beta$'s in light of the break point is more difficult. However, we observe a mild and unstable relationship between the two variables in the pre-break period (i.e. the coefficient oscillates around zero). It becomes stronger and negative immediatly before the break, whereas becoming positive and increasing during the post-break period. Explanation of this behavior are of a technical kind, being related to the chemical relation between the two pollutants, hence we are not going to dive deeper into a causal explanation. It is enough for us to show that the model is able to track this dynamic relation even in presence of structural instability.
 
 ```{r}
 # Kalman filter
@@ -791,13 +785,13 @@ upper_filt_beta  <- filt_state_est_beta + 1.64*filt_sd_est_beta # upper bound of
 lower_filt_beta  <- filt_state_est_beta - 1.64*filt_sd_est_beta # lower bound of 90% C.I.
 ```
 
-```{r, fig.width=18, fig.height=3.5, fig.cap="\\label{fig:filt_est} Filtering estimates with credible intervals: (a) alpha; (b) beta."}
+```{r, fig.width=18, fig.height=4, fig.cap="\\label{fig:filt_est} Filtering estimates with 90\\% credible intervals: (a) $\\alpha$; (b) $\\beta$."}
 
 # Create df
 df_co_ci <- data.frame(louisiana_df$n_months, filt_state_est_alpha, filt_state_est_beta, 
                        upper_filt_alpha, lower_filt_alpha, upper_filt_beta, lower_filt_beta)
 colnames(df_co_ci) = c("n_months", "filt_state_est_alpha", "filt_state_est_beta",
-                       "upper_filt_alpha","lower_filt_alpha", "upper_filt_beta","lower_filt_beta")
+                       "upper_filt_alpha", "lower_filt_alpha", "upper_filt_beta", "lower_filt_beta")
 
 # Plot the filtering estimates with their credible intervals
 filt_alpha <- ggplot(df_co_ci, aes(x=n_months)) +
@@ -806,7 +800,7 @@ filt_alpha <- ggplot(df_co_ci, aes(x=n_months)) +
   geom_line(aes(y=lower_filt_alpha), color="red", linetype="dashed", size=0.2) +
   geom_ribbon(aes(ymin=lower_filt_alpha, ymax=upper_filt_alpha), alpha=.1, fill="red") +
   theme_bw(base_size=9) +
-  labs(x="Year", y="Alpha", color="black") +
+  labs(x="Year", y=expression(alpha), color="black") +
   scale_y_continuous() +
   scale_x_continuous(breaks=seq(0,186,24),
                      labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
@@ -824,7 +818,7 @@ filt_beta <- ggplot(df_co_ci, aes(x=n_months)) +
   geom_line(aes(y=lower_filt_beta), color="red", linetype="dashed", size=0.2) +
   geom_ribbon(aes(ymin=lower_filt_beta, ymax=upper_filt_beta), alpha=.1, fill="red") +
   theme_bw(base_size=9) +
-  labs(x="Year", y="Beta", color="black") +
+  labs(x="Year", y=expression(beta), color="black") +
   scale_y_continuous() +
   scale_x_continuous(breaks=seq(0,186,24),
                      labels=format(seq(as.Date("2001/1/1"),as.Date("2016/6/1"), "2 years"), "%Y")) +
@@ -836,38 +830,39 @@ filt_beta <- ggplot(df_co_ci, aes(x=n_months)) +
         panel.grid.minor=element_blank(),
         plot.margin=unit(c(0,0,0,0.8), "cm"))
 
-ggarrange(filt_alpha, filt_beta, ncol=2, nrow=1, labels=c("(a)", "(b)"),
+ggarrange(filt_alpha, filt_beta, ncol=2, nrow=1, labels=c("(a)","(b)"),
           font.label=list(size=20, family="Times"))
 ```
-
+\bigsqueeze \bigsqueeze
 
 \subsection{Model checking}
+\squeeze
+In order to check the assumptions made in our model specifications, we test in this section the properties of the innovation process. In particular, we report in Figure \ref{fig: summary} the correlogram (left panels) and the QQ-plot of the standardazed residuals (right panels).
 
-```{r, fig.width=18, fig.height=12, out.width='80%', fig.cap="\\label{fig: summary}ACF of one-step-ahead forecast errors and Normal probability plot of standardized one-step-ahead forecast errors: (a) Time-invariant LG model; (b) Time-varying LG model; (c) Time-varying seas LG model."}
+```{r, fig.width=10, fig.height=9.2, out.width='70%', fig.cap="\\label{fig: summary}ACF of one-step-ahead forecast errors and normal probability plot of standardized one-step-ahead forecast errors: (a) Time-invariant LG model; (b) Time-varying LG model; (c) Time-varying seasonal LG model."}
 
 source("LG_model_checking.R")
-mod1 <- ggarrange(b,c, ncol=2, labels = c("(a)"),font.label=list(size=20, family="Times"))
+mod1 <- ggarrange(b,c, ncol=2, labels = c("(a)"),font.label=list(size=15, family="Times"))
 
 source("LG_V_model_checking.R")
-mod2 <- ggarrange(b,c, ncol=2, labels = c("(b)"),font.label=list(size=20, family="Times"))
+mod2 <- ggarrange(b,c, ncol=2, labels = c("(b)"),font.label=list(size=15, family="Times"))
 
 source("LG_V_seas_mod_checking.R")
-mod3 <- ggarrange(b,c, ncol=2, labels = c("(c)"),font.label=list(size=20, family="Times"))
+mod3 <- ggarrange(b,c, ncol=2, labels = c("(c)"),font.label=list(size=15, family="Times"))
 
-ggarrange(mod1,mod2,mod3, ncol=1, nrow=3, align="h")
+ggarrange(mod1,mod2,mod3, ncol=1, nrow=3, align="hv")
 ```
+\bigsqueeze
 
-In this section we are going to check the assumptions made in our model specifications by testing the properties of the innovation process. Specifically we report here the correlogram (left panels) and the qq-plot of standardazed residuals (right panels).
-
-The left panels  of Figure \ref{fig: summary} report evidence of departure from independence. Indeed, in all the three of them the autocorrelation function is significantly different from zero at some lags. This proves the presence of persistency (especially in the short run), which is not fully captured by our relatively simple models.
-
-The right panels of Figure \ref{fig: summary} report evidence of departure from normality. While residuals for the time-invariant linear growth model (Panel (b)) prove the presence of fat tails in the empirical distribution, residuals of the time-varying model (Panel (d)) seem to be closer to a Gaussian distribution in terms of kurtosis. Still, fat tails are present and some positive skewness appears. Very similar results are also obtained for the seasonal model (Panel (f)).\footnote{For sake of brevity we do not report the model checking for the Dynamic regression. It would not be of significant added value being it very similar to results for the Time-varying seasonal linear growth model. However this exercise can be replicated using the provided R code.} These considerations suggest that a better specification should rely on leptokurtic distributions, such as the \textit{student's t} or the \textit{Generalized Pareto Distribution}. However, we do not conduct a deeper analysis, being it beyond the purpose of the present work.
+On the one side, the correlograms provide evidence of a departure from independence. Indeed, in all the three plots the autocorrelation function is significantly different from zero at some lags. This proves the presence of persistency (especially in the short run), which is not fully captured by our relatively simple models.\
+On the other side, the QQ-plots clearly show a departure from normality. While residuals for the time-invariant linear growth model prove the presence of fat tails in the empirical distribution, residuals of the time-varying model seem to be closer to a Gaussian distribution in terms of kurtosis. Still, fat tails are present and some positive skewness appears. Very similar results are also obtained for the seasonal model.\footnote{For sake of brevity we do not report model checking for dynamic regression. It would not be of significant added value being the results similar to the ones of the time-varying seasonal LG model. However, this exercise can be replicated using the provided R code.} These considerations suggest that a better specification should rely on leptokurtic distributions, such as the \textit{Student's t} or the \textit{Generalized Pareto Distribution}. However, we do not conduct a deeper analysis, being it beyond the purpose of the present work.
+\squeeze
 
 \subsection{Performance evaluation}
+\squeeze
+We treat the data under study as streaming data, periodically updated by EPA. Therefore, our main interest is forecasting, which is also a useful way to check the performance of the different specifications considered so far. The one-step-ahead forecasts obtained with the models specified in the previous sections are plotted in Figure \ref{fig:one-step-forecast_est}\footnote{For sake of clarity we decided to report only the temporal window around the breakpoint of 2008.}.
 
-We treat the data under study as streaming data, periodically updated by EPA. Therefore, our main interest is forecasting, which is also a useful way to check the performance of the different specifications considered so far. Therefore, we plot the one-step-ahead obtained with the models fitted in the previous sections (Figure \ref{fig:one-step-forecast_est})\footnote{For sake of clarity we decided to report only the temporal window around the breakpoint.}.
-
-```{r, fig.width=18, fig.height=8, out.width='100%', fig.cap="\\label{fig:one-step-forecast_est}One-step-ahead forecast estimates: (a) Homogeneous HMM; (b) Time-varying linear growth; (c) Time-varying seasonal linear growth; (d) Dynamic regression."}
+```{r, fig.width=18, fig.height=7, out.width='100%', fig.cap="\\label{fig:one-step-forecast_est}Observed data (in black) and one-step-ahead forecast estimates (colored) with 90\\% credible intervals: (a) Homogeneous HMM; (b) Time-varying LG; (c) Time-varying seasonal LG; (d) Dynamic regression."}
 
 # Build df
 df_forecast <- data.frame(louisiana_df$n_months, y,
@@ -906,11 +901,9 @@ plot_HMM <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0.5,0,0.5), "cm")) +
-  scale_color_manual(values=colors) +
-  theme(legend.position = c(.8, .9), legend.background = element_blank(),
-        legend.key = element_blank(), legend.text=element_text(size=15, family="Times"),
-        legend.spacing.x=unit(.2, "cm"))
+        plot.margin=unit(c(0,0.5,0,0.5), "cm"),
+        legend.position="none") +
+  scale_color_manual(values=colors)
 
 plot_LG <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
@@ -930,11 +923,9 @@ plot_LG <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,0), "cm")) +
-  scale_color_manual(values=colors) +
-  theme(legend.position = c(.8, .9), legend.background = element_blank(),
-        legend.key = element_blank(), legend.text=element_text(size=15, family="Times"),
-        legend.spacing.x=unit(.2, "cm"))
+        plot.margin=unit(c(0,0,0,0), "cm"),
+        legend.position="none") +
+  scale_color_manual(values=colors)
 
 plot_LG_V <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
@@ -954,11 +945,9 @@ plot_LG_V <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,0.5), "cm")) +
-  scale_color_manual(values=colors) +
-  theme(legend.position = c(.8, .9), legend.background = element_blank(),
-        legend.key = element_blank(), legend.text=element_text(size=15, family="Times"),
-        legend.spacing.x=unit(.2, "cm"))
+        plot.margin=unit(c(0,0,0,0.5), "cm"),
+        legend.position="none") +
+  scale_color_manual(values=colors)
 
 plot_LG_V_seas <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +
@@ -978,11 +967,9 @@ plot_LG_V_seas <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0.5,0,0.5), "cm")) +
-  scale_color_manual(values=colors) +
-  theme(legend.position = c(.8, .9), legend.background = element_blank(),
-        legend.key = element_blank(), legend.text=element_text(size=15, family="Times"),
-        legend.spacing.x=unit(.2, "cm"))
+        plot.margin=unit(c(0,0.5,0,0.5), "cm"),
+        legend.position="none") +
+  scale_color_manual(values=colors)
 
 plot_DR <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
   geom_line(aes(y=y, color="Observed data")) +  
@@ -1002,37 +989,40 @@ plot_DR <- ggplot(df_forecast[61:109,], aes(x=n_months)) +
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,0.5), "cm")) +
-  scale_color_manual(values=colors) +
-  theme(legend.position = c(.8, .9), legend.background = element_blank(),
-        legend.key = element_blank(), legend.text=element_text(size=15, family="Times"),
-        legend.spacing.x=unit(.2, "cm"))
+        plot.margin=unit(c(0,0,0,0.5), "cm"),
+        legend.position="none") +
+  scale_color_manual(values=colors)
 
-ggarrange(plot_HMM, plot_LG_V, plot_LG_V_seas, plot_DR, ncol=2, nrow=2, align="h",
+ggarrange(plot_HMM, plot_LG_V, plot_LG_V_seas, plot_DR, ncol=2, nrow=2, align="hv",
           labels=c("(a)","(b)","(c)","(d)"), font.label=list(size=20, family="Times"))
 ```
+\bigsqueeze
 
-It is possible to see the effect that the signal-to-noise ratio has on the one-step-ahead forecast. For example, the time invariant linear growth model reports a relative magnitude of $W$ on $V$ higher than the time variant one and, consequently, its point forecasts tend to follow more closely the data.
+From these plots, one can clearly see the effect that the \textit{signal-to-noise ratio} has on the one-step-ahead forecast. \textcolor{red}{For example, the time-invariant linear growth model in reports a relative magnitude of $W$ on $V$ higher than the time-variant one and, as a consequence, its point forecasts tend to follow more closely the data. --> ATTENZIONE! NON ABBIAMO PIU' TIME-INVARIANT: CAMBIARE!}
+\squeeze
 
-\section{Section 3. Multivariate DLMs}
-
+\subsection{Section 3. Multivariate DLMs}
+\smallsqueeze
 \subsection{Seemingly unrelated time series equations (SUTSE)}
-
+\squeeze
 Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. From visual inspection of Figure \ref{fig:louisiana_plots} it appears that the two series display a similar type of qualitative behavior, that can be modeled by a linear growth DLM. To set up a multivariate model for the two series, we combine the two linear growth models in a comprehensive \textit{seemingly unrelated time series equations model} (SUTSE). This is written as:
 \begin{eqnarray*}
   & Y_t = (F \otimes I_2) \; \theta_t + v_t, & v_t \sim \mathcal{N}_{2}(0,V_{t}) \\
   & \theta_t = (G \otimes I_2) \; \theta_{t-1} + w_t, & w_t \sim \mathcal{N}_{4}(0,W)
 \end{eqnarray*}
+\smallsqueeze
 with
+\smallsqueeze
 \begin{equation*}
   \underset{2 \times 1}{Y_t} = \begin{bmatrix} Y_{CO,t} \\ Y_{SO_2,t} \end{bmatrix}, \quad
-  \underset{4 \times 1}{\theta_t} = \begin{bmatrix} \mu_{CO,t} \\ \mu_{SO_2,t}, \\ \beta_{CO,t} \\
-  \beta_{SO_2,t} \end{bmatrix}, \quad
+  \underset{4 \times 1}{\theta_t} = [ \mu_{CO,t} \; \mu_{SO_2,t} \; \beta_{CO,t} \; \beta_{SO_2,t} ]', \quad
   \underset{1 \times 2}{F} = \begin{bmatrix} 1 & 0 \end{bmatrix}, \quad
-  \underset{2 \times 2}{G} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} \quad \text{ and } \quad \underset{4
-  \times 4}{W} = \text{blockdiag}(W_{\mu}, W_{\beta}).
+  \underset{2 \times 2}{G} = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} \quad
+  \underset{4 \times 4}{W} = \text{blockdiag}(W_{\mu}, W_{\beta}).
 \end{equation*}
-We also assume $V_{t}$ to be a time-variant diagonal matrix, similarly as we did above, considering January 2008 as change point. Moreover, to simplify the general model in order to reduce the overall number of parameters, we assume that only the level $\mu_{i,t}$ is correlated among pollutants, which we think it is a reasonable assumption in this context.  
+We also assume $V_{t}$ to be a time-variant diagonal matrix, similarly as we did above, considering January 2008 as change point. Moreover, to simplify the general model in order to reduce the overall number of parameters, we assume that only the level $\mu_{i,t}$ is correlated among pollutants, which we think is a reasonable assumption in this context.
+In Table \ref{tab:MLE_SUTSE} are presented the MLEs of the unknown coefficients and the associated standard errors. The one-step-ahead forecasts with credible intervals for both pollutants are plotted in Figure \ref{fig:SUTSE_forecast}.
+
 ```{r, include=F, warning=F}
 # Build df multivariate
 y_m <- data.frame(louisiana_df$m_CO_mean, louisiana_df$m_SO2_mean)
@@ -1075,7 +1065,6 @@ SUTSE_Filt <- dlmFilter(y_m, SUTSE)
 y_filt_SUTSE <- SUTSE_Filt$f
 ```
 
-
 ```{r, include=F, warning=F}
 ## Credible intrvals of the one-step ahead forecast
 SUTSE_sd <- residuals(SUTSE_Filt)$sd
@@ -1086,7 +1075,6 @@ SUTSE_lb_SO2 <- SUTSE_Filt$f[,2] - 1.64 * SUTSE_sd[,2]
 SUTSE_ub_SO2 <- SUTSE_Filt$f[,2] + 1.64 * SUTSE_sd[,2]
 ```
 
-In Table \ref{tab:MLE_SUTSE} are presented the MLEs of the unknown coefficients and the associated standard errors.
 ```{r}
 # MLE
 MLE_sigmaV11_1  <- paste0(round(exp(fit_SUTSE$par[1]),4))
@@ -1096,8 +1084,8 @@ MLE_sigmaV22_2  <- paste0(round(exp(fit_SUTSE$par[4]),4))
 MLE_sigmaWmu11  <- paste0(round(exp(fit_SUTSE$par[8]),4))
 MLE_sigmaWmu12  <- paste0(round(exp(fit_SUTSE$par[6]),4))
 MLE_sigmaWmu22  <- paste0(round(exp(fit_SUTSE$par[9]),4))
-MLE_sigmaWbeta11  <- paste0(round(exp(fit_SUTSE$par[5]),4))
-MLE_sigmaWbeta22  <- paste0(round(exp(fit_SUTSE$par[7]),4))
+MLE_sigmaWbeta11  <- paste0(round(exp(fit_SUTSE$par[5]),12))
+MLE_sigmaWbeta22  <- paste0(round(exp(fit_SUTSE$par[7]),9))
 
 # se(MLE)
 se_sigmaV11_1  <- paste0('(', round(SE_SUTSE[1],4), ')')
@@ -1107,8 +1095,8 @@ se_sigmaV22_2  <- paste0('(', round(SE_SUTSE[4],4), ')')
 se_sigmaWmu11  <- paste0('(', round(SE_SUTSE[8],4), ')')
 se_sigmaWmu12  <- paste0('(', round(SE_SUTSE[6],4), ')')
 se_sigmaWmu22  <- paste0('(', round(SE_SUTSE[9],4), ')')
-se_sigmaWbeta11  <- paste0('(', round(SE_SUTSE[5],4), ')')
-se_sigmaWbeta22  <- paste0('(', round(SE_SUTSE[7],4), ')')
+se_sigmaWbeta11  <- paste0('(', round(SE_SUTSE[5],9), ')')
+se_sigmaWbeta22  <- paste0('(', round(SE_SUTSE[7],7), ')')
 
 # Summary table
 MLEsum <- data.frame(sigmaV11_1=c(MLE_sigmaV11_1, se_sigmaV11_1),
@@ -1139,12 +1127,10 @@ MLEsum_table_2 <- knitr::kable(MLEsum, "latex", booktabs=T, align="c",
            general_title="Note:",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
-add_header_above(MLEsum_table_2, c("Period 1 to 84"=2, "Period 85 to 186"=2, " "=5))
+add_header_above(MLEsum_table_2, c("Months 1 to 84"=2, "Months 85 to 186"=2, " "=5))
 ```
 
-
-
-```{r, fig.width=18, fig.height=4, out.width='100%', fig.cap="\\label{fig:SUTSE_forecast}One-step-ahead forecast with credible intervals: (a) CO; (b) SO2."}
+```{r, fig.width=18, fig.height=3.5, out.width='100%', fig.cap="\\label{fig:SUTSE_forecast}Observed data and one-step-ahead forecast estimates with 90\\% credible intervals: (a) CO; (b) $\\text{SO}_2$."}
 
 df_SUTSE <- data.frame(y_m, louisiana_df$n_months,
                        y_filt_SUTSE, SUTSE_lb_CO, SUTSE_lb_SO2, SUTSE_ub_CO, SUTSE_ub_SO2)
@@ -1156,8 +1142,9 @@ CO_forecast <- ggplot(df_SUTSE[61:109,], aes(x=n_months)) +
   geom_line(aes(y=SUTSE_ub_CO), color="red", linetype="dotted", size=0.2) +
   geom_line(aes(y=SUTSE_lb_CO), color="red", linetype="dotted", size=0.2) +
   geom_ribbon(aes(ymin=SUTSE_lb_CO, ymax=SUTSE_ub_CO), alpha=.1, fill="red") +
+  geom_vline(xintercept = 85, color= "black", size=0.3) +
   theme_bw(base_size=9) +
-  labs(x="Year", y=expression(SO~(ppm)), color="black") +
+  labs(x="Year", y=expression(CO~(ppm)), color="black") +
   scale_y_continuous() +
   scale_x_continuous(breaks=seq(61,109,12),
                      labels=format(seq(as.Date("2006/1/1"),as.Date("2010/12/31"), "1 years"), "%Y")) +
@@ -1167,8 +1154,7 @@ CO_forecast <- ggplot(df_SUTSE[61:109,], aes(x=n_months)) +
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,1,0,1), "cm"))
-
+        plot.margin=unit(c(0,0.5,0,0.5), "cm"))
 
 SO2_forecast <- ggplot(df_SUTSE[61:109,], aes(x=n_months)) +
   geom_line(aes(y=SO2), size=0.4) +
@@ -1176,6 +1162,7 @@ SO2_forecast <- ggplot(df_SUTSE[61:109,], aes(x=n_months)) +
   geom_line(aes(y=SUTSE_ub_SO2), color="red", linetype="dotted", size=0.2) +
   geom_line(aes(y=SUTSE_lb_SO2), color="red", linetype="dotted", size=0.2) +
   geom_ribbon(aes(ymin=SUTSE_lb_SO2, ymax=SUTSE_ub_SO2), alpha=.1, fill="red") +
+  geom_vline(xintercept = 85, color= "black", size=0.3) +
   theme_bw(base_size=9) +
   labs(x="Year", y=expression(SO[2]~(ppb)), color="black") +
   scale_y_continuous() +
@@ -1187,14 +1174,16 @@ SO2_forecast <- ggplot(df_SUTSE[61:109,], aes(x=n_months)) +
         axis.title.y=element_text(size=20, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,0,1), "cm"))
+        plot.margin=unit(c(0,0,0,0.5), "cm"))
 
 ggarrange(CO_forecast, SO2_forecast, ncol=2, nrow=1, labels=c("(a)","(b)"),
           font.label=list(size=20, family="Times"))
 ```
+\bigsqueeze \bigsqueeze
 
-\section{Conclusion}
- 
+\subsection{Conclusion}
+
+Finally, in Table \ref{tab:for_accuracy} we report the measures of forecasting accuracy for all the models of the analysis. Most interestingly, the table tells us that, in this case, introducing dependence across time series of different pollutants does not "borrow" so much strenght. Indeed, the SUTSE is the best model only according to the MAE, while the MSE and MAPE select less sophisticated specifications. Anyway, such a result should not be taken as absolute, since it could only be due to a poor pollutant choice.
  
 ```{r, include=F}
 source("forecasting_accuracy.R")
@@ -1214,11 +1203,16 @@ for_accuracy <- data.frame(measure   = c("MSE",          "MAE",          "MAPE")
 
 knitr::kable(for_accuracy, "latex", booktabs=T, align="c",
              col.names=c('', 'HMM', 'Time-invar LG', 'Time-var LG', 'Time-var seas LG', 'DR', 'SUTSE'),
-             escape=F, caption="Measures of predictive accuracy") %>%
-  column_spec(1:7, width="5em") %>%
+             escape=F, caption="Measures of predictive accuracy\\label{tab:for_accuracy}") %>%
+  column_spec(c(1,2,6,7), width="4em") %>%
+  column_spec(c(3,4,5), width="8em") %>%
   kable_styling(latex_options="hold_position")
 ```
 
-We have presented several models that can be used to examine the series CO, underlying for each of them advantages and disadvantages. Even if, given the complexity of the phenomenon presented, our specifications may be too basic to have accurate predictions, we are satisfied with the results we obtained. We have not only learned how to implement the models seen throughout the course, but also studied a debated topic we are interested it, better understanding the evolution of the series across past years. Further research that we are considering are focused on applying the same analysis to other States and pollutants. 
+To conclude, we have presented several models that can be used to examine the series CO, underlying for each of them advantages and disadvantages. Even if, given the complexity of the phenomenon presented, our specifications may be too basic to have accurate predictions, we can be satisfied with the results we obtained. \textcolor{red}{We have not only learned how to implement the models seen throughout the course, but also studied a debated topic we are interested it, better understanding the evolution of the series across past years. Further research that we are considering are focused on applying the same analysis to other states and pollutants. --> EVITEREI RIFERIMENTI AL CORSO: IL REPORT DEVE ESSERE "UNA COSA CHE PRESENTERESTI AL TUO CAPO" (VEDI SCORECARD). QUI METTEREI COLLEGAMENTO CON LA PURPOSE DEL LAVORO: COSA SAPPIAMO DIRE ORA IN PIU' RISPETTO AL TEMA POLLUTION?}
 
-\section{References}
+\textcolor{red}{DA FARE: (1) MIGLIORARE FLUIDITA' DISCORSO (e.g. EVITIAMO A INIZIO SECTION "IN THIS SECTION WE DO..."; (2) RIVEDERE E MAGARI AGGIUNGERE QUALCHE VALORE PER SIGNAL-TO-NOISE RATIO; (3) (SE POSSIBILE) QUALCHE COMMENTO SU MLE CHE TROVIAMO, ALTRIMENTI ABBIAMO TABELLE QUASI PER NIENTE; }
+\squeeze
+
+\subsection{References}
+\squeeze
