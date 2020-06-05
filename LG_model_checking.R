@@ -51,9 +51,9 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
   if(large.sample.size == TRUE)
   {
     plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
-      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
-      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*acfstd), fill = "#B9CFE7") +
-      geom_col(fill = "#4373B6", width = 0.7) +
+      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*acfstd), fill = "steelblue3") +
+      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*acfstd), fill = "steelblue3") +
+      geom_col(fill = "steelblue3", width = 0.5) +
       theme_bw(base_size=9) +
       scale_x_continuous(breaks = seq(0,max(df1$lag),1)) +
       scale_y_continuous(name = element_blank(), 
@@ -67,10 +67,10 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
             plot.margin=unit(c(0,0,1,1.8), "cm"))
     
     plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
-      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
-      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*pacfstd), fill = "#B9CFE7") +
+      geom_area(aes(x = lag, y = qnorm((1+ci)/2)*pacfstd), fill = "steelblue3") +
+      geom_area(aes(x = lag, y = -qnorm((1+ci)/2)*pacfstd), fill = "steelblue3") +
       theme_bw(base_size=9) +
-      geom_col(fill = "#4373B6", width = 0.7) +
+      geom_col(fill = "steelblue3", width = 0.5) +
       scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm = TRUE),1)) +
       scale_y_continuous(name = element_blank(),
                          limits = c(min(df1$acf,df2$pacf),1)) +
@@ -88,10 +88,10 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
     plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
       geom_col(fill = "#4373B6", width = 0.7) +
       geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "steelblue3",
+                 colour = "navy",
                  linetype = "dashed", size=0.5) + 
       geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "steelblue3",
+                 colour = "navy",
                  linetype = "dashed", size=0.5) + 
       theme_bw(base_size=9) +
       scale_x_continuous(breaks = seq(0,max(df1$lag),1)) +
@@ -108,10 +108,10 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
     plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
       geom_col(fill = "#4373B6", width = 0.7) +
       geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "steelblue3",
+                 colour = "navy",
                  linetype = "dashed", size=0.5) + 
       geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "steelblue3",
+                 colour = "navy",
                  linetype = "dashed", size=0.5) + 
       theme_bw(base_size=9) +
       scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm=TRUE),1)) +
