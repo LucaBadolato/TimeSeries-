@@ -183,7 +183,7 @@ In particular, among the pollutants, $\text{CO}$ is probably the most tightly li
 As an exploratory step, we decompose the time series in its structural components using an additive model\footnote{For sake of brevity we do not report the plots of the decomposed components.}. The decomposition confirms the presence of a quarterly seasonal component and shows a negative trend up to a clear breakpoint around 2008. The effect of this break seems to be twofold: first, the trend, that was negative in the pre-break period, disappears; second, the variance reduces markedly in the post-break period.
 \squeeze
 
-\subsection{Section 1. HMM}
+\section{Section 1. HMM}
 \squeeze
 The features we just identified suggest that the process may be well described by a homogeneous \textit{hidden Markov model} (HMM) with a trend component. Therefore, we estimate a homogeneous HMM with two states, specified as:
 \begin{align*}
@@ -366,7 +366,7 @@ HMM_forecast_ub <- HMM_forecast + 1.64 * HMM_forecast_sd
 ```
 \squeeze
 
-\subsection{Section 2. Univariate DLMs}
+\section{Section 2. Univariate DLMs}
 \squeeze
 We try to model the series of interest through \textit{dynamic linear model} (DLM) specifications. Indeed, DLMs are very attractive, since they allow a natural interpretation of the process as the combination of several components, such as trend, seasonal and regressive ones. Therefore, we consider different specifications which, simply combined, are able to explain all the features previously described\footnote{Therefore we are aware (and we expect) that by construction each model will miss some features of the process. For example, residuals for a linear growth model may shows a seasonal behavior but this is fully consistent with the additive structure we consider.}. 
 \squeeze
@@ -1003,7 +1003,7 @@ From these plots, we can see that all models are able to some extent to predict 
 A further evidence that the time-variant linear growth model well describes structural instability can be found in the \textit{signal-to-noise ratio}. Indeed, it is possible to clearly see the effect that it has on the one-step-ahead forecast: after the breakpoint the magnitude of the system variance $W$ relative to the observation variance $\sigma_{v_t}^{2}$ increases and, as a consequence, the one-step-ahead forecasts follow more closely the data.
 \squeeze
 
-\subsection{Section 3. Multivariate DLMs}
+\section{Section 3. Multivariate DLMs}
 \smallsqueeze
 \subsection{Seemingly unrelated time series equations (SUTSE)}
 \squeeze
@@ -1183,7 +1183,7 @@ ggarrange(CO_forecast, SO2_forecast, ncol=2, nrow=1, labels=c("(a)","(b)"),
 ```
 \bigsqueeze \bigsqueeze
 
-\subsection{Conclusion}
+\section{Conclusion}
 
 Finally, in Table \ref{tab:for_accuracy} we report the measures of forecasting accuracy for all the models considered. Interestingly, results show that, in this case, introducing dependence across time series of different pollutants does not lead to sizable improvements ude to the so called \textit{borrowing of strenght}. Indeed, the SUTSE is the best model only according to the MAE, while the MSE and MAPE select less sophisticated specifications.
  
@@ -1214,5 +1214,5 @@ knitr::kable(for_accuracy, "latex", booktabs=T, align="c",
 To conclude, we have presented several models that can be used to examine the series CO, underlying for each of them advantages and disadvantages. Even if, given the complexity of the phenomenon, our specifications may be too basic to have accurate predictions, we can be satisfied with the results we obtained. we studied a debated topic and identified \textit{empirically} the consequences of that \textit{green} culture that lead only in recent years to the effective implementation of economic and regulatory interventions.
 \squeeze
 
-\subsection{References}
+\section{References}
 \squeeze
