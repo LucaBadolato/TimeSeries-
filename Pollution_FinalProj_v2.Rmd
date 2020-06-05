@@ -429,13 +429,13 @@ se_sigmaV  <- paste0('(', round(SE_LG[1],4), ')')
 se_sigmaW1 <- paste0('(', round(SE_LG[2],6), ')')
 se_sigmaW2 <- paste0('(', round(SE_LG[3],7), ')')
 
-# MLE time-variant model
+# MLE time-varynig model
 MLE_sigmaV1_v  <- paste0(round(exp(fit_LG_v$par[1]),4))
 MLE_sigmaV2_v  <- paste0(round(exp(fit_LG_v$par[2]),4))
 MLE_sigmaW1_v  <- paste0(round(exp(fit_LG_v$par[3]),4))
 MLE_sigmaW2_v  <- paste0(round(exp(fit_LG_v$par[4]),12))
 
-# se(MLE) time-variant model
+# se(MLE) time-varying model
 se_sigmaV1_v  <- paste0('(', round(SE_LG_v[1],4), ')')
 se_sigmaV2_v  <- paste0('(', round(SE_LG_v[2],4), ')')
 se_sigmaW1_v  <- paste0('(', round(SE_LG_v[3],4), ')')
@@ -467,7 +467,7 @@ MLEsum_table <- knitr::kable(MLEsum, "latex", booktabs=T, align="c",
            general_title="Note:",
            footnote_as_chunk=T, escape=F) %>%
   kable_styling(latex_options="hold_position")
-add_header_above(MLEsum_table, c("Time-invariant LG" = 3, "Time-variant LG" = 4))
+add_header_above(MLEsum_table, c("Time-invariant LG" = 3, "Time-varying LG" = 4))
 ```
 
 ```{r}
@@ -498,7 +498,7 @@ S_to_N <- matrix(NA,2,1)
 S_to_N[1] <- exp(fit_LG$par[2]) * exp(-fit_LG$par[1])
 S_to_N[2] <- exp(fit_LG$par[3]) * exp(-fit_LG$par[1])
 
-### Time-variant LG
+### Time-varynig LG
 # Put MLE in the model
 LG_v <- build_LG_v(fit_LG_v$par)
 
@@ -521,7 +521,7 @@ y_filt_LG_v_lb <- y_filt_LG_v - 1.64 * y_filt_LG_v_sd
 y_filt_LG_v_ub <- y_filt_LG_v + 1.64 * y_filt_LG_v_sd
 ```
 
-```{r, fig.width=18, fig.height=3.5, out.width='100%',fig.cap="\\label{fig:innovation_process}Standardized one-step-ahead forecast errors: (a) Time-invariant LG model; (b) Time-variant LG model."}
+```{r, fig.width=18, fig.height=3.5, out.width='100%',fig.cap="\\label{fig:innovation_process}Standardized one-step-ahead forecast errors: (a) Time-invariant LG model; (b) Time-varying LG model."}
 
 res_LG <- residuals(LG_Filt, sd=FALSE)
 res_LG <- data.frame(res_LG,louisiana_df$n_months)
@@ -642,7 +642,7 @@ y_filt_LG_v_seas_ub <- y_filt_LG_v_seas + 1.64 * y_filt_LG_v_seas_sd
 
 In order to evaluate the improvement that a seasonal component represents in our analysis, we combine it with the time-varying linear growth model previously specified. Figure \ref{fig:innovation_process_combined} plots the series of innovation process obtained from such a specification. Comparing this plot with the ones reported in Figure \ref{fig:innovation_process}, it is easy to see that the seasonal component is no more present in standardazed residuals. In fact, the series looks like a true noise with almost no structure.
 
-```{r, fig.width=9, fig.height=3.5, out.width='50%', fig.cap="\\label{fig:innovation_process_combined} Standardized one-step-ahead forecast errors: Time-variant seasonal LG model."}
+```{r, fig.width=9, fig.height=3.5, out.width='50%', fig.cap="\\label{fig:innovation_process_combined} Standardized one-step-ahead forecast errors: Time-varying seasonal LG model."}
 
 res_LG_v_seas <- residuals(LG_v_seas_Filt, sd=FALSE)
 res_LG_v_seas = data.frame(res_LG_v_seas,louisiana_df$n_months)
@@ -1000,14 +1000,14 @@ ggarrange(plot_HMM, plot_LG_V, plot_LG_V_seas, plot_DR, ncol=2, nrow=2, align="h
 \bigsqueeze
 
 From these plots, we can see that all models are able to some extent to predict the structural breaks, although being able to reproduce the dynamics with different accuracy.
-A further evidence that the time-varying linear growth model well describes structural instability can be found in the \textit{signal-to-noise ratio}. Indeed, it is possible to clearly see the effect that it has on the one-step-ahead forecast: after the breakpoint the magnitude of the system variance $W$ relative to the observation variance $\sigma_{v_t}^{2}$ increases and, as a consequence, the one-step-ahead forecasts follow more closely the data.
+A further evidence that the time-varying linear growth model well describes structural instability can be found in the \textit{signal-to-noise ratio}. Indeed, it is possible to see the effect that it has on the one-step-ahead forecast: after the breakpoint the magnitude of the evolution error variance $W$ relative to the observation equation variance $\sigma_{v_t}^{2}$ increases and, as a consequence, the one-step-ahead forecasts follow more closely the data.
 \squeeze
 
 \section{Section 3. Multivariate DLMs}
 \smallsqueeze
 \subsection{Seemingly unrelated time series equations (SUTSE)}
 \squeeze
-Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. From visual inspection of Figure \ref{fig:louisiana_plots} it appears that the two series display a similar type of qualitative behavior, that, as we have previously seen, can be modeled by a time-variant linear growth DLM. To set up a multivariate model for the two series, we combine two linear growth models in a comprehensive \textit{seemingly unrelated time series equations model} (SUTSE). This is written as:
+Let us still consider the time series for $\text{CO}$ and $\text{SO}_2$. From visual inspection of Figure \ref{fig:louisiana_plots} it appears that the two series display a similar type of qualitative behavior, that, as we have previously seen, can be modeled by a time-varying linear growth DLM. To set up a multivariate model for the two series, we combine two linear growth models in a comprehensive \textit{seemingly unrelated time series equations model} (SUTSE). This is written as:
 \begin{eqnarray*}
   & Y_t = (F \otimes I_2) \; \theta_t + v_t, & v_t \sim \mathcal{N}_{2}(0,V_{t}) \\
   & \theta_t = (G \otimes I_2) \; \theta_{t-1} + w_t, & w_t \sim \mathcal{N}_{4}(0,W)
@@ -1185,7 +1185,7 @@ ggarrange(CO_forecast, SO2_forecast, ncol=2, nrow=1, labels=c("(a)","(b)"),
 
 \section{Conclusion}
 
-Finally, in Table \ref{tab:for_accuracy} we report the measures of forecasting accuracy for all the models considered. Interestingly, results show that, in this case, introducing dependence across time series of different pollutants does not lead to sizable improvements ude to the so called \textit{borrowing of strenght}. Indeed, the SUTSE is the best model only according to the MAE, while the MSE and MAPE select less sophisticated specifications.
+Finally, in Table \ref{tab:for_accuracy} we report the measures of forecasting accuracy for all the models considered. Interestingly, results show that, in this case, introducing dependence across time series of different pollutants does not lead to sizable improvements due to the so called \textit{borrowing of strenght}. Indeed, the SUTSE is the best model only according to the MAE, while the MSE and MAPE select less sophisticated specifications.
  
 ```{r, include=F}
 source("forecasting_accuracy.R")
@@ -1211,7 +1211,7 @@ knitr::kable(for_accuracy, "latex", booktabs=T, align="c",
   kable_styling(latex_options="hold_position")
 ```
 
-To conclude, we have presented several models that can be used to examine the series CO, underlying for each of them advantages and disadvantages. Even if, given the complexity of the phenomenon, our specifications may be too basic to have accurate predictions, we can be satisfied with the results we obtained. we studied a debated topic and identified \textit{empirically} the consequences of that \textit{green} culture that lead only in recent years to the effective implementation of economic and regulatory interventions.
+To conclude, we have presented several models that can be used to examine the series CO, pointing out for each of them advantages and disadvantages. Even if, given the complexity of the phenomenon, our specifications may be too basic to have accurate predictions, we can be satisfied with the results we obtained. we studied a debated topic and identified \textit{empirically} the consequences of that \textit{green} culture that lead only in recent years to the effective implementation of economic and regulatory interventions.
 \squeeze
 
 \section{References}
