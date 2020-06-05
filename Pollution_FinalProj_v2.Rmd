@@ -1000,7 +1000,7 @@ ggarrange(plot_HMM, plot_LG_V, plot_LG_V_seas, plot_DR, ncol=2, nrow=2, align="h
 \bigsqueeze
 
 From these plots, we can see that all models are able to some extent to predict the structural breaks, although being able to reproduce the dynamics with different accuracy.
-A further evidence that the time-variant linear growth model well describes structural instability can be found in the \textit{signal-to-noise ratio}. Indeed, it is possible to clearly see the effect that it has on the one-step-ahead forecast: after the breakpoint the magnitude of the system variance $W$ relative to the observation variance $\sigma_{v_t}^{2}$ increases and, as a consequence, the one-step-ahead forecasts follow more closely the data.
+A further evidence that the time-varying linear growth model well describes structural instability can be found in the \textit{signal-to-noise ratio}. Indeed, it is possible to clearly see the effect that it has on the one-step-ahead forecast: after the breakpoint the magnitude of the system variance $W$ relative to the observation variance $\sigma_{v_t}^{2}$ increases and, as a consequence, the one-step-ahead forecasts follow more closely the data.
 \squeeze
 
 \section{Section 3. Multivariate DLMs}
