@@ -108,10 +108,10 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
     plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
       geom_col(fill = "#4373B6", width = 0.7) +
       geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
+                 colour = "red",
                  linetype = "dashed") + 
       geom_hline(yintercept = - qnorm((1+ci)/2)/sqrt(N), 
-                 colour = "sandybrown",
+                 colour = "red",
                  linetype = "dashed") + 
       theme_bw(base_size=9) +
       scale_x_continuous(breaks = seq(0,max(df2$lag, na.rm=TRUE),1)) +
@@ -132,8 +132,8 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
 b <- ggplot.corr(data=res_LG$res, lag.max=12, ci=0.95, large.sample.size=FALSE, horizontal=TRUE)
 
 c <- ggplot(res_LG, aes(sample=res)) +
-  stat_qq(col="blue",size=0.5) +
-  stat_qq_line(col="red", lty=2, size=1) +
+  stat_qq(col="#B9CFE7",size=0.5) +
+  stat_qq_line(col="red", lty=1, size=0.5) +
   scale_y_continuous(breaks=seq(-3, 3,1), limits=c(-3,3)) +
   scale_x_continuous(breaks=seq(-3, 3,1), limits=c(-3,3)) +
   theme_bw(base_size=9) +
