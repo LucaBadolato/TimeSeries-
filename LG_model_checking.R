@@ -24,7 +24,7 @@ a <- ggplot(res_LG, aes(x=time)) +
         axis.title.y=element_text(size=15, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,1,1.8), "cm"))
+        plot.margin=unit(c(0,0,0.5,1.8), "cm"))
 
 ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE, horizontal = TRUE,...)
 {
@@ -64,7 +64,7 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
             axis.title.y=element_text(size=15, family="Times", margin=margin(r=5)),
             panel.grid.major=element_line(size=0.5),
             panel.grid.minor=element_blank(),
-            plot.margin=unit(c(0,0,1,1.8), "cm"))
+            plot.margin=unit(c(0,0,0.5,1.8), "cm"))
     
     plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
       geom_area(aes(x = lag, y = qnorm((1+ci)/2)*pacfstd), fill = "navy") +
@@ -81,7 +81,7 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
             axis.title.y=element_text(size=15, family="Times", margin=margin(r=5)),
             panel.grid.major=element_line(size=0.5),
             panel.grid.minor=element_blank(),
-            plot.margin=unit(c(0,0,1,1.8), "cm"))
+            plot.margin=unit(c(0,0,0.5,1.8), "cm"))
   }
   else
   {
@@ -103,7 +103,7 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
             axis.title.y=element_text(size=15, family="Times", margin=margin(r=5)),
             panel.grid.major=element_line(size=0.5),
             panel.grid.minor=element_blank(),
-            plot.margin=unit(c(0,0,1,1.8), "cm"))
+            plot.margin=unit(c(0,0,0.5,1.8), "cm"))
     
     plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
       geom_col(fill = "navy", width = 0.5) +
@@ -124,7 +124,7 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
             axis.title.y=element_text(size=15, family="Times", margin=margin(r=5)),
             panel.grid.major=element_line(size=0.5),
             panel.grid.minor=element_blank(),
-            plot.margin=unit(c(0,0,1,1.8), "cm"))
+            plot.margin=unit(c(0,0,0.5,1.8), "cm"))
   }
   cowplot::plot_grid(plot.acf)
 }
@@ -144,4 +144,4 @@ c <- ggplot(res_LG, aes(sample=res)) +
         axis.title.y=element_text(size=15, family="Times", margin=margin(r=5)),
         panel.grid.major=element_line(size=0.5),
         panel.grid.minor=element_blank(),
-        plot.margin=unit(c(0,0,1,1), "cm"))
+        plot.margin=unit(c(0,0,0.5,1), "cm"))
