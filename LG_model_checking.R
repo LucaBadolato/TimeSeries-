@@ -86,7 +86,7 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
   else
   {
     plot.acf <- ggplot(data = df1, aes( x = lag, y = acf)) +
-      geom_col(fill = "#4373B6", width = 0.7) +
+      geom_col(fill = "steelblue3", width = 0.5) +
       geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
                  colour = "navy",
                  linetype = "dashed", size=0.5) + 
@@ -106,7 +106,7 @@ ggplot.corr <- function(data, lag.max = 24, ci = 0.95, large.sample.size = TRUE,
             plot.margin=unit(c(0,0,1,1.8), "cm"))
     
     plot.pacf <- ggplot(data = df2, aes(x = lag, y = pacf)) +
-      geom_col(fill = "#4373B6", width = 0.7) +
+      geom_col(fill = "steelblue3", width = 0.5) +
       geom_hline(yintercept = qnorm((1+ci)/2)/sqrt(N), 
                  colour = "navy",
                  linetype = "dashed", size=0.5) + 
